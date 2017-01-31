@@ -83,3 +83,10 @@ readSay [] = []
 readSay [x] = [1,x]
 readSay (x:xs) = let (a,b) = break (/=x) (x:xs) in [length a,x]++readSay b
 
+minCount [] = error "No elements"
+minCount (x:xs) = foldl count (x,1) xs
+  where
+    count (r, c) x  = case compare x r of
+      LT -> (x,1)
+      EQ -> (r,c+1)
+      GT -> (r,c)

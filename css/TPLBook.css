@@ -82,8 +82,7 @@ def {
     display: block;
     margin-bottom: 1ex;
     padding: 1ex;
-    font-family: "Helvetica", "Calibri", sanserif;
-    font-size: 90%;
+    line-height: 1.25em;
     text-align: left;
 }
 
@@ -262,7 +261,7 @@ ghci {
     overflow-x: auto;
     padding: 0.5em;
     color: #222;
-    line-height: 1.3em;
+    line-height: 1.4em;
     background: #eee;
 }
 
@@ -331,4 +330,12 @@ ht {
 sl {
     font-family: sans-serif;
     font-weight: bold;
+}
+
+keystroke {
+      font-family: monospace;
+      padding: 2px;
+      width: 5em;
+      color: firebrick;
+      border: 1px dotted gray;
 }

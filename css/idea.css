@@ -15,14 +15,12 @@ Intellij Idea-like styling (c) Vasily Polovnyov <vast@whiteants.net>
 .hljs-subst,
 .hljs-title {
     font-weight: bold;
-    font-style: italic;
     color: #c00;
 }
 
 .hljs-comment,
 .hljs-quote {
   color: #808080;
-  font-style: italic;
 }
 
 .hljs-meta {

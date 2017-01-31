@@ -81,3 +81,10 @@ h2 {
     line-height:0.9em;
 }
 
+keystroke {
+      display: inline-block;
+      font-family: monospace;
+      margin-right: 1em;
+      width: 5em;
+      color: firebrick;
+}
