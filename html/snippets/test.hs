@@ -79,3 +79,7 @@ connected x = case resistance x of
 
 c k1 k2 = (Key k1 `Seq` R 7) `Par` (Key k2 `Seq` (R 12 `Par` (R 1 `Seq` R 5)))
 
+readSay [] = []
+readSay [x] = [1,x]
+readSay (x:xs) = let (a,b) = break (/=x) (x:xs) in [length a,x]++readSay b
+

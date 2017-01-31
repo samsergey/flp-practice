@@ -35,9 +35,13 @@
 :t id
 :t ($)
 :t (.)
-:t integrate</ghci></pre>	
+:t integrate
+:t (\x -> x)
+:t (\x y -> x)
+:t (\x y -> x + y)</ghci></pre>	
 
-
+      <p>Cм. <a href ='haskell-ref.html#Типы данных и функций' target='_blank'>Типы данных и функций</a>.</p>
+      
       <task>Посмотрите информацию о типах с помощью команды <code>:i</code>      </task>
 	<pre><ghci>:i Char
 :i String
@@ -45,6 +49,7 @@
 :i Int
 :i []</ghci></pre>
 
+      <p>Cм. <a href ='haskell-ref.html#Классы типов' target='_blank'>Классы типов</a>.</p>
       <task>Посмотрите информацию о классах типов с помощью команды <code>:i</code></task>
 	<pre><ghci>:i Show
 :i Eq
@@ -64,24 +69,24 @@
       <task>Даны целые числа n и k. Вывести  на печать n раз число k.</task>
       <pre><ghci>λ> mapM_ print $ replicate n k</ghci></pre>
 
-	<task>Напишите своё определение функции replicate</task>
-	<pre><def>replicate' :: Int -> a -> [a]</def>
-<hs>replicate' n x = const x <$> [1..n]</hs></pre>
-
+      <task>Напишите определение функции <code>replicate</code>, определите её тип.
+	<pre><hs>replicate' n x = const x <$> [1 .. n]</hs></pre>
+	Удостоверьтесь, что оно работает верно. Объясните смысл функции <code>const</code>.</task>
 	<h3>Выделение части списка</h3>
 	
-	<task>Выясните и объясните тип функций <code>take</code>, <code>map</code>, <code>takeWhile</code>, <code>dropWhile</code>, <code>filter</code>. Вычислите несколько примеров в интерпретаторе: </task>
-	<pre><ghci>take 5 [1..10]
-take 5 [1..3]
-take 5 [1..]
-map (+1) [1..5]
-takeWhile (&lt; 5) [1..20]
-dropWhile (&lt; 5) [1..20]
-take 3 $ dropWhile (&lt; 5) [1..]
-filter (\i -> i^2 &lt; 5) [1..20]</ghci></pre>
+	<task>Выясните и объясните тип функций <code>take</code>, <code>map</code>, <code>takeWhile</code>, <code>dropWhile</code>, <code>filter</code>. Вычислите следующие примеры в интерпретаторе и объясните своими словами, что делают эти функции.</task>
+	<pre><ghci>take 5 [1 .. 10]
+take 5 [1 .. 3]
+take 5 [1 .. ]
+map (+1) [1 .. 5]
+takeWhile (&lt; 5) [1 .. 20]
+dropWhile (&lt; 5) [1 .. 20]
+take 3 $ dropWhile (&lt; 5) [1 .. ]
+filter (\i -> i^2 &lt; 5) [1 .. 20]</ghci></pre>
 	    		    
 	<task>Даны два целых числа <eq>a</eq> и <eq>b</eq>. Найти сумму квадратов всех целых чисел от <eq>a</eq> до <eq>b</eq> включительно.</task>     
-	<task> Дано целое число <eq>n > 0</eq>. Найти значение выражения<eqn>1 - 1.1 + 1.2 - 1.3 + ...</eqn> (<eq>n</eq> слагаемых, знаки чередуются).</task>
+
+	<task>Найти среднее геометрическое всех целых чисел от а до b.</task>
 
 	<task>Найдите сколько точек на целочисленной сетке попадают в круг указанным целочисленным радиусом. Оцените число <eq>\pi</eq> с помощью круга радиусом 100. Здесь для каждого элемента списка следует создать и обработать ещё один список, таким образом реализуется вложенный цикл.<br/> Посмотрите в справке о генерации списков.</task>
 	
@@ -138,6 +143,8 @@ insert y (x:xs) | x == y = xs
 take 5 $ iterate cos 0.3
 iterate (`div` 2) 17</ghci></pre>
 
+	<task>Решите в одну строчку. Начав тренировки, лыжник в первый день пробежал 10 км. Каждый следующий день он увеличивал пробeг на 10% от пробега предыдущего дня. Определите, в какой день лыжник должен будет пробежать 100 км. Найдите в какой день суммарный пробег за все дни превысит 100 км. </task>
+	
 	<task>Напишите функцию <code>toBase b n</code> , которая переводит число <code>n</code> из десятичной системы счисления в систему с основанием <code>b</code>. Убедитесь в том, что эта функция является обратной функции <code>fromBase</code></task>
 
 	    <task>Вычислите в GHCi следующие выражения и объясните что вычисляют функции <code>zip</code>, <code>zipWith</code>, <code>tail</code> и <code>sum</code></task>
