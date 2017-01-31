@@ -1,4 +1,5 @@
 import Data.Complex
+import Control.Applicative
 
 repeat' n k = const k <$> [1..n]
 
@@ -15,7 +16,7 @@ sin' x = takeWhile ((> 1e-10).abs) $ (\i -> (-1**((i-1) / 2))*x**i/fact i) <$> [
 area r = length $ filter (< r^2) $ concat $ (\x -> (\y -> x^2 + y^2) <$> [1..r]) <$> [1..r]
 
 toBase d = map (`mod` d) . takeWhile (> 0) . iterate (`div` d)
-fromBase d = foldr (\x res -> d*res + x) 0
+fromBase d = foldr (\x res -> d*res + x) 0 . reverse
 
 secant f x1 x2 = converge 1e-11 $ take 50 $ roots
   where g x1 x2 = (f x2 * x1 - f x1 * x2)/(f x2 - f x1)
@@ -90,3 +91,32 @@ minCount (x:xs) = foldl count (x,1) xs
       LT -> (x,1)
       EQ -> (r,c+1)
       GT -> (r,c)
+
+volvo = [ mconcat[show volvo, "+", show fiat, "=", show motor]
+        | v <- [1..9]
+        , o <- [0..9], o /= v
+        , l <- [0..9], not $ l `elem` [v,o]
+        , f <- [1..9], not $ f `elem` [v,o,l]
+        , i <- [0..9], not $ i `elem` [v,o,l,f]
+        , a <- [0..9], not $ a `elem` [v,o,l,f,i]
+        , t <- [0..9], not $ t `elem` [v,o,l,f,i,a]
+        , m <- [1..9], not $ m `elem` [v,o,l,f,i,a,t]
+        , r <- [0..9], not $ r `elem` [v,o,l,f,i,a,t,m]
+        , let volvo = fromBase 10 [v,o,l,v,o]
+              fiat = fromBase 10 [f,i,a,t]
+              motor = fromBase 10 [m,o,t,o,r]
+        , volvo + fiat == motor]
+
+--main = mapM_ putStrLn volvo
+
+bisection p a b
+  | p a == p b = empty
+  | abs c < 1e-14 && abs (b - a) < 1e-14 = pure c
+  | abs ((b-a)/c) < 1e-14 = pure c
+  | otherwise = bisection p a c <|> bisection p c b
+  where c = (b + a) / 2
+
+findRoot p x = go x 1e-5
+  where
+    go x dx | abs x > 1e16 = empty
+            | otherwise = bisection p x (x+dx) <|> go (x+dx) (2*dx)

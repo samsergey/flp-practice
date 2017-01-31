@@ -339,3 +339,8 @@ keystroke {
       color: firebrick;
       border: 1px dotted gray;
 }
+
+code {
+    color: #226;
+    font-size: 110%;
+}
