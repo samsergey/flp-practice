@@ -1,0 +1,334 @@
+body {
+    font-family: "Georgia", serif;    
+    font-size: 90%;
+    width: 70ex;
+    margin-left: 5%;
+    margin-right: 5%;
+    text-align: justify;
+}
+
+h1 {
+    font-family: "Georgia", serif;    
+    font-weight: bold;
+    font-size: 200%;
+    font-variant: small-caps;
+    margin-top: 30px;
+    margin-bottom: 0px;
+    letter-spacing: 0.5px;
+}
+
+h2 {
+    font-weight: normal;
+    font-variant: small-caps;
+    font-size: 120%;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    text-align: center;
+    border-bottom: 1px solid #111111;
+    border-top: 1px solid #111111;
+}
+
+kbd {
+    font-size: 75%;
+    border: 1px solid #111111;
+    padding: 1.5px;
+    color: #221122;
+    background: #ddd;
+    border-radius: 3px;
+    white-space: nowrap;
+}
+
+tab {
+    font-size:85%;
+    border: 1px solid #888;
+    padding: 1px;
+    color: #000;
+    white-space: nowrap;
+    border-radius: 3px;
+    background: #eee;
+}
+
+tt {
+    font-weight: bold;
+    color: #423;
+}
+
+file {
+    font-family: "Courier New", monospace;    
+    font-weight: bold;
+    color: #233;
+    font-size: 100%; 
+}
+
+the {
+    font-weight: 500%;
+    color: #022;
+}
+
+def {
+    font-style: italic;
+}
+
+.tasks {
+    margin-left: 0pt;
+    padding-right: 0pt;
+    list-style-type: none;
+}
+
+.tasks task {
+    counter-increment: task;
+    display: block;
+    margin-bottom: 1ex;
+    padding: 1ex;
+    font-family: "Helvetica", "Calibri", sanserif;
+    font-size: 90%;
+    text-align: left;
+}
+
+.tasks task:before {
+    content: "✍";
+    margin-left: -1.2em;
+    padding-right: 0.4em;
+    font-family: "Helvetica", "Calibri";
+    font-size: 25px;
+    font-weight: bold;
+    color: firebrick;
+    line-height: 0px;
+    position: relative;
+    top: 4px;
+}
+
+.labs {
+    margin-left: 0pt;
+    padding-right: 0pt;
+    list-style-type: none;
+}
+
+.labs lab {
+    counter-increment: lab;
+}
+
+.labs lab:before {
+    content: counter(lab);
+    margin-left: -1em;
+    padding-right: 0.4em;
+    font-size: 40px;
+    color: teal;
+    line-height: 0px;
+    position: relative; top: 5px;
+}
+
+.labs a {
+    font-weight: normal;
+    font-variant: small-caps;
+    font-size: 150%;
+    margin-top: 0px;
+    margin-bottom: 20px;
+    text-decoration: none;
+    color: firebrick;
+}
+
+.labs a:hover {
+    text-decoration: underline;
+}
+
+problem {
+    display: block;
+    font-size: 95%; 
+    margin-left: 2em;
+    margin-right: 2em;
+    margin-top: 1em;
+    margin-bottom: 1em;
+}
+
+algorythm {
+    display: block;
+    border: 3px solid  #bbb;
+    background: #ffe;
+    font-size: 97%; 
+    margin-left: 2em;
+    margin-right: 2em;
+    margin-top: 1em;
+    margin-bottom: 1em;
+    padding: 1em;
+}
+
+algorythm title {
+    font-family: Georgia, Times, serif;   
+    font-style: small-caps;
+    display: block;
+    color: firebrick;
+    font-size: 120%; 
+    margin: 0em;
+}
+
+algorythm li {
+    margin-top: 0.25em;
+}
+
+.data li {
+    line-height: 1em;
+    margin-left: 1em;
+}
+
+.data ul:before {
+    display: block;
+    content: "Исходные данные:";
+    font-decoration: underline;
+    color: #044;
+    margin-left: -2.25em;
+    font-size:95%;
+}
+
+result {
+    display: block;
+    margin-bottom: -0.5em;
+    margin-left: 1.5em;
+}
+
+result:before {
+    display: block;
+    content: "Результат:";
+    color: #044;
+    margin-bottom: 0.25em;
+    margin-left: -1.25em;
+    font-size:95%;
+}
+
+.file title {
+    display: block;
+    background: #efe;
+    border: 1px solid #ccc;
+    padding: 0.25em;
+    font-family: "Courier", monospace;
+    font-size: 80%;
+    margin-bottom: 0em;
+    margin-top: 1em;
+}
+
+.file pre {
+    margin-top: 0em;
+}
+
+.file title::before {
+    font-family: "Ubuntu", "Calibri", "System";
+    content: "Файл ";
+}
+
+.navigation {
+    font-size: 80%;
+}
+
+.navigation a {
+    font-decoration: none;
+    font-color: navy;
+}
+
+.navigation a:hover {
+   font-decoration: underline;
+}
+
+eq {
+    display: in-line;
+    font-family: serif;
+    font-size:80%;
+}
+
+eqn {
+    display: block;
+    font-family: serif;    
+    padding-bottom:  1rem;
+    padding-top:     1rem;
+}
+
+.eqnarray {
+    padding-bottom:  1rem;
+    padding-top:     1rem;
+    display: block;
+    text-align: center;
+}
+
+.eqns {
+    display: inline-block;
+    text-align: left;
+}
+
+
+ghci {
+    display: block;
+    border: dotted 1px gray;
+    overflow-x: auto;
+    padding: 0.5em;
+    color: #222;
+    line-height: 1.3em;
+    background: #eee;
+}
+
+
+
+disclaim {
+  display: block;
+  padding: 0.5em;
+  width: 65ex;
+  margin-left: 2ex;
+}
+
+details {
+  background: #FFF;
+  color: #008;
+  border: dotted 1px gray;
+  padding: 1ex;
+}
+
+details summary {
+ background: #FFF;
+}
+
+sinopsys {
+  display: block;
+  padding: 0.5em;
+  margin-top: 1ex;
+  width: 65ex;
+  margin-left: 2ex;
+  font-size: 75%;
+  background: #FF8
+}
+
+sinopsys p {
+    font-family: "Courier New", monospace;
+    font-weight: bold;
+    padding: 0px;
+    margin-bottom: 10px;
+    margin-top: 5px;
+    padding-left: 1em;
+}
+
+sinopsys part {
+    font-family: "Helvetica", sans;
+    font-weight: normal;
+    padding: 0px;
+}
+
+der {
+    color: dimgray;
+}
+
+basic {
+    color: black;
+}
+
+nt {
+    color: blue;
+    font-weight:bold;
+}
+
+ht {
+    color: dimgray;
+}
+
+sl {
+    font-family: sans-serif;
+    font-weight: bold;
+}
