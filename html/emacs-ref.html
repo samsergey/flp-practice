@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <title>Emacs. Краткая справка</title>
+    <meta charset = "UTF-8"/>
+    <link rel="stylesheet" href="../css/HRef.css">
+    <link rel="stylesheet" href="../lib/styles/idea.css">
+    <link rel="stylesheet" href="../lib/katex/katex.min.css">
+    
+    <script src="../lib/highlight.pack.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    <script src="../lib/katex/katex.min.js"></script>
+    <style>
+      
+      keystroke {
+      display: inline-block;
+      font-family: monospace;
+      margin-right: 1em;
+      width: 5em;
+      color: firebrick;
+      }
+    </style>
+</head>
+<body>
+  <div id="toc" class="toc">
+    <h1>Emacs.<br/>Краткая справка.</h1><hr/>
+  </div>
+  <div class="main"></p>
+
+<h1>Emacs.<br/> Краткая справка по наиболее часто используемым командам</h1>
+
+<hr />
+
+<article>
+<h2>Комбинации клавиш</h2>
+
+<table>
+  <tr>
+    <td><keystroke>С-…</keystroke></td><td>соответствует нажатию <tt>Ctrl + …</tt></td></tr> 
+  <tr><td><keystroke>M-…</keystroke></td><td>  соответствует нажатию <tt>Alt + …</tt></td></tr>
+  <tr><td><keystroke>S-…</keystroke></td><td>  соответствует нажатию <tt>Shift + …</tt></td></tr>
+  <tr><td><keystroke> C-… C-…</keystroke></td><td> два нажатия подряд (не одновременно)</td></tr>
+  <tr><td><keystroke> C-M-…</keystroke></td><td> соответствует  одновременному нажатию <tt>Alt + Ctrl + …</tt></td></tr>
+  <tr><td><keystroke> C-g</keystroke></td><td> отмена набора текущей команы</td></tr>
+</table>
+
+</article>
+
+<article>
+  <h2>Справка</h2>
+  <table>
+    <tr><td><keystroke>C-h C-h</keystroke></td><td> справка о справке</td></tr>
+    <tr><td><keystroke> C-h C-m</keystroke></td><td> справка о текущих режимах (модах)</td></tr>
+  </table>
+</article>
+
+<article>
+  <h2>Выход из программы</h2>
+<table>
+  <tr><td><keystroke>C-x C-c</keystroke></td><td> сохранить открытые файлы и выйти.</td></tr>
+</table>
+
+<article>
+  <h2>Управление файлами</h2>
+
+  <table>
+    <tr><td><keystroke>C-x C-f </keystroke></td><td> открыть или создать новый файл</td></tr>
+    <tr><td><keystroke>C-x C-r</keystroke></td><td> открыть один из недавно открывавшихся файлов</td></tr>
+    <tr><td><keystroke>C-x C-s</keystroke></td><td> сохранить текущий файл</td></tr>
+    <tr><td><keystroke>С-x C-k</keystroke></td><td> закрыть буфер с текущим файлом</td></tr>
+  </table>
+</article>
+
+<article>
+  <h2>Редактирование текста</h2>
+
+  <p>
+    Кроме стандартных способов перемещения по тексту, есть ряд особых приёмов работы с текстом
+  </p>
+
+  <table>
+    <tr><td><keystroke>C-a</keystroke></td><td> перейти в начало строки</td></tr>
+    <tr><td><keystroke>C-e</keystroke></td><td> перейти в конец строки</td></tr>
+    <tr><td><keystroke>C-k</keystroke></td><td> удаление содержимого строки вправо от курсора</td></tr>
+  </table>
+
+  <table>
+    <tr><td><keystroke>C-SPS</keystroke></td><td> начать или завершить выделение региона</td></tr>
+  </table>
+
+  <table>
+    <tr><td><keystroke>C-d  </keystroke></td><td> удалить символ слева от курсора</td></tr>
+    <tr><td><keystroke>M-SPC</keystroke></td><td> удалить ряд пробелов, оставив лишь один</td></tr>
+  </table>
+
+  <h3>Мультикурсоры</h3>
+  <p>Мультикурсоры позволяют вводить текст в нескольких местах одновременно. Если при создании мультикурсора выделен регион, мультикурсоры образуются в регионах, идентичных выделенному. Так удобно переименовывать имена функций или переменных.</p>
+
+  <table>
+    <tr><td><keystroke>C-M-&gt;</keystroke></td><td> создаёт мультикурсор ниже по тексту</td></tr>
+    <tr><td><keystroke>C-M-&lt;</keystroke><td> создаёт мультикурсор выше по тексту</td></tr>
+    <tr><td><keystroke>RET</keystroke></td><td> выход из режима мультикурсора</td></tr>
+  </table>
+
+  <h3>Инкрементный поиск</h3>
+  <p>
+    С помощью инкрементного поиска очень удобно перемещаться по тексту без использования стрелок или мыши.
+  </p>
+  
+  <table>
+    <tr><td><keystroke>С-s</keystroke></td><td> инкрементный поиск ниже по тексту</td></tr>
+    <tr><td><keystroke>C-r</keystroke></td><td> инкрементный поиск ниже по тексту</td></tr>
+    <tr><td><keystroke>RET</keystroke></td><td> выход из режима инкрементного поиска</td></tr>
+    <tr><td><keystroke>C-x C-x</keystroke></td><td> возвращение в предыдущую точку в тексте</td></tr>
+  </table>
+      
+  <h3>Повторение команд и их последовательностей</h3>
+
+
+  <table>
+    <tr><td><keystroke>C-x ( </keystroke></td><td> начать запись макрокоманды</td></tr>
+    <tr><td><keystroke>C-x ) </keystroke></td><td> завершить запись макрокоманды</td></tr>
+    <tr><td><keystroke>C-x C-e</keystroke></td><td> выполнить макрокоманду</td></tr>
+    <tr><td><keystroke>C-e   </keystroke></td><td> повторить выполнение макрокоманды </td></tr>
+  </table>
+  <table>
+    <tr><td><keystroke>C-u число …</keystroke></td><td> повторение команды … указанное число раз, например,
+	<tt>C-u 60 -</tt> напечатает 60 знаков <tt>'-'</tt></td></tr>
+    <tr><td><keystroke>С-u число C-x C-e</keystroke></td><td> выполнить макрокоманду указанное число раз</td></tr>
+  </table>
+
+
+</article>
+
+<article>
+  <h2>Работа с буферами</h2>
+<table>
+  <tr><td><keystroke>C-x 1 </keystroke></td><td> скрыть все буферы, оставив открытым только текущий буфер</td></tr>
+  <tr><td><keystroke>C-x 2 </keystroke></td><td> разделить буфер горизонтально  </td></tr>
+  <tr><td><keystroke>C-x 3 </keystroke></td><td> разделить буфер вертикально</td></tr>
+  <tr><td><keystroke>C-x 0 </keystroke></td><td> скрыть текущий буфер</td></tr>
+  <tr><td><keystroke>C-x b </keystroke></td><td> переключиться на один из существующих буферов</td></tr>
+  <tr><td><keystroke>C-x o </keystroke></td><td> перейти в один из открытых буферов </td></tr>
+  <tr><td><keystroke>C-x k </keystroke></td><td> уничтожить текущий буфер</td></tr>
+  <tr><td><keystroke>C-x } </keystroke></td><td> расширить текущий буфер</td></tr>
+  <tr><td><keystroke>C-x { </keystroke></td><td> сузить текущий буфер</td></tr>
+</table>
+</article>
+
+<article>
+  <h2>Работа в haskell-mode</h2>
+<table>
+  <tr><td><keystroke>C-c C-l</keystroke></td><td> скомпилировать программу и загрузить её в интерпретатор</td></tr>
+  <tr><td><keystroke>C-c C-z</keystroke></td><td> переключаться между буферами программы и интерпретатора</td></tr>
+  <tr><td><keystroke>TAB</keystroke></td><td> установить отступ сроки (с учётом структуры программы)</td></tr>
+  <tr><td><keystroke>C-m</keystroke></td><td> перейти в начало строки, игнорируя пробелы</td></tr>
+  <tr><td><keystroke>C-/</keystroke></td><td> автодополнение слова</td></tr>
+  <tr><td><keystroke>M-S-;</keystroke></td><td> закомментировать строку или выделенный регион</td></tr>
+</table>
+</article>
+
+</div>
+
+<script>
+function makeTOCitem(el, lev) {
+    var text = el.innerHTML
+    el.innerHTML = "<a id='" + text + "'>" + text +"</a>"
+    TOC += "<div class='" + lev + "'><a href='#" + text + "'>" + text + "</a></div>"
+}
+
+function makeArticle(a) {
+    makeTOCitem(a.getElementsByTagName("h2")[0],"l1")
+    var heads = a.getElementsByTagName("h3")
+    if (heads.length == 0) return
+    for(var j = 0; j<heads.length; j++) {
+    makeTOCitem(heads[j],"l2")
+    }
+}
+
+var TOC = toc.innerHTML
+var articles = document.getElementsByTagName("article")
+for (var i = 0; i<articles.length; i++) 
+    makeArticle(articles[i])
+toc.innerHTML = TOC
+</script>
+    <script src='../lib/postprocess.js'></script>
+    <script>
+    document.onLoad = function () {
+  var defs = document.getElementsByTagName("def")
+  for (var i = 0; i<defs.length; i++) 
+      defs[i].innerHTML = defs[i].innerText || defs[i].textContent
+    }
+</script>
+</body>
+</html>
