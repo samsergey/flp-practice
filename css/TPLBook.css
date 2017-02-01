@@ -350,3 +350,11 @@ code {
     color: #226;
     font-size: 110%;
 }
+
+.disclaimer {
+    padding: 1ex;
+    margin-right: 5%;
+    margin-left: 5%;
+    background: #FCB;
+    border: 1px solid gray
+}
