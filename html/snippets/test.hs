@@ -15,8 +15,8 @@ sin' x = takeWhile ((> 1e-10).abs) $ (\i -> (-1**((i-1) / 2))*x**i/fact i) <$> [
 
 area r = length $ filter (< r^2) $ concat $ (\x -> (\y -> x^2 + y^2) <$> [1..r]) <$> [1..r]
 
-toBase d = map (`mod` d) . takeWhile (> 0) . iterate (`div` d)
-fromBase d = foldr (\x res -> d*res + x) 0 . reverse
+toBase d = reverse . map (`mod` d) . takeWhile (> 0) . iterate (`div` d)
+fromBase d = foldl (\res x -> d*res + x) 0
 
 secant f x1 x2 = converge 1e-11 $ take 50 $ roots
   where g x1 x2 = (f x2 * x1 - f x1 * x2)/(f x2 - f x1)
@@ -107,7 +107,7 @@ volvo = [ mconcat[show volvo, "+", show fiat, "=", show motor]
               motor = fromBase 10 [m,o,t,o,r]
         , volvo + fiat == motor]
 
---main = mapM_ putStrLn volvo
+main = mapM_ putStrLn volvo
 
 bisection p a b
   | p a == p b = empty
@@ -120,3 +120,11 @@ findRoot p x = go x 1e-5
   where
     go x dx | abs x > 1e16 = empty
             | otherwise = bisection p x (x+dx) <|> go (x+dx) (2*dx)
+
+multLong x lst = case foldl shift (0,[]) (0:lst) of
+  (0,res) -> res
+  (y,res) -> y:res
+  where
+    shift (r,res) d = let (q,r') = (d*x+r) `divMod` 1000 in (q, r':res)
+
+factLong n = foldr multLong [1] [1..n]
