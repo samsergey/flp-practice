@@ -1,6 +1,7 @@
 {-# LANGUAGE BangPatterns #-}
 import Data.Complex
 import Control.Applicative
+import Data.List.Split
 
 repeat' :: (Num b1, Enum b1) => b1 -> b -> [b]
 repeat' n k = const k <$> [1..n]
@@ -152,3 +153,17 @@ multLong x lst = dropWhile (==0) $ init $ snd <$> scanr addShift (0,0) (0:lst)
 
 factLong :: Int -> [Int]
 factLong n = foldr multLong [1] [1..n]
+
+data Client = Client { name :: String
+                     , age :: Int
+                     , address :: Maybe Address } deriving Show
+data Address = Address {street :: String, house :: Int} deriving Show
+
+table = concat [ "Johny Mitchell, 35, Tony lane, 6\n"
+               , "Jim Morisson, 27, Ivy ave, 32\n"
+               , "Marty Mc'Fly, 18, Lion est., 16\n"
+               , "Woody Woodepecker, 63, -,-"]
+
+readCSV = fmap (splitOn ",") . splitOn "\n"
+
+readString =
