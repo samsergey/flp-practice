@@ -4,7 +4,7 @@
   <head>
     <meta charset = "UTF-8"/>
     <link rel="stylesheet" href="../css/TPLBook.css">
-    <link rel="stylesheet" href="../css/idea.css">
+    <link rel="stylesheet" href="../css/obsidian.css">
     <link rel="stylesheet" href="../lib/katex/katex.min.css">    
 
     <script src="../lib/highlight.pack.js"></script>
@@ -93,8 +93,9 @@ Just (2*) <*> Nothing
 (+) <&> Just 3 <*> Nothing</ghci></pre>    
 
       <task>Рассмотрим задачу отыскания на числовой оси точек, в которых изменяется какое-либо условие. Универсальным, надёжным и достаточно быстрым является метод деления отрезка пополам. Напишите функцию <code>bisection p a b</code>, имеющую следующий тип:
-      <pre><def>bisection :: Eq t => (Double -> t) -> Double -> Double -> Maybe Double</def></pre>
-      Здесь функция <code>p :: Eq b => Double -> t</code> определяет условие, которое должно изменяться в искомой точке, а точки <code>a</code> и <code>b</code> определяют отрезок на котором точка ищется. Метод состоит в следующем:
+	<pre><hs>bisection :: Eq t => (Double -> t) -> Double -> Double
+	          -> Maybe Double</hs></pre>
+      Здесь функция <code>Double -> t</code> определяет условие, которое должно изменяться в искомой точке, а точки <code>a</code> и <code>b</code> определяют отрезок на котором точка ищется. Метод состоит в следующем:
       <ul>
 	<li> Если на границах отрезка условие принимает одинаковые значения, считаем, что искомой точки на отрезке нет;
 	<li> если отрезок достаточно мал, решением является его средняя точка;

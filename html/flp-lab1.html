@@ -4,7 +4,7 @@
   <head>
     <meta charset = "UTF-8"/>
     <link rel="stylesheet" href="../css/TPLBook.css">
-    <link rel="stylesheet" href="../css/idea.css">
+    <link rel="stylesheet" href="../css/obsidian.css">
     <link rel="stylesheet" href="../lib/katex/katex.min.css">    
 
     <script src="../lib/highlight.pack.js"></script>
@@ -84,7 +84,9 @@ sum [1..100000]</ghci></pre>
 
     <task>Напишите функцию, вычисляющую среднее арифметическое двух чисел.</task>
 
-    <task>Напишите определение для функции <eqns>\mathrm{sinc}\,0 = 1,\\ \mathrm{sinc}\, x = \frac{\sin x}{x}.</eqns> См. <a href ='haskell-ref.html#Определение с образцом' target='_blank'>Определение с образцом</a>.</task>
+    <task>Напишите определение для функции
+      <eqn>\mathrm{sinc}\, x = \frac{\sin x}{x}.</eqn>
+      Так, чтобы правильно обрабатывался случай <eq>x = 0</eq>. См. <a href ='haskell-ref.html#Определение с образцом' target='_blank'>Определение с образцом</a>.</task>
 
     <task>Решите классическую задачу FizzBuzz: Напишите программу, которая выводит на экран числа от 1 до 100, при этом вместо чисел, кратных 3, программа должна выводить слово <tt>"Fizz"</tt>, а вместо чисел, кратных 5 — слово <tt>"Buzz"</tt>. Если число кратно и 3, и 5, то программа должна выводить слово <tt>"FizzBuzz"</tt>.
       
@@ -96,6 +98,29 @@ sum [1..100000]</ghci></pre>
 	<li>Функция <code>fizzbuzz</code> применяется к элементам списка чисел <code>[1..100]</code>, в результате получается список строк.</li>
       </ul>
       </p>
+    </task>
+    
+<task>Напишите определение для функции <code>diff f x</code>, которая вычисляет производную функции <code>f</code> в точке <code>x</code>, используя приближение:
+      <eqn>f'(x) = \frac{f(x+dx)-f(x-dx)}{2dx},\quad dx = 10^{-8}</eqn>
+      Вычислите таблицу производной для функций <eq>x^2</eq> и <eq>\sin x</eq> для </task>
+
+<hr/>
+
+<p>Одной из важных задач прикладной математики является задача численного интегрирования функции. Существует простой и эффективный метод приближённого вычисления интегралов: метод гауссовых квадратур третьего порядка, он дает точные значения интеграла для полиномов до 5-й степени:
+<eqn>
+\int_a^b f(x) dx \approx \frac{b-a}2\left[ \frac{5}{9} g\left(-\sqrt{\frac{3}{5}}\right)+\frac{8}{9}g(0)+\frac{5}{9}g\left(\sqrt{\frac{3}{5}}\right)\right],
+</eqn>
+<eqn>
+  g(x)=f\left(\frac{a+b}2+\frac{b-a}2x\right).  
+</eqn>
+</p>
+
+<task>Напишите функцию <code>integrate f a b</code>, которая вычисляла бы интеграл от функции <code>f</code> в интервале от <code>a</code> до <code>b</code>, используя этот метод (cм. <a href ='haskell-ref.html#Дополнительные определения' target='_blank'>Дополнительные определения</a>). Проверьте правильность работы функции <code>integrate</code> на следующих примерах:
+  <eqn>\int_1^4 x^2\,dx,\quad \int_0^3 (x^5-x)\,dx,\quad \int_0^2 \sin x\,dx.</eqn></task>
+
+    <task>Проинтегрируйте функцию <eq>\mathrm{sinc}\,x</eq> на отрезке от <eq>0</eq> до <eq>\pi</eq>.</task>
+
+
     </div>
     <p id="footer"></p>
     <script src="../lib/postprocessing.js"></script>

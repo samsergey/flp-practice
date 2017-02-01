@@ -232,14 +232,17 @@ result:before {
 eq {
     display: in-line;
     font-family: serif;
-    font-size:80%;
+    font-size:85%;
 }
 
 eqn {
     display: block;
+    text-align: center;
     font-family: serif;    
     padding-bottom:  1rem;
     padding-top:     1rem;
+    font-size:90%;
+
 }
 
 .eqnarray {
@@ -252,6 +255,7 @@ eqn {
 .eqns {
     display: inline-block;
     text-align: left;
+    font-size:125%;
 }
 
 
@@ -260,9 +264,11 @@ ghci {
     border: dotted 1px gray;
     overflow-x: auto;
     padding: 0.5em;
-    color: #222;
+    color: #ccc;
     line-height: 1.4em;
-    background: #eee;
+    background: #222;
+    /* font-weight: bold; */
+    font-size:110%;
 }
 
 

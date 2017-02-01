@@ -1,16 +1,17 @@
 (defface haskell-type-declaration-face
-  '((t (:foreground "RoyalBlue2" :slant italic :weight bold :underline t))) "haskell-type-declaration-face")
+  '((t (:foreground "LightSeaGreen" :slant italic :weight bold :underline t))) "haskell-type-declaration-face")
 (defface haskell-type-declaration-multline-face
   '((t (:inherit haskell-type-declaration-face :underline nil))) "haskell-type-declaration-multline-face")
-(defface haskell-package-face '((t (:foreground "#377"))) "haskell-package-face")
+(defface haskell-package-face '((t (:foreground "#599"))) "haskell-package-face")
+(defface number-face '((t (:foreground "khaki"))) "haskell-package-face")
 (defface haskell-binding-face '((t (:foreground "black" :weight bold))) "haskell-binding-face")
 (defface haskell-guard-face '((t (:weight normal))) "haskell-guard-face")
-(defface haskell-dot-face '((t (:weight bold))) "haskell-dot-face")
+(defface haskell-dot-face '((t (:weight extrabold))) "haskell-dot-face")
 (defface haskell-local-definition-face '((t (:foreground "#a00" :weight normal :slant italic))) "haskell-local-definition-face")
-(defface haskell-prelude-function-face '((t (:foreground "#605"))) "haskell-prelude-function-face")
-(defface haskell-prelude-type-face '((t (:foreground "#66b" :weight bold))) "haskell-prelude-type-face")
-(defface haskell-prelude-class-face '((t (:foreground "#a8a" :weight bold))) "haskell-prelude-class-face")
-(defface haskell-prelude-constructor-face '((t (:foreground "#60f" :weight bold))) "haskell-prelude-constructor-face")
+(defface haskell-prelude-function-face '((t (:foreground "white"))) "haskell-prelude-function-face")
+(defface haskell-prelude-type-face '((t (:foreground "DarkSeaGreen" :weight bold))) "haskell-prelude-type-face")
+(defface haskell-prelude-class-face '((t (:foreground "aquamarine" :weight bold))) "haskell-prelude-class-face")
+(defface haskell-prelude-constructor-face '((t (:foreground "DarkSeaGreen" :weight normal))) "haskell-prelude-constructor-face")
 
 
 (setq kwd
@@ -30,32 +31,34 @@
 	  '(lambda ()
 	     (font-lock-add-keywords 
 	      nil 
-	      `((" \\(<-\\|=\\|->\\) " . 'haskell-binding-face)
+	      `(
+;		(" \\(<-\\|=\\|->\\) " . 'haskell-binding-face)
 		("[{,] *\\(\\w+\\) ::" 1 'haskell-definition-face t)
 	  
-		("\\\\.+?\\(->\\)" 1 'haskell-binding-face t)
-		("\\\\" 0 'haskell-binding-face t)
-		("\\<_" 0 'default t)
+;		("\\\\.+?\\(->\\)" 1 'haskell-binding-face t)
+;		("\\\\" 0 'haskell-binding-face t)
+;		("\\<_" 0 'default t)
 
-		("\\(where\\|let\\) +\\(\\w+\\)[^=`]*?=[^=]" 2 'haskell-local-definition-face t)
-		("\\(where\\|let\\) +\\(([^=
-]+\\)=[^=]" 2 'haskell-local-definition-face t)
-		("^ +\\(\\w+\\)[^=`
-]+=[^=]" 1 'haskell-local-definition-face t)
-		("^ +\\(([^=
-]+\\)=[^=]" 1 'haskell-local-definition-face t)
-		("^ +[^`|=]+\\(`\\w+`\\)[^=]+ *=[^=]" 1 'haskell-local-definition-face t)
+;		("\\(where\\|let\\) +\\(\\w+\\)[^=`]*?=[^=]" 2 'haskell-local-definition-face t)
+;		("\\(where\\|let\\) +\\(([^=
+;]+\\)=[^=]" 2 'haskell-local-definition-face t)
+;		("^ +\\(\\w+\\)[^=`
+;]+=[^=]" 1 'haskell-local-definition-face t)
+;		("^ +\\(([^=
+;]+\\)=[^=]" 1 'haskell-local-definition-face t)
+;		("^ +[^`|=]+\\(`\\w+`\\)[^=]+ *=[^=]" 1 'haskell-local-definition-face t)
 ;		("^ +\\(\\w+\\|[(,)':]\\)+ +<-" 1 'haskell-local-definition-face t)
 ;		("[(,)]\\|\\[\\|\\]" 0 'default t)
-		("[^:]\\(:\\)[^:]" 1 'haskell-constructor-face t)
+;		("[^:]\\(:\\)[^:]" 1 'haskell-constructor-face t)
 
-		("\\<where\\|let\\>" 0 'haskell-keyword-face t)
-		("\\<[[:digit:]]+\\([.][[:digit:]]+\\)?\\([eE]-?[[:digit:]]\\{1,3\\}\\)?" 0 'font-lock-string-face t)
+;		("\\<where\\|let\\>" 0 'haskell-keyword-face t)
+		("\\<[[:digit:]]+\\([.][[:digit:]]+\\)?\\([eE]-?[[:digit:]]\\{1,3\\}\\)?" 0 'number-face t)
 		(" [.] " 0 'haskell-dot-face t)
-		("[[:upper:]][[:alnum:]]+\\([.][[:upper:]][[:alnum:]]*\\)+" 0 'haskell-package-face t)
+		("\\([[:upper:]][[:alnum:]]+\\([.][[:upper:]][[:alnum:]]*\\)*\\)[.][[:alnum:]]" 1 'haskell-package-face t)
+		("^import +\\([[:upper:]][[:alnum:]]+\\([.][[:upper:]][[:alnum:]]*\\)*\\)" 1 'haskell-package-face t)
 		("^import .*? as \\(\\w+\\)" 1 'haskell-package-face t)
-		(" | +\\(.*?\\) = " 1 'haskell-guard-face t)
-		(" | +\\(.*?\\) -> " 1 'haskell-guard-face t)
+;		(" | +\\(.*?\\) = " 1 'haskell-guard-face t)
+;		(" | +\\(.*?\\) -> " 1 'haskell-guard-face t)
 		(,kwd . 'haskell-prelude-function-face)
 		(,types . 'haskell-prelude-type-face)
 		(,classes . 'haskell-prelude-class-face)
@@ -64,5 +67,5 @@
 ]+$" 0 'haskell-type-declaration-face t)
 		("^ +\\(\\(=>\\|->\\) [^
 ]+\\)$" 1 'haskell-type-declaration-multline-face t)
-		("-- .*?$" 0 'font-lock-comment-face t)
+;		("-- .*?$" 0 'font-lock-comment-face t)
 		))))

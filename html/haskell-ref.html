@@ -4,7 +4,7 @@
     <title>Haskell. Краткая справка</title>
     <meta charset = "UTF-8"/>
     <link rel="stylesheet" href="../css/HRef.css">
-    <link rel="stylesheet" href="../css/idea.css">
+    <link rel="stylesheet" href="../css/obsidian.css">
     <link rel="stylesheet" href="../lib/katex/katex.min.css">
     
     <script src="../lib/highlight.pack.js"></script>
@@ -248,8 +248,7 @@ count _ = "many"</hs></pre>
 
 <p>Оператор <code data-language="haskell">where</code> позволяет вводить локальные определения</p>
 
-<pre><hs>
-f args = expr 
+<pre><hs>f args = expr 
   where v₁ = expr₁
         v₂ = expr₂
         ...
@@ -325,8 +324,8 @@ f args = expr
 <h3>Декларация типов</h3>
 Определяя функцию, можно указать типы аргументов и тип возвращаемого значения явно. Но делается это в отдельной строчке, а не в теле определения. Например, так выглядит определение типа для простой числовой функции:
 
-<pre><def>f :: Int -> Int</def>
-<hs>f x = x^2 + 3*x `mod` 5</hs></pre>
+<pre><hs><def>f :: Int -> Int</def>
+f x = x^2 + 3*x `mod` 5</hs></pre>
 
 Система типов языка позволяет компилятору автоматически выводить большинсво типов для данных и функций в программе. Однако явное указание типа определяемой функции бывает полезным.
 
@@ -419,23 +418,23 @@ data Polygon = [Point Float]
 
 <p>Функциии имеют тип, определяемый с помощью оператора <code>-&gt;</code></p>
 унарная функция
-<pre><def>f :: Arg -> Res</def></pre>
+<pre><hs>f :: Arg -> Res</hs></pre>
 
 бинарная функция
-<pre><def>g :: Arg₁ -> Arg₂ -> Res</def></pre>
+<pre><hs>g :: Arg₁ -> Arg₂ -> Res</hs></pre>
 
 -- бинарная функция, первый аргумент которой -- унарная функция</hs>
-<pre><def>h :: (Arg' -> Res') -> Arg₂ -> Res</def></pre>
+<pre><hs>h :: (Arg' -> Res') -> Arg₂ -> Res</hs></pre>
 
 <p>Полиморфные функции, определены с точностью до типа. При этом произвольный тип записывается маленькой буквой.</p>
 
-<pre><def>length :: [a] -> Int</def>
+<pre><hs>length :: [a] -> Int</hs>
 
-<def>map :: (a -> b) -> [a] -> [b]</def>
+<hs>map :: (a -> b) -> [a] -> [b]</hs>
 
-<def>filter :: (a -> Bool) -> [a] -> [a]</def>
+<hs>filter :: (a -> Bool) -> [a] -> [a]</hs>
 
-<def>lookup :: a -> [(a,b)] -> Maybe b</def></pre>
+<hs>lookup :: a -> [(a,b)] -> Maybe b</hs></pre>
 
 <h3>Сопоставление с образцом и типы данных</h3>
 
@@ -452,8 +451,8 @@ data Polygon = [Point Float]
             | Square (Int, Int) Int
             | Point (Int, Int)</hs>
 
-<def>area :: Figure -> Int</def>
-<hs>area (Point     _)     = 0
+<hs>area :: Figure -> Int
+area (Point     _)     = 0
 area (Square    _ s)   = s * s
 area (Rectangle _ w h) = w * h
 </hs></pre>
