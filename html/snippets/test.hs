@@ -2,6 +2,7 @@
 import Data.Complex
 import Control.Applicative
 import Data.List.Split
+import Data.List
 
 repeat' :: (Num b1, Enum b1) => b1 -> b -> [b]
 repeat' n k = const k <$> [1..n]
@@ -25,7 +26,21 @@ area :: (Ord a, Num a, Enum a) => a -> Int
 area r = length $ filter (< r^2) $ concat $ (\x -> (\y -> x^2 + y^2) <$> [1..r]) <$> [1..r]
 
 toBase :: Integral a => a -> a -> [a]
-toBase d = reverse . map (`mod` d) . takeWhile (> 0) . iterate (`div` d)
+--toBase d = reverse . map (`mod` d) . takeWhile (> 0) . iterate (`div` d)
+
+toBase d = map (`mod` d) . takeWhile (> 0) . iterate (`div` d)
+
+toBase base n
+  | n < base = [n]
+  | otherwise = r : toBase base q
+  where
+    (q, r) = n `divMod` base
+
+toBase base = unfoldr modDiv
+  where modDiv 0 = Nothing
+        modDiv n = let (q, r) = (n `divMod` base)
+                   in Just (r, q) 
+
 
 fromBase :: (Foldable t, Num a) => a -> t a -> a
 fromBase d = foldl (\res x -> d*res + x) 0
@@ -166,4 +181,4 @@ table = concat [ "Johny Mitchell, 35, Tony lane, 6\n"
 
 readCSV = fmap (splitOn ",") . splitOn "\n"
 
-readString =
+
