@@ -15,30 +15,30 @@
     <p id="header"></p>
 
     <div class='tasks'>
-      <h2>Использование Emacs</h2>
-      <task>Открыв редактор Emacs, создайте новый файл, нажав последовательно сочетания клавиш: <keystroke>Ctrl</keystroke>+<keystroke>x</keystroke> <keystroke>Ctrl</keystroke>+<keystroke>f</keystroke> (далее будем писать <keystroke>C-c C-f</keystroke>). В строке минибуфера введите путь и имя создаваемого файла, например, <tt>D:/tmp/test.hs</tt>. Редактор перейдёт в режим работы с программами, написанными на Haskell: <tt>haskell-mode</tt>.</task>
+      <h2>Использование <sl>Emacs</sl></h2>
+      <task>Открыв редактор <sl>Emacs</sl>, создайте новый файл, нажав последовательно сочетания клавиш: <keystroke>Ctrl</keystroke>+<keystroke>x</keystroke> <keystroke>Ctrl</keystroke>+<keystroke>f</keystroke> (далее будем писать <keystroke>C-c C-f</keystroke>). В строке минибуфера введите путь и имя создаваемого файла, например, <tt>D:/tmp/test.hs</tt>. Редактор перейдёт в режим работы с программами, написанными на Haskell: <tt>haskell-mode</tt>.</task>
 
       <task>Введите простейшую программу:</task>
 
       <pre><hs>-- это первая программа на Haskell
 main = putStrLn "Hello world!"</hs></pre>
 
-      <task>Нажмите <keystroke>C-c C-l</keystroke>. Эта команда запустит интерпретатор GHCi, загрузит в него написанный вами модуль и создаст новый буфер для работы с интерпретатором. Переключаться между буферами можно сочетанием клавиш <keystroke>C-x o</keystroke>.</task>
+      <task>Нажмите <keystroke>C-c C-l</keystroke>. Эта команда запустит интерпретатор <sl>GHCi</sl>, загрузит в него написанный вами модуль и создаст новый буфер для работы с интерпретатором. Переключаться между буферами можно сочетанием клавиш <keystroke>C-x o</keystroke>.</task>
 
       <task>В строке ввода команды интерпретатора введите
-	<pre><ghci>λ> main</ghci></pre>
+	<pre><ghci>main</ghci></pre>
 	Это выполнит вашу программу.</task>
 
-      <task>Переключитесь в буфер с кодом программы. Измените что-либо в программе и сохраните изменения, нажав <keystroke>C-x C-s</keystroke>. После этого выйдите из Emacs с помощью сочетания <keystroke>C-x C-c</keystroke>.</task>
+      <task>Переключитесь в буфер с кодом программы. Измените что-либо в программе и сохраните изменения, нажав <keystroke>C-x C-s</keystroke>. После этого выйдите из <sl>Emacs</sl> с помощью сочетания <keystroke>C-x C-c</keystroke>.</task>
 
-      <task>Снова откройте редактор Emacs и нажмите <keystroke>C-x C-r</keystroke>. Появится новый буфер со списком недавно открывавшихся файлов. Выбрать конкретный файл можно с помощью мыши, но проще воспользоваться номером файла, нажав клавишу с соответствующей цифрой.</task>
+      <task>Снова откройте редактор <sl>Emacs</sl> и нажмите <keystroke>C-x C-r</keystroke>. Появится новый буфер со списком недавно открывавшихся файлов. Выбрать конкретный файл можно с помощью мыши, но проще воспользоваться номером файла, нажав клавишу с соответствующей цифрой.</task>
 
-      <task>Просмотрите <a href ='emacs-ref.html' target='_blank'>краткую справку по Emacs</a>, и поупражняйтесь в использовании сочетаний клавиш.</task>
+      <task>Просмотрите <a href ='emacs-ref.html' target='_blank'>краткую справку по <sl>Emacs</sl></a>, и поупражняйтесь в использовании сочетаний клавиш.</task>
       
     <h2>Использование REPL</h2>
     <h3>Простейшие вычисления</h3>
       <p>Cм. <a href ='haskell-ref.html#Выражения' target='_blank'>Выражения в Haskell</a></p>
-      <task>Выполните в GHCi</task>
+      <task>Выполните в <sl>GHCi</sl></task>
     <pre><ghci>2 + 3
 7 < 9.5
 10^2
@@ -48,7 +48,7 @@ main = putStrLn "Hello world!"</hs></pre>
 
     <h3>Вычисление функций</h3>
 
-    <task>Выполните в GHCi</task>
+    <task>Выполните в <sl>GHCi</sl></task>
     <pre><ghci>sin 5
 length "Hello!"
 exp (sin (sqrt 3))
@@ -62,14 +62,14 @@ exp $ sin $ sqrt 3
 
     <h3>Лямбда-функции</h3>
       <p>Cм. <a href ='haskell-ref.html#Анонимные функции' target='_blank'>Анонимные функции</a></p>
-    <task>Выполните в GHCi</task>
+      <task>Выполните в <sl>GHCi</sl></task>
 
     <pre><ghci>(\x -> x*x) 4
 (\x y -> x*x `mod` y) 4 3</ghci></pre>
 
     <h3>Создание и обработка списков</h3>
      <p>Cм. <a href ='haskell-ref.html#Списки и функции для работы со списками' target='_blank'>Списки в Haskell</a></p>
-    <task>Выполните в GHCi</task>
+     <task>Выполните в <sl>GHCi</sl></task>
     <pre><ghci>[1,3,5,7]
 [1..5]
 [1,3..10]
