@@ -1,25 +1,30 @@
+{-# Language Strict #-}
 import Data.Monoid
-import Control.Arrow ((&&&))
-
-data Resumable a = Frozen { getResumable :: a }
-                 | Awaken { getResumable :: a }
-                 deriving Show
-
-instance Monoid m => Monoid (Resumable m) where
-  mempty = Awaken mempty
-  Frozen _ `mappend` Frozen b = Frozen b
-  Frozen a `mappend` Awaken b = Frozen (a <> b)
-  Awaken a `mappend` Frozen b = Awaken (a <> b)
-  Awaken a `mappend` Awaken b = Awaken (a <> b)
+import Control.Arrow
 
 wc :: String -> (Int, Int, Int)
-wc = getResult . foldMap (countLines &&& countWords &&& countChars)
+wc s = getResult $ foldMap count $ zip s (tail s) 
   where
-    countWords = unless (`elem` " \n") (Frozen 1)
-    countLines = unless (`elem` "\n") (Frozen 1)
-    countChars = const 1
-    getResult (a,(b,c)) = ( getSum $ getResumable a
-                          , getSum $ getResumable b
-                          , getSum c)
+    getResult (a, (b, c)) = (getSum a, getSum b, getSum c)
 
-unless p m x = if p x then mempty else m
+    count = countWords &&& countLines &&& countChars 
+
+    countWords = when (rBoundary " \n") (Sum 1)
+    countLines = when ((== '\n') . fst) (Sum 1)
+    countChars = const (Sum 1)
+    
+    rBoundary set (x, y) = not (x `elem` set) && y `elem` set
+
+when :: Monoid t1 => (t -> Bool) -> t1 -> t -> t1
+when p m x = if p x then m else mempty
+
+wc' :: String -> (Int, Int, Int)
+wc' s = (length $ words s, length $ lines s, length s) 
+
+--length' = getSum . foldMap (const 1)
+
+main :: IO ()
+main = do
+  -- txt <- readFile "../emacs-ref.html"
+  txt <- readFile "txt"
+  print $ wc txt
