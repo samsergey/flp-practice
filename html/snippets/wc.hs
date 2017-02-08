@@ -1,6 +1,6 @@
-{-# Language Strict #-}
 import Data.Monoid
 import Data.List
+import Data.Foldable
 import Control.Arrow
 
 wc :: String -> (Int, Int, Int)
@@ -24,40 +24,81 @@ wc' s = (length $ words s, length $ lines s, length s)
 
 --length' = getSum . foldMap (const 1)
 
-main :: IO ()
-main = do
-  -- txt <- readFile "../emacs-ref.html"
-  txt <- readFile "txt"
-  print $ wc txt
+
+times :: (Monoid a, Integral i) => i -> a -> a
+0 `times` _ = mempty
+1 `times` a = a
+2 `times` a = a <> a
+n `times` a | even n = (n` div` 2) `times` (2 `times` a)
+            | odd n  = a <> (n` div` 2) `times` (2 `times` a)
 
 
-power :: (Monoid a, Integral i) => a -> i -> a
-power _ 0 = mempty
-power a n
-  | r == 0    = b
-  | otherwise = a `mappend` b
-  where
-    (q,r) = n `divMod` 2
-    b = (a `mappend` a) `power` q
-
-
-data M a = M [[a]] | Unit deriving Show
+data M a = M [[a]] | I deriving Show
 
 instance Num a => Monoid (M a) where
-  mempty = Unit
-  Unit `mappend` x = x
-  x `mappend` Unit = x
-  M m1 `mappend` M m2 = M [ [ r <.> c |  c <- transpose m2] |r <- m1 ]
-    where a <.> b = sum $ zipWith (*) a b
+  mempty = I
+  I `mappend` x = x
+  x `mappend` I = x
+  M m1 `mappend` M m2 = M [ [ r `dot` c |  c <- transpose m2 ] |r <- m1 ]
+    where a `dot` b = sum $ zipWith (*) a b
 
+--------------------------------------------------------------------------------
 
-rotate a = M [[cos a, - sin a, 0],[sin a, cos a, 0], [0,0,1]]
-scale s = M [[s, 0, 0],[0, s, 0], [0,0,1]]
-shift x y = M [[1, 0, x],[0, 1, y], [0,0,1]]
+fib 0 = 1
+fib n = a
+  where M ((a:_):_) = n `times` M [[1,1,0],[1,0,0],[0,1,0]]
 
-transform m v = (<> v) <$> m
+fibs = 1 : scanl' (+) 1 fibs
 
-model :: [M Double] -> [M Double]
-model = foldMap $ transform [ scale 0.5 <> rotate (-pi/2) <> shift 0 1
-                            , scale 0.5 <> shift 0 1
-                            , scale 0.5 <> rotate (pi/2) <> shift 0 1]
+--------------------------------------------------------------------------------
+
+data Primitive = Line [(Float, Float)] deriving Show
+
+primTransform :: [[Float]] -> Primitive -> Primitive
+primTransform m (Line pts) = Line $ trans <$> pts
+  where trans (x,y) = let M [[x'],[y'],_] = M m <> M [[x],[y],[1]] in (x',y')
+
+data Picture = Picture [Primitive] deriving Show
+
+line :: [(Float,Float)] -> Picture
+line pts = Picture $ [Line pts]
+
+transform :: [[Float]] -> Picture -> Picture
+transform m (Picture ps) = Picture $ primTransform m <$> ps
+
+rotate :: Float -> Picture -> Picture
+rotate a = transform [[c, -s, 0]
+                     ,[s,  c, 0]
+                     ,[0,  0, 1]]
+  where c = cos a
+        s = sin a
+        
+scale :: Float -> Picture -> Picture
+scale s = transform [[s, 0, 0]
+                    ,[0, s, 0]
+                    ,[0, 0, 1]]
+
+shift :: Float -> Float -> Picture -> Picture
+shift x y = transform [[1, 0, x]
+                      ,[0, 1, y]
+                      ,[0, 0, 1]]
+
+instance Monoid Picture where
+  mempty = Picture []
+  Picture p1 `mappend` Picture p2 = Picture (p1 <> p2)
+
+model :: Picture -> Picture
+model =  shift 0 100 . scale 0.6 . rotate (-pi/6)
+      <> shift 0 100 . scale 0.7
+      <> shift 0 100 . scale 0.5 . rotate (pi/6)
+                 
+
+tree n = shift 200 0 $ fold $ take n $ iterate model $ line [(0,0),(0,100)]         
+
+primSVG (Line pts) = "<polyline fill='none' stroke='blue' points='" <> points <> "'/>"
+  where points = foldMap point pts
+        point (x,y) = ' ': show x ++ "," ++ show (400-y)        
+
+toSVG (Picture ps) = "<svg width='400' height='400'>" <> foldMap primSVG ps <> "</svg>"
+
+main = writeFile "test.html" $ toSVG $ tree 10
