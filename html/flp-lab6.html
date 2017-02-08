@@ -15,125 +15,14 @@
     <p id="header"></p>
 
     <div class='tasks'>
-      <h2>Табулирование функции</h2>
-     
-      <task>Определите синонимы типов для числовой функции и для точки на графике.</task>
-<pre><hs>type NumFunc = Double -> Double
-type Point = (Double, Double)</hs></pre>
+      <h3>Типы для примитивов и изображений</h3>
 
-      <task>Напишите функцию, которая вычисляет координату точки на графике заданной числовой функции:
-      <pre><hs><def>tab :: NumFunc -> Double -> Point</def>
-tab f x = (x, f x)</hs></pre>
-      </task>
+      <h3>Представление изображений в формате SVG</h3>
       
-      <task>Посчитайте координаты графика функции <eq>y = x^2</eq> на диапазоне чисел от <eq>-5</eq> до <eq>5</eq> с шагом <eq>1/2</eq>.</task>
+      <h3>Преобразования изображений</h3>
 
-      <task>Определите типы для диапазона чисел и для таблицы значений числовой функции.</task>
-<pre><hs>type Range = (Double, Double)
-type Table = [Point]</hs></pre>
-
-<task>Напишите функцию <code>tabulate</code>, которая бы табулировала указанную функцию на указанном интервале значений <code>x</code>, используя указанное число разбиений
-<pre><hs><def>tabulate :: NumFunc -> Range -> Int -> Table</def></hs></pre>
-
-Пример использования:
-
-<pre><ghci>tabulate sin (0,2*pi) 10</ghci></pre>
-</task>
-
-<h2>Графический вывод в формате SVG</h2>
-    
-    <task>Напишите строку, представляющую изображение домика в формате SVG.</task>
-    <pre><hs><def>house :: String</def>
-house = concat [ "&lt;svg width='400' height='300'&gt;"
-               , walls
-               , roof
-               , "&lt;/svg&gt;" ]
-  where
-    walls = "&lt;rect x='10' y='240' width='50' height='50' fill='brown'/&gt;"
-    roof = "&lt;polyline points='10,240 35,200 60,240' fill='none' stroke='black'/&gt;"</hs></pre>
-
-      <p> Это изображение можно записать в файл <tt>house.html</tt>
-      <pre><ghci>writeFile "house.svg" house</ghci></pre>
-      и открыть в веб-браузере. Если записать эту строку в файл <tt>"house.svg"</tt>, то можно будет открыть изображение с помощью программ <sl>Emacs</sl>, <sl>Paint.NET</sl> или <sl>Inkscape</sl>.</p>
-
-
-      <task>Напишите функцию, которая превращала бы список координат в параметр <code>points</code> для элемента <code>polyline</code>.</task>
-      <pre><hs><def>polyline :: Table -> String</def>
-polyline pts = concat [ "&lt;polyline points='"
-                      , points
-                      , "' fill='none' stroke='blue'/&gt;" ]
-  where
-    points = unwords $ showPoint <$> pts
-    showPoint (x,y) = show x ++ "," ++ show y</hs></pre>
-
-<task>Изобразите в формате SVG график синуса в диапазоне <eq>(0,3\pi)</eq>.</task>
-
-<h2>Масштабирование графика</h2>
-
-      <task>Напишите функцию, которая бы линейно масштабировала значения из одного указанного диапазона в другой.</task>
-      <pre><hs><def>scale :: Range -> Range -> Double -> Double</def>
-scale (a,b) (c,d) x = _</hs></pre>
-
-      <p>Проверьте правильность её работы на следующих примерах:</p>
-      <pre><ghci>scale (-1,1) (3,4) <$> [-1,0,1,2]
-scale (-1,1) (2,-2) <$> [-2..2]</ghci></pre>
-
-      <task> Пересчитайте таблицу значений синуса в диапазоне от <eq>0</eq> до <eq>2\pi</eq>, разбив его на 30 частей, и преобразуйте в координаты области, имеющей размеры 300 × 200 пикселей. Изобразите правильно масштабированный график синуса в формате SVG</task>
+      <h3>Композиция изображений</h3>
       
-      <task>Напишите функцию
-	<pre><hs><def>plot :: NumFunc -> (Range, Range) -> Int -> String</def>
-plot f (xRange, yRange) n = _</hs></pre>
-для построения графиков произвольной числовой функции в указанном диапазоне координат, используя число разбиений <code>n</code>. Размер обрасти SVG примите фиксированным, например, 400×300 пикселей. </task>
-
-      <p>Пример использования:</p>
-      <pre><ghci>writeFile "plot.html" $ plot sin ((0,3*pi),(-1,1)) 100</ghci></pre>
-
-      <task>Постройте графики следующих функций: <ul>
-	  <li><eqn>y = \mathrm{sinc}\, x,</eqn> (см. задание из Занятия 1)
-	  <li><eqn>y = \int \mathrm{sinc}\, x\, dx</eqn> (см. задание из Занятия 3)
-	  <li>активного и реактивного сопротивления цепи 2 из занятия 3 в зависимости от частоты;
-	</ul>
-	</task>
-
-      <task>Напишите функцию <pre><hs><def>listPlot :: Table -> (Range, Range) -> String</def>
-listPlot tbl (xRange, yRange) = _</hs></pre>
-Которая изображает в формате SVG график <code>listPlot</code></task>
-
-      <h2>Абстракция данных</h2>
-      
-      <p>Стоит разделить расчёт таблицы и вывод SVG.</p>
-      
-      <h2>Выделение модуля</h2>
-      <p>Для дальнейшего использования стоит выделить написанные нами полезные функции в отдельный модуль. В языке Haskell модуль -- это отдельный файл, имя которого совпадает с именем модуля. </p>
-      <pre><hs>module Plot where
-
-type NumFunc = Double -> Double
-type Point = (Double, Double)</hs>
-
-<def>tab :: NumFunc -> Double -> Point</def>
-<hs>tab f x = (x, f x)
-
-type Range = (Double,Double)
-type Table = [Point]</hs>
-
-<def>tabulate :: NumFunc -> Range -> Int -> Table</def>
-<hs>tabulate f (x1,x2) n = tab f <$> [x1,x1+h..x2]
-  where h = (x2-x1) / fromIntegral n</hs>
-
-<def>scale :: Range -> Range -> Double -> Double</def>
-<hs>scale (a,b) (c,d) x = (d-c)/(b-a)*(x-a)+c</hs>
-
-<def>polyline :: Table -> String</def>
-<hs>polyline pts = concat [ "&lt;polyline points='"
-                      , points
-                      , "' fill='none' stroke='blue'/&gt;" ]
-   where
-     points = unwords $ showPoint <$> pts
-     showPoint (x,y) = show x ++ "," ++ show y</hs>
-	    
-<def>plot :: NumFunc -> (Range, Range) -> Int -> String</def>
-<hs>plot f (xRange, yRange) n = _</hs>
-      </hs></pre>
     </div>
 
     <p id="footer"></p>

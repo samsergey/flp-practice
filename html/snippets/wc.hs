@@ -52,48 +52,41 @@ fibs = 1 : scanl' (+) 1 fibs
 
 --------------------------------------------------------------------------------
 
-data Primitive = Line [(Float, Float)] deriving Show
-
-primTransform :: [[Float]] -> Primitive -> Primitive
-primTransform m (Line pts) = Line $ trans <$> pts
-  where trans (x,y) = let M [[x'],[y'],_] = M m <> M [[x],[y],[1]] in (x',y')
-
 data Picture = Picture [Primitive] deriving Show
 
-line :: [(Float,Float)] -> Picture
+data Primitive = Line [(Float, Float)] deriving Show
+
 line pts = Picture $ [Line pts]
 
-transform :: [[Float]] -> Picture -> Picture
+primTransform m (Line pts) = Line $ trans <$> pts
+  where trans (x,y) = let M [[x'],[y'],_] = m <> M [[x],[y],[1]] in (x',y')
+
 transform m (Picture ps) = Picture $ primTransform m <$> ps
 
-rotate :: Float -> Picture -> Picture
-rotate a = transform [[c, -s, 0]
-                     ,[s,  c, 0]
-                     ,[0,  0, 1]]
+rotate a = M [[c, -s, 0]
+             ,[s,  c, 0]
+             ,[0,  0, 1]]
   where c = cos a
         s = sin a
         
-scale :: Float -> Picture -> Picture
-scale s = transform [[s, 0, 0]
-                    ,[0, s, 0]
-                    ,[0, 0, 1]]
+scale s = M [[s, 0, 0]
+            ,[0, s, 0]
+            ,[0, 0, 1]]
 
-shift :: Float -> Float -> Picture -> Picture
-shift x y = transform [[1, 0, x]
-                      ,[0, 1, y]
-                      ,[0, 0, 1]]
+shift x y = M [[1, 0, x]
+              ,[0, 1, y]
+              ,[0, 0, 1]]
 
 instance Monoid Picture where
   mempty = Picture []
   Picture p1 `mappend` Picture p2 = Picture (p1 <> p2)
 
 model :: Picture -> Picture
-model =  shift 0 100 . scale 0.6 . rotate (-pi/6)
-      <> shift 0 100 . scale 0.7
-      <> shift 0 100 . scale 0.5 . rotate (pi/6)
+model =  transform (shift 0 100 <> scale 0.6 <> rotate (-pi/6))
+      <> transform (shift 0 100 <> scale 0.7)
+      <> transform (shift 0 100 <> scale 0.5 <> rotate (pi/6))
                  
-
-tree n = shift 200 0 $ fold $ take n $ iterate model $ line [(0,0),(0,100)]         
+tree n = transform (shift 200 0) $ fold $ take n $ iterate model $ line [(0,0),(0,100)]         
 
 primSVG (Line pts) = "<polyline fill='none' stroke='blue' points='" <> points <> "'/>"
   where points = foldMap point pts
