@@ -57,7 +57,6 @@ type Pt = (Float, Float)
 
 data Primitive = Point Pt
                | Line [Pt]
-               | Circle Pt Float
   deriving Show
 
 class SVG a where
@@ -67,8 +66,6 @@ instance SVG Primitive where
 
   toSVG (Point (x,y)) = format "<circle fill='blue' cx='_' cy='_' r='1'/>" [show x, show y]
 
-  toSVG (Circle (x,y) r) = format "<circle cx='_' cy='_' r='_'/>" [show x, show y, show r]
-
   toSVG (Line pts) = format "<polyline points='_'/>" [points]
     where points = foldMap showPt pts
           showPt (x,y) = format " _,_" [show x, show y]
@@ -76,26 +73,33 @@ instance SVG Primitive where
 format :: String -> [String] -> String
 format s args = mconcat $ zipWith (<>) (splitOn "_" s) (args <> [""])
 
-type BoundingBox = (Min Float, Max Float, Min Float, Max Float)
+type Box = (Min Float, Max Float, Min Float, Max Float)
 
 instance Bounded Float where
   minBound = 0
   maxBound = 1000
 
-data Picture = Picture BoundingBox [Primitive] deriving Show
+data Picture = Picture Box [Primitive] deriving Show
 
 instance SVG Picture where
   toSVG (Picture (Min x1, Max x2, Min y1, Max y2) ps) =
     format "<svg width='_' height='_' fill='none' stroke='blue'>_</svg>"
-    [show (x2+5), show (y2+5), foldMap toSVG ps]
+    [show (x2-x1), show (y2-y1), foldMap toSVG ps']
+    where
+      ps' = affine (shiftT (-x1) (-y1)) <$> ps
 
-line pts = Picture (foldMap bb pts) [Line pts]
-  where bb (x,y)= (Min x, Max x, Min y, Max y)
+getBox p = case p of
+  Line pts -> foldMap box pts
+  Point pt -> box pt
+  where box (x,y)= (Min x, Max x, Min y, Max y)
 
-point (x,y) = Picture (Min x, Max x, Min y, Max y) [Point (x,y)]
+makePicture p = Picture (getBox p) [p]
 
-circle (x,y) r = Picture (Min (x-r), Max (x+r), Min (y-r), Max (y+r))
-                 [Circle (x,y) r]
+line pts = makePicture $ Line pts
+
+point pt = makePicture $ Point pt
+
+circle pt r = polygon pt 20 r
 
 polygon (x,y) n r = line $ [(x + r*cos a, y + r*sin a)
                            | a <- [0,2*pi/fromIntegral n..2*pi]]
@@ -104,25 +108,32 @@ instance Monoid Picture where
   mempty = Picture mempty mempty
   Picture bb1 p1 `mappend` Picture bb2 p2 = Picture (bb1 <> bb2) (p1 <> p2)
 
+affine m p = case p of
+  Point pt   -> Point $ trans pt
+  Line pts   -> Line $ trans <$> pts
+  where trans (x,y) = let M [[x'],[y'],_] = m <> M [[x],[y],[1]] in (x',y')
+
+        
+rotateT a = M [[c, -s, 0], [s,  c, 0], [0,  0, 1]]
+  where c = cos a
+        s = sin a
+        
+scaleT sx sy = M [[sx, 0, 0], [0, sy, 0], [0, 0, 1]]
+
+shiftT x y = M [[1, 0, x], [0, 1, y], [0, 0, 1]]
+
+transform m (Picture bb p) = Picture (foldMap getBox p') p' 
+  where p' = affine m <$> p
+
+shift x y = transform (shiftT x y)
+scale x y = transform (scaleT x y)
+rotate a = transform (rotateT a)
 
 -- --------------------------------------------------------------------------------
 
--- primTransform m p = case p of
---   Point pt   -> Point $ trans pt
---   Line pts   -> Line $ trans <$> pts
---   Group s ps -> Group s $ primTransform m <$> ps 
---   where trans (x,y) = let M [[x'],[y'],_] = m <> M [[x],[y],[1]] in (x',y')
-
--- rotate a = M [[c, -s, 0], [s,  c, 0], [0,  0, 1]]
---   where c = cos a
---         s = sin a
-        
--- scale s = M [[s, 0, 0], [0, s, 0], [0, 0, 1]]
-
--- shift x y = M [[1, 0, x], [0, 1, y], [0, 0, 1]]
 
 
--- transform m p = primTransform m <$> p
+
 
 -- line pts = Picture [Line pts]
 -- dot (x,y) = Picture [Point (x,y)]
