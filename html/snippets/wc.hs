@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveFunctor #-}
+{-#language GeneralizedNewtypeDeriving #-}
 import Data.Monoid
 import Data.List
 import Data.Foldable
@@ -39,7 +41,7 @@ instance Num a => Monoid (M a) where
   mempty = I
   I `mappend` x = x
   x `mappend` I = x
-  M m1 `mappend` M m2 = M [ [ r `dot` c |  c <- transpose m2 ] |r <- m1 ]
+  M m1 `mappend` M m2 = M [ [ r `dot` c |  c <- transpose m2 ] | r <- m1 ]
     where a `dot` b = sum $ zipWith (*) a b
 
 --------------------------------------------------------------------------------
@@ -51,47 +53,43 @@ fib n = a
 fibs = 1 : scanl' (+) 1 fibs
 
 --------------------------------------------------------------------------------
+data Primitive a = Line [a]
+                 | Point a deriving (Show,Functor)
 
-data Picture = Picture [Primitive] deriving Show
-
-data Primitive = Line [(Float, Float)] deriving Show
-
-line pts = Picture $ [Line pts]
-
-primTransform m (Line pts) = Line $ trans <$> pts
+primTransform m p = trans <$> p
   where trans (x,y) = let M [[x'],[y'],_] = m <> M [[x],[y],[1]] in (x',y')
 
-transform m (Picture ps) = Picture $ primTransform m <$> ps
-
-rotate a = M [[c, -s, 0]
-             ,[s,  c, 0]
-             ,[0,  0, 1]]
+rotate a = M [[c, -s, 0], [s,  c, 0], [0,  0, 1]]
   where c = cos a
         s = sin a
         
-scale s = M [[s, 0, 0]
-            ,[0, s, 0]
-            ,[0, 0, 1]]
+scale s = M [[s, 0, 0], [0, s, 0], [0, 0, 1]]
 
-shift x y = M [[1, 0, x]
-              ,[0, 1, y]
-              ,[0, 0, 1]]
+shift x y = M [[1, 0, x], [0, 1, y], [0, 0, 1]]
 
-instance Monoid Picture where
-  mempty = Picture []
-  Picture p1 `mappend` Picture p2 = Picture (p1 <> p2)
+newtype Picture a = Picture [a] deriving (Show,Monoid,Functor,Foldable)
 
-model :: Picture -> Picture
+transform m p = primTransform m <$> p
+
+line pts = Picture [Line pts]
+point (x,y) = Picture [Point (x,y)]
+
 model =  transform (shift 0 100 <> scale 0.6 <> rotate (-pi/6))
       <> transform (shift 0 100 <> scale 0.7)
       <> transform (shift 0 100 <> scale 0.5 <> rotate (pi/6))
-                 
-tree n = transform (shift 200 0) $ fold $ take n $ iterate model $ line [(0,0),(0,100)]         
 
-primSVG (Line pts) = "<polyline fill='none' stroke='blue' points='" <> points <> "'/>"
-  where points = foldMap point pts
-        point (x,y) = ' ': show x ++ "," ++ show (400-y)        
+primSVG (Point (x,y)) = concat ["<circle"
+                                ," cx='", show x, "'"
+                                ," cy='", show (400-y), "'"
+                                ," r='1'/>"]
+primSVG (Line pts) = "<polyline points='" <> points <> "'/>"
+  where points = foldMap showPoint pts
+        showPoint (x,y) = ' ': show x ++ "," ++ show (400-y)        
 
-toSVG (Picture ps) = "<svg width='400' height='400'>" <> foldMap primSVG ps <> "</svg>"
+toSVG p = "<svg width='400' height='400' fill='blue' stroke='blue'>"
+       <> foldMap primSVG p
+       <> "</svg>"
 
-main = writeFile "test.html" $ toSVG $ tree 10
+tree n = transform (shift 200 0) $ mconcat $ take n $ iterate model $ point (0,100)
+
+main = writeFile "test.html" $ toSVG $ tree 8
