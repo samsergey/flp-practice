@@ -63,6 +63,8 @@ instance Bounded Float where
 
 data Picture = Picture Box [Primitive] deriving Show
 
+box (Picture (Min x1, Max x2, Min y1, Max y2) _) = (x1,x2,y1,y2)
+
 instance SVG Picture where
   toSVG (Picture (Min x1, Max x2, Min y1, Max y2) ps) =
     format "<svg width='_' height='_' fill='none' stroke='blue'>_</svg>"
@@ -86,7 +88,7 @@ circle r = polygon 20 r
 polygon n r = line $ [(r*sin a, r*cos a)
                      | a <- [0,2*pi/fromIntegral n..2*pi]]
 
-square a = rotate (pi/4) $ polygon 4 a
+square a = line [(0,0),(0,a),(a,a),(a,0),(0,0)]
 
 rectangle a b = scale 1 (b/a) $ square a
 
@@ -113,6 +115,19 @@ transform m (Picture bb p) = Picture (foldMap getBox p') p'
 shift x y = transform (shiftT x y)
 scale x y = transform (scaleT x y)
 rotate a = transform (rotateT a)
+p `at` (x,y) = shift x y p
+
+p1 `beside` p2 = p1 <> shift (-x1'+x2) (y1-y1') p2
+  where (_  ,x2,y1 ,_) = box p1
+        (x1',_ ,y1',_) = box p2
+
+p1 `above` p2 = p1 <> shift (-x1'+x1) (y1-y2') p2
+  where (x1 ,_, y1,_) = box p1
+        (x1',_,_,y2') = box p2
+
+row, col :: [Picture] -> Picture
+row = foldr beside mempty
+col = foldr above mempty
 
 model =  transform (shiftT 0 100 <> scaleT 0.6 0.6 <> rotateT (-pi/6))
       <> transform (shiftT 0 100 <> scaleT 0.7 0.7)
@@ -120,4 +135,14 @@ model =  transform (shiftT 0 100 <> scaleT 0.6 0.6 <> rotateT (-pi/6))
 
 tree n = mconcat $ take n $ iterate model $ line [(0,0), (0,100)]
 
+sierp 1 = polygon 3 4
+sierp n = let t = sierp (n-1) in t `above` (t `beside` t)
+
+writeSVG f = writeFile f . toSVG
+
 main = writeFile "test.html" $ toSVG $ tree 8
+
+wheel = mconcat $ take 48 $ iterate (rotate (pi/24)) $ square 100 `at` (50,50)
+
+chart p lst = row $ (\i -> col $ replicate i $ p) <$> lst
+barChart a lst =  row $ rectangle a <$> lst
