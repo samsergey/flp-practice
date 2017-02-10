@@ -16,12 +16,12 @@
 
     <div class='tasks'>
       
-      <p>Вооружившись знаниями о функторах и моноидах построим гибкую и расширяемую систему для вывода графической информации в формате SVG (Scalable Vector Graphics).</p>
-
+      <p>Вооружившись знаниями о моноидах построим гибкую и расширяемую систему для вывода графики, использующую web-интерфейс. Наша система будет представлять собой небольшой встроенный предметно-ориентированный язык (EDSL) для декларативного описания графики. Этот язык будет трансливаться в формат SVG (Scalable Vector Graphics). Это текстовый формат, используемый веб-браузерами и многими векторными графическими редакторами (<sl>Corel Draw</sl>, <sl>Inkscape</sl> и т.п.).</p>
+      
       <h4>Типы для графических примитивов</h4>
-      <p>Определим типы для представления двух (для начала) графических примитивов: точек и ломаных линий</p>
+      <p>Определим типы для представления некоторых графических примитивов: точек, ломаных линий.</p>
       <pre><hs>type Pt = (Float, Float)
-
+  
 data Primitive = Point Pt
                | Line [Pt]
   deriving Show</hs></pre>
@@ -68,12 +68,12 @@ type Box = ( Min Float, Max Float
             , Min Float, Max Float )
 
 instance Bounded Float where
-  minBound = 0
+  minBound = -1000
   maxBound = 1000</hs></pre>
-	Здесь <code>Box</code> хранит координаты "рамки", обрамляющей изображения. Чтобы сделать тип <code>Box</code> моноидом, определим минимальное и максимальное допустимое значение координат, соответственно, 0 и 1000 используя экземпляр класса <code>Bounded</code> для типа <code>Float</code>.
+	Здесь <code>Box</code> хранит координаты "рамки", обрамляющей изображения. Чтобы сделать тип <code>Box</code> моноидом, определим минимальное и максимальное допустимое значение координат, соответственно, -1000 и 1000 используя экземпляр класса <code>Bounded</code> для типа <code>Float</code>.
       </p>
 
-      <task>Определите фукцию <code>getBox :: Primitive -> Box</code>, вычисляющую обрамляющие координаты для примитивов.</task>
+      <task>Определите фукцию <code>findBox :: Primitive -> Box</code>, вычисляющую обрамляющие координаты для примитивов.</task>
       
       <task>Определите экземпляр класса <code>SVG</code> для типа <code>Picture</code> и два конструктора <code>line :: [Pt] -> Picture</code> и <code>point :: Pt -> Picture</code>, которые бы вычисляли обрамляющие координаты для примитивов.</p>
       </task>
@@ -145,38 +145,104 @@ instance Bounded Float where
       </task>
 
       <task>Проверьте на примере квадрата как работают преобразователи и их композиция:
-	<pre><ghci>let square = polygon 4 25
-square <> rotate (pi/2) square
-square <> shift 10 30 square
-square <> scale 2 3 square
-square <> (scale 2 3 . rotate (pi/3)) square
-(shift 20 30 <> rotate (pi/3)) square </ghci></pre></task>      
-
-      <task>Преобразователи позволяют отделить построение фигур от их расположения в пространстве. Наличие сдвига позволяет не задавать координаты центра конструкторам <code>polygon</code> и <code>circle</code>, а также ограничиться только размерами при конструировании прямоугольника. Упростите определения этих конструкторов и введите простой оператор <code>at</code>, с помощью которого можно было бы описать окружность со вписанным в неё квадратом, расположеные в координатах (100, 100) так:
+	<pre><ghci>let s = square 50
+s <> rotate (pi/2) s
+s <> shift 10 30 s
+s <> scale 2 3 s
+s <> (scale 2 3 . rotate (pi/3)) s
+(shift 20 30 <> rotate (pi/3)) s </ghci></pre></task>      
+      
+      <task>Преобразователи позволяют отделить построение фигур от их расположения в пространстве. Наличие сдвига позволяет не задавать координаты центра конструкторам <code>polygon</code> и <code>circle</code>, а также ограничиться только размерами при конструировании квадрата и прямоугольника. Упростите определения этих конструкторов и введите простой оператор <code>at</code>, с помощью которого можно было бы описать окружность со вписанным в неё квадратом, расположеные в координатах (100, 100) так:
 	<pre><hs>(circle 50 <> rectangle 50 50) `at` (100,100)</hs></pre></task>
-
+     
       <task>То, что начало координат области изображения SVG расположено в левом верхнем углу и ось ординат направлена вниз традиционно для компьютерной графики, но неудобно. Удобнее было бы вообще не думать о том, где находится центр координат, показывая всё, что содержит в себе изображение, даже если координаты объектов отрицательны. Тип <code>Picture</code> содержит в себе информацию об области, обрамляющей изображение, и эту информацию можно использовать для приведения всех координат изображения в видимую область положительных координат. Измените определение функции <code>toSVG</code> для типа <code>Picture</code> так, чтобы перед выводом ось ординат направлялась вверх, а минимальные координаты изображения перемещались в начало координат.</task>
 
-      <task>Имея в своём распоряжении композицию изображений и операцию сдвига несложно определить ещё два полезных комбинатора, располагающих изображения рядом вертикально и горизонтально: <code>above</code> и <code>beside</code>. Напишите их определение так, чтобы при результаты были тками, как показано на рисунке:</task>
+      <task>Постройте картинку, задаваемую выражением:
+      	<pre>mconcat $ take 48 $ iterate (rotate (pi/24)) $ square 50 `at` (25,25)</pre>
+	<p align='center'><img src="img/wheel.png"/></p>
+      </task>
+      
+      <task>Имея в своём распоряжении композицию изображений и операцию сдвига несложно определить ещё два полезных комбинатора, располагающих изображения рядом вертикально и горизонтально: <code>above</code> и <code>beside</code>. Напишите их определение так, чтобы при результаты были тками, как показано на рисунке:
+	<pre>circle 30 `beside` square 40</pre>
+	<p align='center'><img src="img/beside.png"/></p>
+	<pre>circle 30 `above` square 40</pre>
+	<p align='center'><img src="img/above.png"/></p>
+      </task>
 
       <task>Напишите две функции <code>row</code> и <code>column</code>, которые располагали бы список изображений в виде ряда или колонки. Например так:
-	<pre>row $ circle <$> [2,4,8,16,8,4,2]</pre>
-      </task>
+	<pre>row $ circle <$> [20,40,80,160,80,40,20]</pre>
+	<p align='center'><img src="img/row1.png"/></p>
+            </task>
 
       <task>Напишите функцию <code>chart :: Picture -> [Int] -> Picture</code>, которая строила бы диаграммы для списков целочисленных значений, как показано на примере:
 
 	<pre>chart (square 10) [1,2,1,2,3,2,1,4,2,3,6,5,4,3,4,3,1,2,1]</pre>
-
+	<p align='center'><img src="img/chart1.png"/></p>
+      
       </task>
 
       <task>Напишите функцию <code>barChart :: Double -> [Double] -> Picture</code>, которая строила бы столбчатую диаграмму для числовых списков, используя указанную ширину столбца:
 	<pre>scale 1 10 $ barChart 10 [1,2,3,2,3,4,5,4,3,2]</pre>
-      </task>
-      
-</div>
+	<p align='center'><img src="img/chart2.png"/></p>
+            </task>
 
-    <p id="footer"></p>
-    <script src="../lib/postprocessing.js"></script>
-  </body>
+      <h3>Атрибуты изображений</h3>
+      
+      <task>Нашим картинкам не хватает цвета. Добавьте в тип <code>Primitive</code> новый конструктор <code>Group Attribute [Primitive]</code>, задающий группу примитивов и атрибут, такой как цвет линии, заливки и т.д. для этой группы. Тип <code>Attribute</code> зададим так:
+      <pre><hs>data Attribute = Color String
+               | Fill String
+               | LineWidth Float
+               | Opacity Float
+   deriving Show</hs></pre>
+      Для этого типа определите экземпляр класса <code>toSVG</code>. Перечисленные нами атрибуты в SVG задаются следующим образом:
+      <ul>
+	<li> цвет линии -- <tt>stroke='цвет'</tt>
+	<li> цвет заливки -- <tt>fill='цвет'</tt>
+	<li> толщина линии -- <tt>stroke-width='число'</tt>
+	<li> прозрачность -- <tt>stroke-opacity='число' fill-opacity='число'</tt>
+      </ul>
+
+      Создайте функции, задающие атрибуты для изображений:
+      <pre><hs>color :: String -> Picture -> Picture
+fill :: String -> Picture -> Picture
+lineWidth :: Float -> Picture -> Picture
+opacity :: Float -> Picture -> Picture</hs></pre>
+      </task>
+
+      <task>Постройте две диаграммы
+	<pre><hs>charts = opacity 0.5 (fill "blue" chart1 <> fill "red" chart2)
+  where 
+    chart1 = barChart 10 [10,20,30,20,30,40,50,40,30,20]
+    chart2 = barChart 10 [30,10,35,50,10,45,60,20,10,5]</hs></pre>
+	<p align='center'><img src="img/charts.png"/></p>
+
+	<task>Объясните какие свойства моноидов позволяют построить следующее изображение:
+	<pre><hs>fractal :: Foldable t => t (M Float) -> Int -> Picture -> Picture
+fractal model n = mconcat . take n . iterate (foldMap transform model) 
+
+tree = fractal model 7 $ line [(0,0), (0,100)]
+  where model = [ shiftT 0 100 <> scaleT 0.6 0.6 <> rotateT (-pi/6)
+                , shiftT 0 100 <> scaleT 0.7 0.7
+                , shiftT 0 100 <> scaleT 0.5 0.5 <> rotateT (pi/6)]</hs></pre>
+	  <p align='center'><img src="img/tree.png"/></p>
+	  Постройте ряд, показывающий рост "дерева" по мере увеличения числа поколений.
+	</task>
+
+	<task>Постройте фрактальные структуры по другим моделям:
+	  <pre><hs>circles = fractal model 8 $ circle 150
+  where model = [ shiftT 0 75 <> scaleT 0.5 0.5 <> rotateT (pi/3)
+                , shiftT 0 (-75) <> scaleT 0.5 0.5 <> rotateT (-pi/3) ]
+
+pithagor = fractal model 10 $ square 100
+  where model = [ shiftT 0 100 <> scaleT s s <> rotateT (pi/4)
+                , shiftT 100 100 <> scaleT s s <> rotateT (-pi/4)]
+        s = 1/sqrt 2</hs></pre>
+	</task>
+	
+    </div>
+
+   <p id="footer"></p>
+  <script src="../lib/postprocessing.js"></script>
+ </body>
 </html>
 
