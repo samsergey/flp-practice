@@ -213,6 +213,10 @@ pithagor = fractal model 10 $ square 100
                 , shiftT 100 100 <> scaleT s s <> rotateT (-pi/4)]
         s = 1/sqrt 2
 
+tree' = [ transform (shiftT 0 100 <> scaleT 0.6 0.6 <> rotateT (-pi/6))
+        , transform (shiftT 0 100 <> scaleT 0.7 0.7)
+        , transform (shiftT 0 100 <> scaleT 0.5 0.5 <> rotateT (pi/6))]
+
 pentaflake = scale 100 100 $ fractal model 4 $ polygon 5 1
   where model =  map copy [0,72..288]
         copy a = scaleT s s <> rotateT (pi*a/180) <> shiftT 0 x
