@@ -145,19 +145,19 @@ contents :: Picture -> [Primitive]</hs></pre>
 
       <task>Опрелите три основные вида преобразований:
 	<ul>
-	  <li> масштабирование осей: <code>scaleT a b</code>
+	  <li> масштабирование осей: <code>scaleM a b</code>
 	    <eqn>\begin{pmatrix}
 	      a & 0 & 0\\
 	      0 & b & 0\\
 	      0 & 0 & 1
 	  \end{pmatrix}</eqn>
-	  <li> параллельный перенос: <code>translateT x y</code>
+	  <li> параллельный перенос: <code>translateM x y</code>
 	    <eqn>\begin{pmatrix}
 	      1 & 0 & x\\
 	      0 & 1 & y\\
 	      0 & 0 & 1
 	  \end{pmatrix}</eqn>
-	  <li> поворот на заданный угол: <code>rotateT alpha</code>
+	  <li> поворот на заданный угол: <code>rotateM alpha</code>
 	    <eqn>\begin{pmatrix}
 	      \cos \alpha & -\sin \alpha & 0\\
 	      \sin \alpha & \cos \alpha & 0\\
