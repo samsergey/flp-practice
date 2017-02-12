@@ -34,7 +34,7 @@ data Primitive = Point Pt
 	</ul>
       </p>
 
-      <task>Для того, чтобы упростить генерацию SVG напишите функцию <code>format</code> для форматирования строк по шаблону, последовательно заменяя символ <tt>'_'</tt> строками из списка. Например:
+      <task>SVG -- это текстовый формат. Для того, чтобы упростить генерацию SVG напишите функцию <code>format</code> для форматирования строк по шаблону, последовательно заменяя символ <tt>'_'</tt> строками из списка. Например:
 	<pre><ghci> Main> format "_ said: '_!'" ["John", "Hello"]
 "John said: 'Hello!'"</ghci></pre>
 	<em>Подсказка: воспользуйтесь функцией <code>splitOn</code> из модуля <code>Data.List.Split</code> для того, чтобы разбить форматируемую строку на части, а потом с помощью функции <code>zipWith</code> перемешайте эти части со строками из списка.</em>
@@ -72,17 +72,21 @@ instance Bounded Float where
   maxBound = 1000</hs></pre>
 	Здесь <code>Box</code> хранит координаты "рамки", обрамляющей изображения. Чтобы сделать тип <code>Box</code> моноидом, определим минимальное и максимальное допустимое значение координат, соответственно, -1000 и 1000 используя экземпляр класса <code>Bounded</code> для типа <code>Float</code>.
       </p>
-
+      
       <task>Определите фукцию <code>findBox :: Primitive -> Box</code>, вычисляющую обрамляющие координаты для примитивов.</task>
+
+      <task>Для типа <code>Picture</code> определите функции-свойства:
+	<pre><hs>box :: Picture -> (Float, Float, Float, Float)
+width :: Picture -> Float
+height :: Picture -> Float
+contents :: Picture -> [Primitive]</hs></pre></task>
       
       <task>Определите экземпляр класса <code>SVG</code> для типа <code>Picture</code> и два конструктора <code>line :: [Pt] -> Picture</code> и <code>point :: Pt -> Picture</code>, которые бы вычисляли обрамляющие координаты для примитивов.</p>
       </task>
 
-      <task>Запишите какое-либо несложное SVG-выражение в файл <tt>test.html</tt> с помощью функции <code>writeFile</code> и убедитесь в том, что  изображение открывается в браузере. Сознайте вспомогательную функцию <code>writeSVG :: SVG a => FileName -> a -> IO ()</code>.</task>
+      <task>Запишите какое-либо несложное SVG-выражение в файл <tt>test.html</tt> с помощью функции <code>writeFile</code> и убедитесь в том, что  изображение открывается в браузере. Создайте вспомогательную функцию <code>writeSVG :: SVG a => String -> a -> IO ()</code>.</task>
       
       <task>Напишите конструктор <code>polygon</code>для правильных многоугольников заданного размера (размер задаётся радусом описанной окружности).</task>
-
-      <task>Добавьте конструктор <code>circle</code> для окружности, представляемой двадцатигранником.</task>
 
       <task>Добавьте конструктор <code>square</code> для квадрата.</task>
       
@@ -93,12 +97,12 @@ instance Bounded Float where
       <h3>Преобразования изображений</h3>
 
       <p>
-	Воспользуемся тем, что мы научились перемножать матрицы для преобразования изображений. Существует класс преобразований плоскости, называемый <em>афинными</em>, при котором параллельные прямые переходят в параллельные прямые, пересекающиеся в пересекающиеся, скрещивающиеся в скрещивающиеся. К ним относятся движения: сдвиги и повороты, и преобразования подобия.</p>
+	Воспользуемся тем, что мы научились перемножать матрицы для преобразования изображений. Существует класс преобразований плоскости, называемый <em>афинными</em>, при котором параллельные прямые переходят в параллельные прямые, пересекающиеся в пересекающиеся, скрещивающиеся в скрещивающиеся. К ним относятся движения: сдвиги, повороты и преобразования подобия.</p>
       
       <p>
 	Любое афинное преобразование вектора <eq>\vec x</eq> можно представить в виде
 	<eqn>\mathbf{T}\,\vec{x} =\mathbf{M}\,\vec{x} + \vec{v}</eqn>
-	Матрица <eq>\mathbf{M}</eq> определяет поворот, масштабирование или сдвиг, а вектор <eq>\vec v</eq> -- параллельный перенос. Преобразование можно выразить в виде дополненной матрицы:
+	Матрица <eq>\mathbf{M}</eq> определяет поворот, масштабирование или сдвиг (или их композицию), а вектор <eq>\vec v</eq> -- параллельный перенос. Преобразование можно выразить в виде дополненной матрицы:
 	<eqn>
 	  \mathbf{T} = \begin{pmatrix}
 	  M & v\\
@@ -137,20 +141,24 @@ instance Bounded Float where
 	  <code>affine :: M Float -> Primitive -> Primitive</code>
 	</p>, применяющую афинные преобразования к графическим примитивам, и преобразователи изображений:
 	<p>
-	  <code>transform :: M Float -> Picture -> Picture</code><br/>
-	  <code>scale :: Float -> Float -> Picture -> Picture</code><br/>
-	  <code>shift :: Float -> Float -> Picture -> Picture</code><br/>
-	  <code>rotate :: Float -> Picture -> Picture</code>
+	  <code>transform :: M Float -> Picture -> Picture</code> -- применяет произвольное преобразование<br/>
+	  <code>scaleX :: Float -> Picture -> Picture</code> -- масштабирует координату x<br/>
+	  <code>scaleY :: Float -> Picture -> Picture</code> -- масштабирует координату y<br/>
+	  <code>scale :: Float -> Picture -> Picture</code> -- масштабирует обе координаты<br/>
+	  <code>shift :: Float -> Float -> Picture -> Picture -- параллельный перенос изображения</code><br/>
+	  <code>rotate :: Float -> Picture -> Picture</code> -- поворот на угол, задаваемый в градусах
 	</p>
       </task>
 
       <task>Проверьте на примере квадрата как работают преобразователи и их композиция:
 	<pre><ghci>let s = square 50
-s <> rotate (pi/2) s
+s <> rotate 90 s
 s <> shift 10 30 s
 s <> scale 2 3 s
-s <> (scale 2 3 . rotate (pi/3)) s
-(shift 20 30 <> rotate (pi/3)) s </ghci></pre></task>      
+s <> (scale 2 3 . rotate 60) s
+(shift 20 30 <> rotate 60) s </ghci></pre></task>      
+
+      <task>Добавьте к типу <code>Primitive</code> конструктор <code>Circle Pt Float</code> для окружности. Пусть, для простоты, при преобразованиях окружности, изменяется только положение центра координат. Окружность, которая может быть изменена произвольной матрицей можно построить с помощью <code>polygon</code> сбольшим числом углов.</task>
       
       <task>Преобразователи позволяют отделить построение фигур от их расположения в пространстве. Наличие сдвига позволяет не задавать координаты центра конструкторам <code>polygon</code> и <code>circle</code>, а также ограничиться только размерами при конструировании квадрата и прямоугольника. Упростите определения этих конструкторов и введите простой оператор <code>at</code>, с помощью которого можно было бы описать окружность со вписанным в неё квадратом, расположеные в координатах (100, 100) так:
 	<pre><hs>(circle 50 <> rectangle 50 50) `at` (100,100)</hs></pre></task>
@@ -158,7 +166,7 @@ s <> (scale 2 3 . rotate (pi/3)) s
       <task>То, что начало координат области изображения SVG расположено в левом верхнем углу и ось ординат направлена вниз традиционно для компьютерной графики, но неудобно. Удобнее было бы вообще не думать о том, где находится центр координат, показывая всё, что содержит в себе изображение, даже если координаты объектов отрицательны. Тип <code>Picture</code> содержит в себе информацию об области, обрамляющей изображение, и эту информацию можно использовать для приведения всех координат изображения в видимую область положительных координат. Измените определение функции <code>toSVG</code> для типа <code>Picture</code> так, чтобы перед выводом ось ординат направлялась вверх, а минимальные координаты изображения перемещались в начало координат.</task>
 
       <task>Постройте картинку, задаваемую выражением:
-      	<pre>mconcat $ take 48 $ iterate (rotate (pi/24)) $ square 50 `at` (25,25)</pre>
+      	<pre>mconcat $ take 48 $ iterate (rotate 7.5) $ square 50 `at` (25,25)</pre>
 	<p align='center'><img src="img/wheel.png"/></p>
       </task>
       
@@ -217,26 +225,32 @@ opacity :: Float -> Picture -> Picture</hs></pre>
 	<p align='center'><img src="img/charts.png"/></p>
 
 	<task>Объясните какие свойства моноидов позволяют построить следующее изображение:
-	<pre><hs>fractal :: Foldable t => t (M Float) -> Int -> Picture -> Picture
+	<pre><hs>fractal :: [M Float] -> Int -> Picture -> Picture
 fractal model n = mconcat . take n . iterate (foldMap transform model) 
 
 tree = fractal model 7 $ line [(0,0), (0,100)]
-  where model = [ shiftT 0 100 <> scaleT 0.6 0.6 <> rotateT (-pi/6)
+  where model = [ shiftT 0 100 <> scaleT 0.6 0.6 <> rotateT (-30)
                 , shiftT 0 100 <> scaleT 0.7 0.7
-                , shiftT 0 100 <> scaleT 0.5 0.5 <> rotateT (pi/6)]</hs></pre>
+                , shiftT 0 100 <> scaleT 0.5 0.5 <> rotateT 30]</hs></pre>
 	  <p align='center'><img src="img/tree.png"/></p>
 	  Постройте ряд, показывающий рост "дерева" по мере увеличения числа поколений.
 	</task>
 
 	<task>Постройте фрактальные структуры по другим моделям:
 	  <pre><hs>circles = fractal model 8 $ circle 150
-  where model = [ shiftT 0 75 <> scaleT 0.5 0.5 <> rotateT (pi/3)
-                , shiftT 0 (-75) <> scaleT 0.5 0.5 <> rotateT (-pi/3) ]
+  where model = [ shiftT 0 75 <> scaleT 0.5 0.5 <> rotateT 60
+                , shiftT 0 (-75) <> scaleT 0.5 0.5 <> rotateT (-60) ]
 
 pithagor = fractal model 10 $ square 100
-  where model = [ shiftT 0 100 <> scaleT s s <> rotateT (pi/4)
-                , shiftT 100 100 <> scaleT s s <> rotateT (-pi/4)]
-        s = 1/sqrt 2</hs></pre>
+  where model = [ shiftT 0 100 <> scaleT s s <> rotateT 45
+                , shiftT 100 100 <> scaleT s s <> rotateT (-45)]
+        s = 1/sqrt 2
+
+pentaflake = scale 100 100 $ fractal model 4 $ polygon 5 1
+  where model =  map copy [0,72..288]
+        copy a = scaleT s s <> rotateT a <> shiftT 0 x
+        x = 2*cos(pi/5)
+        s = 1/(1+x)</hs></pre>
 	</task>
 	
     </div>

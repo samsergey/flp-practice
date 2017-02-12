@@ -52,7 +52,7 @@
 ;		("[^:]\\(:\\)[^:]" 1 'haskell-constructor-face t)
 
 ;		("\\<where\\|let\\>" 0 'haskell-keyword-face t)
-		("\\<[[:digit:]]+\\([.][[:digit:]]+\\)?\\([eE]-?[[:digit:]]\\{1,3\\}\\)?" 0 'number-face t)
+;		("\\<[[:digit:]]+\\([.][[:digit:]]+\\)?\\([eE]-?[[:digit:]]\\{1,3\\}\\)?" 0 'number-face t)
 		(" [.] " 0 'haskell-dot-face t)
 		("\\([[:upper:]][[:alnum:]]+\\([.][[:upper:]][[:alnum:]]*\\)*\\)[.][[:alnum:]]" 1 'haskell-package-face t)
 		("^import +\\([[:upper:]][[:alnum:]]+\\([.][[:upper:]][[:alnum:]]*\\)*\\)" 1 'haskell-package-face t)
