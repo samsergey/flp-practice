@@ -166,25 +166,34 @@ contents :: Picture -> [Primitive]</hs></pre>
 	</ul>
       </task>
 
-      <task>Напишите функцию <code>affine</code>
-	  которая применяет афинные преобразования к графическим примитивам, и преобразователи изображений:
-	  <pre><hs>affine :: M Float -> Primitive -> Primitive
-transform :: M Float -> Picture -> Picture -- применяет произвольное преобразование
-scaleX :: Float -> Picture -> Picture -- масштабирует координату x
-scaleY :: Float -> Picture -> Picture -- масштабирует координату y
-scale :: Float -> Picture -> Picture -- масштабирует обе координаты
-shift :: Float -> Float -> Picture -> Picture -- параллельный перенос изображения
-rotate :: Float -> Picture -> Picture -- поворот на угол, задаваемый в градусах	</hs></pre>
+      <task>Применять афинные преобразованияможно к точкам, примитивам и целыи изображениям. Это наводит на мысль о классе <code>Affine</code>, который абстрагировал это свойство в виде оператора афинных преобразований <code>(.$)</code>:
+      <pre><hs>class Affine a where
+  (.$) :: Transform -> a -> a
+
+type Transform = M Float</hs></pre>
+
+Напишите экземпляры этого класса для типов <code>Pt</code>, <code>Primitive</code> и <code>Picture</code>. 
+      </task>
+      
+      <task>Напишите преобразователи изображений:
+	  <pre><hs>scaleX :: Float -> Transform -- масштабирует координату x
+scaleY :: Float -> Transform -- масштабирует координату y
+scale :: Float -> Transform -- масштабирует обе координаты
+shift :: Float -> Float -> Transform -- параллельный перенос изображения
+rotate :: Float -> Transform -- поворот на угол, задаваемый в градусах	</hs></pre>
       </task>
 
       <task>Проверьте на примере квадрата как работают преобразователи и их композиция:
-	<pre><ghci>let s = square (0,0) 50
-s <> rotate 90 s
-s <> shift 10 30 s
-s <> scaleX 2 . scaleY 3 s
-s <> rotate 60 s
-s <> (shift 30 0 . rotate 60) s </ghci></pre></task>      
+	<pre><hs>let s = square (0,0) 50
+s <> rotate 90 .$ s
+s <> shift 10 30 .$ s
+s <> (scaleX 2 <> scaleY 3) .$ s
+s <> rotate 60 .$ s
+s <> (shift 30 0 <> rotate 60) .$ s </hs></pre></task>      
 
+      <task>Объясните как вычисляется следующее выражение:
+	<pre><hs>(rotate 30 .$) <> (shift 40 40 .$) $ square 10</hs></pre></task>
+      
       <task>Добавьте к типу <code>Primitive</code> конструктор <code>Circle Pt Float</code> для окружности. Пусть, для простоты, при преобразованиях окружности, изменяется только положение центра координат. Окружность, которую можно транформировать произвольной матрицей (увеличивать, превращать в эллипс и т.д.) можно построить с помощью функции <code>polygon</code> сбольшим числом углов.</task>
       
       <task>Преобразователи позволяют отделить построение фигур от их расположения в пространстве. Наличие сдвига даёт нам возможность не задавать координаты центра конструкторам <code>polygon</code> и <code>circle</code>, а также ограничиться только размерами при конструировании квадрата и прямоугольника. Упростите определения этих конструкторов и введите простой оператор <code>at</code>, с помощью которого, например, можно было бы построить квадрат с вписанной в него окружностью и расположить его в координатах (100, 100) так:
