@@ -243,7 +243,7 @@ cmd c args = ["ctx." ++ c ++ "(" ++ args' ++ ");"]
 
 set a v = format "_ = _;" [a, show v]
 
-path pts = cmd "beginPath" [] <> pts <> cmd "stroke" []
+path pts = cmd "beginPath" [] <> pts <> cmd "stroke" [] <> cmd "fill" []
 moveTo (x,y) = cmd "moveTo" [x, y]
 lineTo (x,y) = cmd "lineTo" [x, y]
 arc (x,y) r a1 a2 = cmd "arc" [x, y, r, a1, a2]
@@ -253,7 +253,8 @@ instance Canvas Primitive where
   toCanvas p = unlines $ case p of
     Line [] -> mempty
     Line (pt:pts) -> path $ moveTo pt <> foldMap lineTo pts
-    Point pt -> path $ arc pt 2 0 pi 
+    Circle pt r -> path $ arc pt r 0 (2*pi) 
+    Point pt -> path $ arc pt 2 0 (2*pi) 
     Group attr ps -> group attr $ foldMap toCanvas ps
 
 instance Canvas Picture where
@@ -276,7 +277,7 @@ envOperations = unlines
   , "  os = img.globalOpacity;"
   , "  wl = img.lineWidth;"
   , "}"
-  , "function popEnv() {"
+  , "function restoreEnv() {"
   , "  img.strokeStyle = ss;"
   , "  img.fillStyle = sf;"
   , "  img.globalOpacity = os;"

@@ -6,6 +6,14 @@ import Data.Semigroup hiding ((<>))
 import Data.List.Split (splitOn)
 import Data.List (transpose)
 
+times :: (Monoid a, Integral i) => i -> a -> a
+0 `times` _ = mempty
+1 `times` a = a
+2 `times` a = a <> a
+n `times` a | even n = (n` div` 2) `times` (2 `times` a)
+            | odd n  = a <> (n` div` 2) `times` (2 `times` a)
+
+
 type Pt = (Float, Float)
   
 data Primitive = Point Pt
@@ -18,6 +26,13 @@ data Picture = Picture (Box, [Primitive])
 box (Picture (((Min x1, Min y1), (Max x2, Max y2)), _)) = ((x1,y1),(x2,y2))
 width p = x2 - x1 where ((x1,_),(x2,_)) = box p
 height p = y2 - y1 where ((_,y1),(_,y2)) = box p
+corner (Picture (((Min x1, Min y1), (Max x2, Max y2)), _)) =
+  (((x1,y2),(x2,y2)),((x1,y1),(x2,y1)))
+lower = snd
+upper = fst
+right = snd
+left  = fst
+
 contents (Picture (_, p)) = p
 
 type Box = ((Min Float, Min Float), (Max Float, Max Float))
@@ -37,12 +52,12 @@ findBox p = case p of
   Point pt -> box pt
   where box (x,y)= ((Min x, Min y), (Max x, Max y))
 
-square :: Pt -> Float -> Picture
-square (x,y) a = makePicture $ Line [(x,y), (x+a,y), (x+a,y+a), (x,y+a), (x,y)]
-rectangle :: Pt -> Float -> Float -> Picture
-rectangle (x,y) a b = makePicture $ Line [(x,y), (x+a,y), (x+a,y+b), (x,y+b), (x,y)]
-triangle :: Pt -> Float -> Float -> Picture
-triangle (x,y) a h = makePicture $ Line [(x,y), (x+a,y), (x+a/2,y+h), (x,y)]
+
+square a = makePicture $ Line [(0,0), (a,0), (a,a), (0,a), (0,0)]
+
+rectangle a b = makePicture $ Line [(0,0), (a,0), (a,b), (0,b), (0,0)]
+
+triangle a h = makePicture $ Line [(0,0), (a,0), (a/2,h), (0,0)]
 
 --------------------------------------------------------------------------------
 
@@ -64,12 +79,12 @@ instance SVG Primitive where
 instance SVG Picture where
   toSVG p =
     format "<svg width='_' height='_' fill='none' stroke='blue'>_</svg>"
-    [show (width p), show (height p), foldMap toSVG (contents p)]
+    [show (width p), show (height p), foldMap toSVG (contents (adjust p))]
 
-house = walls <> roof
-  where
-    walls = square (0,0) 100
-    roof = triangle (0,100) 100 40
+-- house = walls <> roof
+--   where
+--     walls = square (0,0) 100
+--     roof = triangle (0,100) 100 40
 
 --------------------------------------------------------------------------------
 
@@ -87,28 +102,45 @@ instance Num a => Monoid (M a) where
 --------------------------------------------------------------------------------
 
 class Affine a where
-  (.$) :: M Float -> a -> a
+  ($.) :: M Float -> a -> a
 
 instance Affine (Float,Float) where
-  m .$ (x,y) = let M [[x'],[y'],_] = m <> M [[x],[y],[1]]
+  m $. (x,y) = let M [[x'],[y'],_] = m <> M [[x],[y],[1]]
                    in (x',y')
 
 instance Affine Primitive where
-  m .$ p = case p of
-    Point pt   -> Point $  m .$ pt
-    Line pts   -> Line $ affine m <$> pts
+  m $. p = case p of
+    Point pt   -> Point $  m $. pt
+    Line pts   -> Line $ (m $.) <$> pts
 
 instance Affine Picture where
-  m .$ p = Picture (b, ps')
+  m $. p = Picture (b, ps')
     where
       b = foldMap findBox ps'
-      ps' = (m .$) <$> contents p
+      ps' = (m $.) <$> contents p
 
 
 shift x y = M [[1,0,x],[0,1,y],[0,0,1]]
+scaleX a = M [[a,0,0],[0,1,0],[0,0,1]]
+scaleY a = M [[1,0,0],[0,a,0],[0,0,1]]
+scale a = M [[a,0,0],[0,a,0],[0,0,1]]
 rotate a = M [[c,-s,0],[s,c,0],[0,0,1]]
   where c = cos phi
         s = sin phi
         phi = 180*a/pi
+
+p `at` (x,y) = shift (x-x1) (y-y1) $. p
+   where (x1,y1) = (left.lower.corner) p
+
+adjust p = (scaleY (-1) $. p) `at` (0,0)
+
+p1 `beside` p2 = p1 <> p2 `at` (right.lower.corner) p1
+
+-- p1 `above` p2 = p1 <> shift (-x1'+x1) (y1-y2') p2
+--   where (x1 ,_, y1,_) = box p1
+--         (x1',_,_,y2') = box p2
+
+-- row ps = foldr beside mempty ps
+-- col ps = foldr above mempty ps
         
 main = pure ()
