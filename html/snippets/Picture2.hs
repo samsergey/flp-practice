@@ -1,10 +1,9 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 import Data.Monoid
 import Data.Semigroup hiding ((<>))
 import Data.List.Split (splitOn)
-import Data.List (transpose)
+import Data.List (transpose, sortBy)
+import Data.Ord
 
 times :: (Monoid a, Integral i) => i -> a -> a
 0 `times` _ = mempty
@@ -144,3 +143,17 @@ p1 `beside` p2 = p1 <> p2 `at` (right.lower.corner) p1
 -- col ps = foldr above mempty ps
         
 main = pure ()
+
+clockwise a o b = (a `sub` o) `cross` (b `sub` o) < 0
+  where
+    cross (x1, y1) (x2, y2) = x1 * y2 - x2 * y1
+    sub (x1, y1) (x2, y2) = (x1 - x2, y1 - y2)
+
+convex :: (Ord a, Num a) => [(a, a)] -> [(a, a)]
+convex [] = []
+convex [p] = [p]
+convex pts = foldr chain start rest
+  where
+    (start,rest) = splitAt 2 $ sortBy (comparing fst) pts
+    chain pt (p1:p2:ps) | clockwise p2 p1 pt = pt:p1:p2:ps
+                        | otherwise = pt:p2:ps
