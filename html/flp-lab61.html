@@ -34,11 +34,18 @@ data Picture = Picture [Primitive] deriving Show</hs></pre>
       <p align='center'>
 	<table>
 	  <tr>
-	    <td><img style="border: dotted 1px gray;" src="img/pmon1.png"/></td>
+	    <td><svg style="border: dotted 1px gray;" width='80' height='80'>
+		<circle cx='44' cy='34' r='30'  fill='red' stroke='black'/>
+	    </svg></td>
 	    <td><code>&lt;&gt;</code></td>
-	    <td><img style="border: dotted 1px gray;" src="img/pmon2.png"/></td>
+	    <td><svg style="border: dotted 1px gray;" width='80' height='80'>
+		<polyline points=' 4,34 4,4 34,4 34,34 4,34' fill='blue' stroke='black'/>
+	    </svg></td>
 	    <td>=</td>
-	    <td><img style="border: dotted 1px gray;" src="img/pmon3.png"/></td>
+	    <td><svg style="border: dotted 1px gray;" width='80' height='80'>
+		<circle cx='44' cy='34' r='30' fill='red' stroke='black'/>
+		<polyline points=' 4,34 4,4 34,4 34,34 4,34' fill='blue' stroke='black'/>
+	    </svg></td>
 	  </tr>
       </table></p>
 
@@ -106,7 +113,8 @@ triangle :: Pt -> Float -> Float -> Picture</hs></pre>
       <pre><hs>data Picture = Picture (Box, [Primitive])
              deriving Show
 
-type Box = ((Min Float, Min Float), (Max Float, Max Float))
+type Box = ( (Min Float, Min Float)
+           , (Max Float, Max Float) )
 
 instance Bounded Float where
   minBound = -1000
@@ -114,26 +122,44 @@ instance Bounded Float where
       
       <p>В типе <code>Box</code> первая пара задаёт левый нижний угол изображения, а вторая – правый верхний. Для того, чтобы использовать полугруппы <code>Min</code> и <code>Max</code>, экпортируем их (и только их) из библиотеки <code>Data.Semigroup</code>. <pre><hs>import Data.Semigroup (Min(..), Max(..))</hs></pre> Для того, чтобы тип <code>Box</code> стал моноидом, мы определили минимальную и максимальную границы значений координат.</p>
 
-      <task>Убедитесь в том, что в определение экземпляра класса <code>Monoid</code> для типа <code>Picture</code> никаких изменений вносить не нужно.</task>
+      <p>
+	В свою очередь, размеры изображения складываются из размеров примитивов, его составляющих. Значит, имеет смысл определить класс для типов, имеющих размер. Создадим такой класс, а в нём опишем несколько универсально полезных функций, имеющих для всех экземпляров класса определение по умолчанию
+	<pre><hs>class Boxed a where
+  box :: a -> Box
 
+  width :: a -> Float
+  width p = x2 - x1
+    where ((Min x1,_),(Max x2,_)) = box p
+
+  height :: a -> Float
+  height p = y2 - y1
+    where ((_,Min y1),(_,Max y2)) = box p</hs></pre>
+	  Для экзепляров класса <code>Boxed</code> достаточно определить функцию <code>box</code>, все остальные выводятся через неё. Так, например определяется экземпляр <code>Boxed</code> для типа <code>Picture</code>:
+	  <pre><hs>instance Boxed Picture where
+  box (Picture (b,_)) = b</hs></pre>
+
+	  А так можно опредлить размеры для точки:
+	  <pre><hs>instance Boxed Pt where
+  box (x,y)= ((Min x, Min y), (Max x, Max y))
+  width _ = 0
+  height _ = 0</hs></pre> 
+      </p>   
+
+      <task>Определите экземпляр <code>Boxed Primitive</code>. Используйте моноидальные свойства типа <code>Box</code> при вычислении рамки для примитива <code>Line</code>.</task>
+
+<task>Надо ли изменять что-либо в определении экземпляра <code>Monoid Picture</code>?</task>
+      
       <task>Переопределите конструкторы <code>poiny, line, square, ...</code>
-	<p>Для этого имеет смысл определить две вспомогательные функции <code>findBox</code> и <code>makePicture</code>, которые выполняли бы необходимые вычисления обрамляющей рамки для указанного примитива:
-	  <pre><hs>findBox :: Primitive -> Box 
-makePicture :: Primitive -> Picture</hs></pre>
-
-	  Используйте моноидальные свойства типа <code>Box</code> при вычислении рамки для примитива <code>Line</code>.
-
+	<p>Для этого имеет смысл определить вспомогательную функцию <code>primitive</code>, которая выполняла бы необходимые вычисления обрамляющей рамки для формируемого изображения:
+	  <pre><hs>primitive :: Primitive -> Picture</hs></pre>
       </task>
 
-      <task>Наконец, используйте информацию об обрамляющей рамке изображения для вычисления размеров, указываемых в заголовке SVG-файла. Для этого напишите ещё несколько простых универсально полезных вспомогательных функций (геттеров для типа <code>Picture</code>):
-	<pre><hs>box :: Picture -> (Pt, Pt)
-width :: Picture -> Float
-height :: Picture -> Float
-contents :: Picture -> [Primitive]</hs></pre>
+      <task>Наконец, используйте информацию об обрамляющей рамке изображения для вычисления размеров, указываемых в заголовке SVG-файла. Для этого напишите ещё одну вспомогательную функцию для типа <code>Picture</code>:
+	<pre><hs>contents :: Picture -> [Primitive]</hs></pre>
       </task>
 
-      <task>Определите функцию <code>corner</code>, возвращающую углы обрамляющей рамки изображения
-      <pre><hs>corner :: Picture -> ((Pt, Pt), (Pt, Pt))</hs></pre> и четыре селектора <code>left, right, upper, lower</code>
+      <task>Определите в классе <code>Boxed</code> универсальную функцию <code>corner</code>, возвращающую углы обрамляющей рамки изображения, или примитива
+      <pre><hs>corner :: a -> ((Pt, Pt), (Pt, Pt))</hs></pre> и четыре селектора <code>left, right, upper, lower</code>
       так, чтобы можно было бы получить правый нижний угол изображения с помощью выражения:
       <pre><hs> right . lower . corner $ p</hs></pre></task>
       
@@ -188,19 +214,19 @@ contents :: Picture -> [Primitive]</hs></pre>
 
       <p>Композиция афинных преобразований соответствует перемножению матриц. Это значит, что функцию <code>affine</code> можно вынести за скобки: <eqn>\mathrm{affine}\,T_1 \circ \mathrm{affine}\,T_2 \circ ... \circ T_n = \mathrm{affine}\,(T_1 \cdot T_2\cdot ... \cdot T_n).</eqn> Сначала перемножить несколько небольших матриц, а потом применить к большому числу точек выгоднее, чем применять их ко всем точкам по очереди.</p>
 
-      <p> Для того, чтобы воспользоваться этим свойством преобразований нужно отделить применение преобразований от применения функции <code>affine</code>. Это можно сделать, расширив тип <code>Picture</code>, добавив в него явное преобразование изображения:
-<pre><hs>data Picture = Picture (Convex, [Primitive])
+      <p>Чтобы воспользоваться этим свойством преобразований нужно отделить применение преобразований от применения функции <code>affine</code>. Это можно сделать, расширив тип <code>Picture</code>, добавив в него явное преобразование изображения:
+<pre><hs>data Picture = Picture (Box, [Primitive])
              | Transform :$: Picture
              deriving Show</hs></pre>
 Это даёт нам возможность перед применением преобразований провести такую оптимизацию:
-<pre>t1 :$: (t2 :$: p) = t1 <> t2 :$: p</pre> Для этого напишем функцию <code>simplify</code>
+<pre>t1 :$: (t2 :$: p) = t1 <> t2 :$: p</pre> Для этого напишем функцию <code>transform</code>
 
-<pre><hs>simplify p = case p of
+<pre><hs>transform p = case p of
   Picture p -> Picture p
-  t :$: Picture p -> affine t (Picture p)
-  t1 :$: (t2 :$: p) -> simplify $ (t1 <> t2) :$: p</hs></pre>
+  (Affine t) :$: Picture p -> affine t (Picture p)
+  t1 :$: (t2 :$: p) -> transform $ (t1 <> t2) :$: p</hs></pre>
 
-И определим тип-моноид <code>Transform</code> для преобразований:
+Для преобразований определим тип-моноид <code>Transform</code>:
 <pre><hs>data Transform = Affine (M Float) deriving Show
 
 instance Monoid Transform where
@@ -208,9 +234,9 @@ instance Monoid Transform where
   Affine m1 `mappend` Affine m2 = Affine (m1 <> m2)</hs></pre>
       </p>
     
-      <task>Тип <code>Picture</code> расширился, значит, определение класса <code>Monoid</code> для него, а также все функции, имеющие тип <pre>Picture -> ...</pre> требуют дополнения. Внесите необходимые исправления, прежде чем двигаться дальше.</task>
+      <task>Тип <code>Picture</code> расширился, значит, определение класса <code>Monoid</code> для него, а также все функции, имеющие тип <code>Picture -> a</code> требуют дополнения. Внесите необходимые исправления, прежде чем двигаться дальше.</task>
     
-      <task>Напишите, используя оператор <code>(:$:)</code> следующие преобразователи изображений:
+      <task>Напишите, используя оператор <code>(:$:)</code>, следующие преобразователи изображений:
 	  <pre><hs>scaleX :: Float -> Picture -> Picture -- масштабирует координату x
 scaleY :: Float -> Picture -> Picture -- масштабирует координату y
 scale :: Float -> Picture -> Picture -- одинаково масштабирует обе координаты
@@ -226,11 +252,13 @@ s <> shift 10 30 s
 s <> (scaleX 2 . scaleY 3) s
 s <> rotate 60 s
 s <> (shift 30 0 . rotate 60) s </hs></pre></task>      
+
+      <p>Обратите внимание на то, как мы "переопределили" по-своему действие оператора композиции <code>(.)</code>  для преобразований. Смысл композиции остался прежним и результат от наших действий не изменится, но изменилась последовательность вычислений и их эффективность. Это очень характерный приём функционального программирования.</p>
       
       <task>Добавьте к типу <code>Primitive</code> конструктор <code>Circle Pt Float</code> для окружности. Пусть, для простоты, при преобразованиях окружности изменяется только положение центра координат. Окружность, которую можно транформировать произвольной матрицей (увеличивать, превращать в эллипс и т.д.) можно построить с помощью функции <code>polygon</code> с большим числом углов.</task>
       
       <task>Преобразователи позволяют отделить построение фигур от их расположения в пространстве. Наличие сдвига даёт нам возможность не задавать координаты центра конструкторам <code>polygon</code> и <code>circle</code>, а также ограничиться только размерами при конструировании квадрата и прямоугольника. Упростите определения этих конструкторов и введите простой оператор <code>at</code>, задающий абсолютные координаты левого нижнего угла изображения. С его помощью, например, можно было бы построить квадрат с вписанной в него окружностью и расположить его в координатах (100, 100) так:
-	<pre><hs>(circle 50 <> rectangle 50 50) `at` (100,100)</hs></pre></task>
+	<pre><hs>(circle 50 <> rectangle 50 50) `at` (100, 100)</hs></pre></task>
       
       <task>Объясните, каким образом вычисляется следующее выражение:
 	<pre><hs>(rotate 30) <> (`at` (40, 40)) $ square 10</hs></pre>
