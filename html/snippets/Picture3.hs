@@ -3,7 +3,6 @@ import Data.Monoid
 import Data.Semigroup (Min(..), Max(..))
 import Data.List.Split (splitOn)
 import Data.List (transpose, sort)
-import qualified Data.Map as M
 
 times :: (Monoid a, Integral i) => i -> a -> a
 0 `times` _ = mempty
@@ -21,7 +20,7 @@ data Primitive = Point Pt
                | Group Attributes [Primitive]
                deriving Show
 
-type Attributes  = M.Map String String
+type Attributes  = [(String, String)]
 
 type Box = ((Min Float, Min Float), (Max Float, Max Float))
 
@@ -65,11 +64,12 @@ contents p = contents (transform p)
 
 transform :: Picture -> Picture
 transform pic = case pic of
-  (t1 :+: t2) :$: p -> transform $ t1 :$: transform (t2 :$: p)
   t1 :$: (t2 :$: p) -> transform $ (t1 <> t2) :$: p
   Picture p -> Picture p
-  Affine m :$: Picture p -> affine m (Picture p)
-  Style s :$: Picture (b,p) -> Picture (b, [Group s p])
+  Transform (m,s) :$: Picture p -> app affine m . app style s $ Picture p
+  where
+    app e m = if m == mempty then id else e m
+    style s (Picture (b,p)) = Picture (b, [Group s p]) 
 
 instance Monoid Picture where
   mempty = Picture mempty 
@@ -130,7 +130,7 @@ instance SVG Picture where
     [show (width p), show (height p), foldMap toSVG (contents (transform (adjust p)))]
 
 instance SVG Attributes where
-  toSVG attr = foldMap (\(k,v) -> format " _='_'" [k, v]) $ M.toList attr
+  toSVG attr = foldMap (\(k,v) -> format " _='_'" [k, v])  attr
 
 
 -- house = walls <> roof
@@ -140,7 +140,7 @@ instance SVG Attributes where
 
 --------------------------------------------------------------------------------
 
-data M a = M [[a]] | I deriving Show
+data M a = M [[a]] | I deriving (Show, Eq)
 
 instance Num a => Monoid (M a) where
   mempty = I
@@ -152,20 +152,12 @@ instance Num a => Monoid (M a) where
     where a `dot` b = sum $ zipWith (*) a b
 
 --------------------------------------------------------------------------------
-data Transform = Affine (M Float)
-               | Style Attributes
-               | Transform :+: Transform
+data Transform = Transform (M Float, Attributes)
                deriving Show
-
-infixr 4 :+:
-infixr 4 :$:
-  
+ 
 instance Monoid Transform where
-  mempty = Affine mempty
-  Affine m1 `mappend` Affine m2 = Affine (m1 <> m2)
-  Style s1 `mappend` Style s2 = Style (s1 <> s2)
-  t `mappend` Style s = Style s :+: t
-  t1 `mappend` t2 = t1 :+: t2
+  mempty = Transform mempty
+  Transform m1 `mappend` Transform m2 = Transform (m1 <> m2)
 
 class Affine a where
   affine :: M Float -> a -> a
@@ -186,21 +178,22 @@ instance Affine Picture where
                               in Picture (foldMap box p', p')
   affine m p = affine m (transform p)
 
+mkAffine m = Transform (m, mempty)
 
 shift :: Float -> Float -> Picture -> Picture
-shift x y = (Affine (M [[1,0,x],[0,1,y],[0,0,1]]) :$:)
+shift x y = (mkAffine (M [[1,0,x],[0,1,y],[0,0,1]]) :$:)
 
 scaleX :: Float -> Picture -> Picture
-scaleX a = (Affine (M [[a,0,0],[0,1,0],[0,0,1]]) :$:)
+scaleX a = (mkAffine (M [[a,0,0],[0,1,0],[0,0,1]]) :$:)
 
 scaleY :: Float -> Picture -> Picture
-scaleY a = (Affine (M [[1,0,0],[0,a,0],[0,0,1]]) :$:)
+scaleY a = (mkAffine (M [[1,0,0],[0,a,0],[0,0,1]]) :$:)
 
 scale :: Float -> Picture -> Picture
-scale a = (Affine (M [[a,0,0],[0,a,0],[0,0,1]]) :$:)
+scale a = (mkAffine (M [[a,0,0],[0,a,0],[0,0,1]]) :$:)
 
 rotate :: Float -> Picture -> Picture
-rotate a = (Affine (M [[c,-s,0],[s,c,0],[0,0,1]]) :$:)
+rotate a = (mkAffine (M [[c,-s,0],[s,c,0],[0,0,1]]) :$:)
   where c = cos phi
         s = sin phi
         phi = pi*a/180
@@ -225,20 +218,20 @@ col :: Foldable t => t Picture -> Picture
 col ps = foldr above mempty ps
 
 
-makeAttr :: String -> String -> Picture -> Picture
-makeAttr k v = (Style (M.singleton k v) :$:)
+mkStyle :: String -> String -> Picture -> Picture
+mkStyle k v = (Transform (mempty, [(k, v)]) :$:)
 
 color :: String -> Picture -> Picture
-color = makeAttr "stroke"
+color = mkStyle "stroke"
 
 fill :: String -> Picture -> Picture
-fill = makeAttr "fill"
+fill = mkStyle "fill"
 
 lineWidth :: Show a => a -> Picture -> Picture
-lineWidth w = makeAttr "lineWidth" $ show w
+lineWidth w = mkStyle "lineWidth" $ show w
 
 opacity :: Show a => a -> Picture -> Picture
-opacity a = (makeAttr "stroke-opacity" <> makeAttr "fill-opacity") (show a) 
+opacity a = (mkStyle "stroke-opacity" <> mkStyle "fill-opacity") (show a) 
 
 main :: IO ()
 main = pure ()
