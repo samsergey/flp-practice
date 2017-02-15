@@ -17,10 +17,14 @@ type Pt = (Float, Float)
 data Primitive = Point Pt
                | Line [Pt]
                | Circle Pt Float
-               | Group Attributes [Primitive]
+               | Group [Attribute] [Primitive]
                deriving Show
 
-type Attributes  = [(String, String)]
+data Attribute = Color String
+               | Fill String
+               | LineWidth Float
+               | Opacity Float
+                deriving (Show, Eq)
 
 type Box = ((Min Float, Min Float), (Max Float, Max Float))
 
@@ -66,7 +70,7 @@ transform :: Picture -> Picture
 transform pic = case pic of
   t1 :$: (t2 :$: p) -> transform $ (t1 <> t2) :$: p
   Picture p -> Picture p
-  Transform (m,s) :$: Picture p -> app affine m . app style s $ Picture p
+  Transform (m,s) :$: Picture p -> app style s . app affine m $ Picture p
   where
     app e m = if m == mempty then id else e m
     style s (Picture (b,p)) = Picture (b, [Group s p]) 
@@ -120,7 +124,7 @@ instance SVG Primitive where
     Point (x,y) -> format "<circle fill='blue' stroke='none' cx='_' cy='_' r='1'/>" [show x, show y]
     Line pts -> format "<polyline points='_'/>" [foldMap showPt pts]
     Circle (x,y) r -> format "<circle cx='_' cy='_' r='_'/>" [show x, show y, show r]
-    Group s g -> format "<g _>_</g>" [toSVG s, foldMap toSVG g]
+    Group s g -> format "<g _>_</g>" [foldMap toSVG s, foldMap toSVG g]
     where 
       showPt (x,y) = format " _,_" [show x, show y]
 
@@ -129,9 +133,14 @@ instance SVG Picture where
     format "<svg width='_' height='_' fill='none' stroke='blue'>_</svg>"
     [show (width p), show (height p), foldMap toSVG (contents (transform (adjust p)))]
 
-instance SVG Attributes where
-  toSVG attr = foldMap (\(k,v) -> format " _='_'" [k, v])  attr
-
+instance SVG Attribute where
+  toSVG attr = case attr of
+    Color c -> showAttr "stroke" c
+    Fill c -> showAttr "fill" c
+    LineWidth w -> showAttr "stroke-width" w
+    Opacity o -> showAttr "stroke-opacity" o <> showAttr "fill-opacity" o
+    where
+      showAttr a v = format " _=_" [a, show v]
 
 -- house = walls <> roof
 --   where
@@ -152,7 +161,7 @@ instance Num a => Monoid (M a) where
     where a `dot` b = sum $ zipWith (*) a b
 
 --------------------------------------------------------------------------------
-data Transform = Transform (M Float, Attributes)
+data Transform = Transform (M Float, [Attribute])
                deriving Show
  
 instance Monoid Transform where
@@ -178,22 +187,23 @@ instance Affine Picture where
                               in Picture (foldMap box p', p')
   affine m p = affine m (transform p)
 
-mkAffine m = Transform (m, mempty)
+mkAffine :: M Float -> Picture -> Picture
+mkAffine m = (Transform (m, mempty) :$:)
 
 shift :: Float -> Float -> Picture -> Picture
-shift x y = (mkAffine (M [[1,0,x],[0,1,y],[0,0,1]]) :$:)
+shift x y = mkAffine $ M [[1,0,x],[0,1,y],[0,0,1]]
 
 scaleX :: Float -> Picture -> Picture
-scaleX a = (mkAffine (M [[a,0,0],[0,1,0],[0,0,1]]) :$:)
+scaleX a = mkAffine $ M [[a,0,0],[0,1,0],[0,0,1]]
 
 scaleY :: Float -> Picture -> Picture
-scaleY a = (mkAffine (M [[1,0,0],[0,a,0],[0,0,1]]) :$:)
+scaleY a = mkAffine $ M [[1,0,0],[0,a,0],[0,0,1]]
 
 scale :: Float -> Picture -> Picture
-scale a = (mkAffine (M [[a,0,0],[0,a,0],[0,0,1]]) :$:)
+scale a = mkAffine $ M [[a,0,0],[0,a,0],[0,0,1]]
 
 rotate :: Float -> Picture -> Picture
-rotate a = (mkAffine (M [[c,-s,0],[s,c,0],[0,0,1]]) :$:)
+rotate a = mkAffine $ M [[c,-s,0],[s,c,0],[0,0,1]]
   where c = cos phi
         s = sin phi
         phi = pi*a/180
@@ -218,20 +228,20 @@ col :: Foldable t => t Picture -> Picture
 col ps = foldr above mempty ps
 
 
-mkStyle :: String -> String -> Picture -> Picture
-mkStyle k v = (Transform (mempty, [(k, v)]) :$:)
+mkStyle :: (t -> Attribute) -> t -> Picture -> Picture
+mkStyle k v = (Transform (mempty, [k v]) :$:)
 
 color :: String -> Picture -> Picture
-color = mkStyle "stroke"
+color = mkStyle Color
 
 fill :: String -> Picture -> Picture
-fill = mkStyle "fill"
+fill = mkStyle Fill
 
-lineWidth :: Show a => a -> Picture -> Picture
-lineWidth w = mkStyle "lineWidth" $ show w
+lineWidth :: Float -> Picture -> Picture
+lineWidth = mkStyle LineWidth
 
-opacity :: Show a => a -> Picture -> Picture
-opacity a = (mkStyle "stroke-opacity" <> mkStyle "fill-opacity") (show a) 
+opacity :: Float -> Picture -> Picture
+opacity = mkStyle Opacity
 
 main :: IO ()
 main = pure ()
