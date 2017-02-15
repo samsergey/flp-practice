@@ -121,17 +121,21 @@ class SVG a where
 
 instance SVG Primitive where
   toSVG p = case p of
-    Point (x,y) -> format "<circle fill='blue' stroke='none' cx='_' cy='_' r='1'/>" [show x, show y]
+    Point (x,y) -> format "<circle fill='blue' stroke='none' cx='_' cy='_' r='1'/>" [short x, short y]
     Line pts -> format "<polyline points='_'/>" [foldMap showPt pts]
-    Circle (x,y) r -> format "<circle cx='_' cy='_' r='_'/>" [show x, show y, show r]
+    Circle (x,y) r -> format "<circle cx='_' cy='_' r='_'/>" [short x, short y, short r]
     Group s g -> format "<g _>_</g>" [foldMap toSVG s, foldMap toSVG g]
     where 
-      showPt (x,y) = format " _,_" [show x, show y]
+      showPt (x,y) = format " _,_" [short x, short y]
 
 instance SVG Picture where
+  toSVG (Picture (_,[])) = "<svg></svg>"
   toSVG p =
     format "<svg width='_' height='_' fill='none' stroke='blue'>_</svg>"
-    [show (width p), show (height p), foldMap toSVG (contents (transform (adjust p)))]
+    [show (width p+8), show (height p+8), foldMap toSVG (contents (transform (adjust p)))]
+
+adjust :: Picture -> Picture
+adjust p = (scaleY (-1) p) `at` (4,4)
 
 instance SVG Attribute where
   toSVG attr = case attr of
@@ -212,8 +216,6 @@ at :: Picture -> (Float, Float) -> Picture
 p `at` (x,y) = shift (x-x1) (y-y1) p
    where (x1,y1) = (left.lower.corner) p
 
-adjust :: Picture -> Picture
-adjust p = (scaleY (-1) p) `at` (0,0)
 
 beside :: Picture -> Picture -> Picture
 beside p1 p2 = p1 <> p2 `at` (right.lower.corner) p1
@@ -245,3 +247,27 @@ opacity = mkStyle Opacity
 
 main :: IO ()
 main = pure ()
+
+rescaleTo  a b p = scaleX (a/width p) . scaleY (b/height p) $ p
+
+barChart lst =  row $ rectangle 1 <$> lst
+
+plot f xmin xmax =  color "black" (axes pic) <> (lineWidth 2 pic)
+  where dx = (xmax-xmin)/200
+        pic = line $ tbl f <$> [xmin,xmin+dx..xmax]
+        axes p = line [(x1,0),(x2,0)] <> line [(0,y1),(0,y2)]
+          where (x1,y1) = left.lower.corner $ p
+                (x2,y2) = right.upper.corner $ p
+        tbl f x = (x, f x)
+        arrow = fill "black" $ triangle 5 10
+
+sinc 0 = 1
+sinc x = sin x / x
+
+short :: (Show a, Floating a) => a -> String
+short n = i ++ if (f /= ".0") then (take 3 f) else ""
+  where (i,f) = break (=='.') $ show n
+
+(color "red" $ plot sinc (-15) 15) <>
+  lineWidth 0.5 (color "blue" $ plot sin (-15) 15 <>
+                 color "green" $ plot (1/) 0.3 15))
