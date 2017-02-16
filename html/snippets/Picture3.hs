@@ -8,8 +8,9 @@ times :: (Monoid a, Integral i) => i -> a -> a
 0 `times` _ = mempty
 1 `times` a = a
 2 `times` a = a <> a
-n `times` a | even n = (n` div` 2) `times` (2 `times` a)
-            | odd n  = a <> (n` div` 2) `times` (2 `times` a)
+n `times` a
+  | even n = (n` div` 2) `times` (2 `times` a)
+  | odd n  = a <> (n` div` 2) `times` (2 `times` a)
 
 
 type Pt = (Float, Float)
@@ -268,6 +269,9 @@ short :: (Show a, Floating a) => a -> String
 short n = i ++ if (f /= ".0") then (take 3 f) else ""
   where (i,f) = break (=='.') $ show n
 
-(color "red" $ plot sinc (-15) 15) <>
-  lineWidth 0.5 (color "blue" $ plot sin (-15) 15 <>
-                 color "green" $ plot (1/) 0.3 15))
+
+polyn k = tail res 
+  where res = 0 : 1 : k : zipWith3 (\a b c -> a - 3*b + 3*c) res (tail res) (drop 2 res)
+
+polygonal k n = p
+  where M ((p:_):_) = (n `times` M [[3,-3,1],[1,0,0],[0,1,0]]) <> M [[0],[1],[k]]

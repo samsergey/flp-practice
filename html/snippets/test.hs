@@ -4,6 +4,7 @@ import Control.Applicative
 import Data.List.Split
 import Data.List
 
+
 repeat' :: (Num b1, Enum b1) => b1 -> b -> [b]
 repeat' n k = const k <$> [1..n]
 
@@ -180,5 +181,4 @@ table = concat [ "Johny Mitchell, 35, Tony lane, 6\n"
                , "Woody Woodepecker, 63, -,-"]
 
 readCSV = fmap (splitOn ",") . splitOn "\n"
-
 
