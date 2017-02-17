@@ -20,7 +20,7 @@
 
       <task>Опишите тип для представления произвольной двухполюсной электрической цепи, которая может состоять из сопротивлений (с&nbsp;номиналами типа <code>Double</code>) и допускает последовательное или параллельное соединение элементов цепи.</task>
 
-<pre><hs>data Circuit a = R Double
+<pre><hs>data Circuit = R Double
                | Par Circuit Circuit
                | Seq Circuit Circuit deriving Show</hs></pre>
 
