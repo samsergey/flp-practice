@@ -156,7 +156,7 @@ instance SVG Attribute where
 
 --------------------------------------------------------------------------------
 
-data M a = M [[a]] | I deriving (Show, Eq)
+data M a = M ![[a]] | I deriving (Show, Eq)
 
 instance Num a => Monoid (M a) where
   mempty = I
@@ -290,10 +290,11 @@ toPicture (Triangle p1 p2 p3) = color col . fill col $ line $ project <$> pts
 bay :: [Triangle]
 bay = [Triangle (0,0,0) (100,0,0) (0,100,0)
       ,Triangle (100,100,0) (100,0,0) (0,100,0)]
+
   
 main :: IO ()
 main = do
-  l <- landScape 6 bay <$> randomIO
+  l <- landScape 3 bay <$> randomIO
   writeSVG "test.html" $ scale 3 . opacity 0.5 $ foldMap toPicture l
 
 
