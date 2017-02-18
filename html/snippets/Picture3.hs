@@ -1,16 +1,18 @@
 {-# LANGUAGE FlexibleInstances #-}
 import Data.Monoid
 import Data.Semigroup (Min(..), Max(..))
-import Data.List.Split (splitOn)
+import Data.List.Split (splitOn,chunksOf)
 import Data.List (transpose, sort)
+import Triscape
+import System.Random
 
 times :: (Monoid a, Integral i) => i -> a -> a
 0 `times` _ = mempty
 1 `times` a = a
 2 `times` a = a <> a
 n `times` a
-  | even n = (n` div` 2) `times` (2 `times` a)
-  | odd n  = a <> (n` div` 2) `times` (2 `times` a)
+  | even n = (n `div` 2) `times` (a <> a)
+  | odd n  = (n - 1) `times` a <> a
 
 
 type Pt = (Float, Float)
@@ -246,9 +248,6 @@ lineWidth = mkStyle LineWidth
 opacity :: Float -> Picture -> Picture
 opacity = mkStyle Opacity
 
-main :: IO ()
-main = pure ()
-
 rescaleTo  a b p = scaleX (a/width p) . scaleY (b/height p) $ p
 
 barChart lst =  row $ rectangle 1 <$> lst
@@ -275,3 +274,26 @@ polyn k = tail res
 
 polygonal k n = p
   where M ((p:_):_) = (n `times` M [[3,-3,1],[1,0,0],[0,1,0]]) <> M [[0],[1],[k]]
+
+toPicture :: Triangle -> Picture
+toPicture (Triangle p1 p2 p3) = color col . fill col $ line $ project <$> pts
+  where
+    pts = crop <$> [p1,p2,p3,p1]
+    project (x,y,z) = (c*x - s*y,c*y + s*x + z/4)
+    crop (x,y,z) = (x,y,max z 0)
+    s = sin (pi/6)
+    c = cos (pi/6)
+    col | all (\(_,_,z) -> z==0) pts = "blue"
+        | all (\(_,_,z) -> z<=20) pts = "green"
+        | otherwise = "gray"
+
+bay :: [Triangle]
+bay = [Triangle (0,0,0) (100,0,0) (0,100,0)
+      ,Triangle (100,100,0) (100,0,0) (0,100,0)]
+  
+main :: IO ()
+main = do
+  l <- landScape 6 bay <$> randomIO
+  writeSVG "test.html" $ scale 3 . opacity 0.5 $ foldMap toPicture l
+
+
