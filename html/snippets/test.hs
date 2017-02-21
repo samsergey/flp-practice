@@ -5,6 +5,7 @@ import Control.Applicative
 import Data.List.Split
 import Data.List
 import Data.Monoid
+import Control.Monad
 
 
 repeat' :: (Num b1, Enum b1) => b1 -> b -> [b]
@@ -60,8 +61,8 @@ converge eps (x:y:xs)
   | abs (x-y)<eps = Just y
   | otherwise = converge eps (y:xs)
 
-join :: Foldable t => String -> t String -> String
-join sep str = foldr (\el res -> sep ++ el ++ res) "" str
+join' :: Foldable t => String -> t String -> String
+join' sep str = foldr (\el res -> sep ++ el ++ res) "" str
 
 pascal :: [[Integer]]
 pascal = iterate (\x -> zipWith (+) (0:x) (tail $ cycle (0:x))) [1]
@@ -201,3 +202,6 @@ instance Monoid m => Alternative (Either m) where
 sqrtA 0 = pure 0
 sqrtA x | x < 0 = message "Negative argument!"
         | x > 0 = pure r <|> pure (-r) where r = sqrt x 
+
+ap' :: Monad m => m (a1 -> a) -> m a1 -> m a
+ap' f x = f >>= (<$> x) 
