@@ -1,8 +1,10 @@
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE BangPatterns #-}
 import Data.Complex
 import Control.Applicative
 import Data.List.Split
 import Data.List
+import Data.Monoid
 
 
 repeat' :: (Num b1, Enum b1) => b1 -> b -> [b]
@@ -26,10 +28,10 @@ sin' x = takeWhile ((> 1e-10).abs) $ (\i -> (-1**((i-1) / 2))*x**i/fact i) <$> [
 area :: (Ord a, Num a, Enum a) => a -> Int
 area r = length $ filter (< r^2) $ concat $ (\x -> (\y -> x^2 + y^2) <$> [1..r]) <$> [1..r]
 
-toBase :: Integral a => a -> a -> [a]
+--toBase :: Integral a => a -> a -> [a]
 --toBase d = reverse . map (`mod` d) . takeWhile (> 0) . iterate (`div` d)
 
-toBase d = map (`mod` d) . takeWhile (> 0) . iterate (`div` d)
+--toBase d = map (`mod` d) . takeWhile (> 0) . iterate (`div` d)
 
 toBase base n
   | n < base = [n]
@@ -37,10 +39,10 @@ toBase base n
   where
     (q, r) = n `divMod` base
 
-toBase base = unfoldr modDiv
-  where modDiv 0 = Nothing
-        modDiv n = let (q, r) = (n `divMod` base)
-                   in Just (r, q) 
+-- toBase base = unfoldr modDiv
+--   where modDiv 0 = Nothing
+--         modDiv n = let (q, r) = (n `divMod` base)
+--                    in Just (r, q) 
 
 
 fromBase :: (Foldable t, Num a) => a -> t a -> a
@@ -149,17 +151,15 @@ bisection :: (Alternative f, Ord t, Fractional t, Eq a)
           => (t -> a) -> t -> t -> f t
 bisection p a b
   | p a == p b = empty
-  | abs c < 1e-14 && abs (b - a) < 1e-14 = pure c
-  | abs ((b-a)/c) < 1e-14 = pure c
+  | abs (b - a) <= 1e-11 * abs c = pure c
   | otherwise = bisection p a c <|> bisection p c b
   where c = (b + a) / 2
 
-findRoot :: (Alternative f, Ord a, Fractional a, Eq a1)
-         => (a -> a1) -> a -> f a
-findRoot p x = go x 1e-5
+findRoots p a b = go a h
   where
-    go x dx | abs x > 1e16 = empty
-            | otherwise = bisection p x (x+dx) <|> go (x+dx) (2*dx)
+    go x dx | x+dx >= b = empty
+            | otherwise = (bisection p x (x+dx) <|> go (x+dx) (2*dx)) >>= \r -> pure r <|> go (r+h) (2*h)
+    h = 1e-5
 
 
 multLong :: Int -> [Int] -> [Int]
@@ -182,3 +182,22 @@ table = concat [ "Johny Mitchell, 35, Tony lane, 6\n"
 
 readCSV = fmap (splitOn ",") . splitOn "\n"
 
+
+class (Alternative f) => Failable f where
+  message :: String -> f a
+  message _ = empty   -- определение, используемое по умолчанию
+
+instance Failable Maybe
+instance Failable []
+instance Failable (Either String) where message = Left
+instance Failable IO where message = error
+
+instance Monoid m => Alternative (Either m) where
+  empty = Left mempty
+  Left x  <|> Left y = Left (x <> y)
+  Left _  <|> x      = x 
+  Right x <|> _      = Right x 
+
+sqrtA 0 = pure 0
+sqrtA x | x < 0 = message "Negative argument!"
+        | x > 0 = pure r <|> pure (-r) where r = sqrt x 
