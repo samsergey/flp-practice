@@ -6,7 +6,7 @@ import Data.List.Split
 import Data.List
 import Data.Monoid
 import Control.Monad
-
+import Data.Ratio
 
 repeat' :: (Num b1, Enum b1) => b1 -> b -> [b]
 repeat' n k = const k <$> [1..n]
@@ -148,19 +148,6 @@ solveVolvo = [ mconcat[show volvo, "+", show fiat, "=", show motor]
 main :: IO ()
 main = mapM_ putStrLn solveVolvo
 
-bisection :: (Alternative f, Ord t, Fractional t, Eq a)
-          => (t -> a) -> t -> t -> f t
-bisection p a b
-  | p a == p b = empty
-  | abs (b - a) <= 1e-11 * abs c = pure c
-  | otherwise = bisection p a c <|> bisection p c b
-  where c = (b + a) / 2
-
-findRoots p a b = go a h
-  where
-    go x dx | x+dx >= b = empty
-            | otherwise = (bisection p x (x+dx) <|> go (x+dx) (2*dx)) >>= \r -> pure r <|> go (r+h) (2*h)
-    h = 1e-5
 
 
 multLong :: Int -> [Int] -> [Int]
@@ -184,7 +171,7 @@ table = concat [ "Johny Mitchell, 35, Tony lane, 6\n"
 readCSV = fmap (splitOn ",") . splitOn "\n"
 
 
-class (Alternative f) => Failable f where
+class Alternative f => Failable f where
   message :: String -> f a
   message _ = empty   -- определение, используемое по умолчанию
 
@@ -203,5 +190,25 @@ sqrtA 0 = pure 0
 sqrtA x | x < 0 = message "Negative argument!"
         | x > 0 = pure r <|> pure (-r) where r = sqrt x 
 
-ap' :: Monad m => m (a1 -> a) -> m a1 -> m a
-ap' f x = f >>= (<$> x) 
+bisectionA :: (Alternative f, Eq a)
+           => (Double -> a) -> Double -> Double -> f Double
+bisectionA f a b | f a == f b = empty
+                 | abs (a - b) < 1e-14 * abs c = pure c
+                 | otherwise = bisectionA f a c <|> bisectionA f c b
+  where c = (a + b) / 2
+
+bisection
+  :: (Failable f, Eq a) =>
+     (Double -> a) -> Double -> Double -> f Double
+bisection f a b = bisectionA f a b <|> message "No root at given interval."
+
+findRoot :: (Failable f, Eq a)
+         => (Double -> a) -> [Double] -> f Double
+findRoot f [] = message "The mesh is empty"
+findRoot f [x] = message "The mesh has only one point"
+findRoot f  mesh = go mesh <|> message "There was no roots found"
+  where go [] = empty
+        go [_] = empty
+        go (x:y:xs) = bisectionA f x y <|> go (y:xs)
+
+        
