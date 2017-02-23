@@ -263,7 +263,7 @@ import Control.Applicative</hs></pre>
 	сотрём (или закомментируем) наше определение оператора <code>>></code>,  а затем объявим наш тип <code>Parser i</code> монадой по всем правилам.</p>
 
       <pre><hs>instance Monad (Parser i) where
-  t1 >>= f = Parser $ \r -> case run t1 r of
+  t >>= f = Parser $ \r -> case run t r of
     Ok x r' -> run (f x) r'
     Fail r' -> Fail r'
 
@@ -291,7 +291,9 @@ instance Applicative (Parser i) where
       <p> Теперь мы можем производить различные действия над результатами трансляции, действуя при этом на сам транслятор. Вот что имеется в виду. </p>
 
       <pre><ghci>λ> run ((2*) <$> num1) "5"
-Ok 10 "" </ghci></pre>
+Ok 10 ""
+λ> run ((+) <$> num1 <*> num1) "57"
+Ok 12 ""
 λ> run ((+) <$> num1 <*> (term '+' >> num1)) "5+7"
 Ok 12 ""</ghci></pre>
 
@@ -315,7 +317,8 @@ Ok "cat" "alog"</ghci></pre>
 
       Из списка символов, <code>mapM term</code> произвела последовательность трансляторов <code>term</code> для этих символов, причём, получившийся транслятор возвращает список результатов этой последовательности. Теперь мы можем определить функцию, распознающую указанную строку:
 
-      <pre><hs>string = mapM term </hs></pre>
+      <pre><hs>string :: Eq a => [a] -> Parser [a] [a]
+string = mapM term </hs></pre>
 
       <pre><ghci>λ> run (string "cat") "catalog"
 Ok "cat" "alog"</ghci></pre>
@@ -327,10 +330,10 @@ Ok "cat" "alog"</ghci></pre>
     </ul>
     Они бывают нужны когда требуется выполнить транслятор в цепочке, но его результат передаваться дальше не будет. Например, пусть нужно чтобы за целым числом следовал пробел. Простая последовательность не годится. мы потеряем прочитанное число:</p>
 
-<pre><ghci>λ> run (num1 >> space) "1 4"
+<pre><ghci>λ> run (num1 >> term ' ') "1 4"
 Ok ' ' "4"</ghci></pre>
 
-     <pre><ghci>λ> run (num1 <* space) "1 4"
+     <pre><ghci>λ> run (num1 <* term ' ') "1 4"
 Ok 1 "4"</ghci></pre>
 
  <p>А вот&nbsp;— вычитание двух чисел, разделённых знаком <code>'-'</code></p>
@@ -357,7 +360,7 @@ Ok 3 ""</ghci></pre>
 <der><*>  <*  <**></der></p>
 
 <part>элементарные трансляторы</part>
-<p><basic>pure</basic> (<der>return</der>) epsilon</p>
+<p><basic>pure</basic> epsilon</p>
 	      
 <part>трансляторы для коллекций</part>
 <p><basic>end next  check</basic>  term<br/>
@@ -380,15 +383,19 @@ Ok 3 ""</ghci></pre>
    expr2</hs></pre>
 	При этом в блоке <code>do</code> может быть сколько угодно выражений, связанных с символами или нет.
 
+<p>Кроме того, у функции <code>pure</code> есть псевдоним <code>return</code>.</p>
+	
 <p> Давайте-ка перепишем определения для функций <code>num1</code>, и <code>add</code>  в новом виде:
 
-  <pre><hs>num1 = do x <- digit
-         return (readInt x)
+  <pre><hs>num1 = do
+  x <- digit
+  return (readInt x)
 
-add = do x <- num1
-         term '+'
-         y <- num1
-         return (x+y)   </hs></pre>    
+add = do
+  x <- num1
+  term '+'
+  y <- num1
+  return (x+y)   </hs></pre>    
 
 				   
     <p>Правда, стало похоже на императивную программу? Что-то вроде С#:</p>
@@ -440,13 +447,6 @@ catch ()
 
 </details>
 
-      <hr/><task>
-	Напишите транслятор <code>between t1 t2 p</code> для транслятора, окружённого терминалами t1 и t2 (например, скобками). При этом тип получившегося транслятора должен совпадать с типом <code>p</code>. С его помощью можно будет записать правило для арифметического выражения в скобках:
-	<eqns>T  \rightarrow \text{'('}~E~\text{')'} ~|~ N</eqns>
-	без всяких лишних "костылей" и с правильным типом как-нибудь так:
-	<pre><hs>_T = between '(' ')' _E <|> _N</hs></pre>
-	
-      </task>
 
       
       <!-- ------------------------------------------------------------ -->

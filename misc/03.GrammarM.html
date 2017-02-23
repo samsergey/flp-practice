@@ -1031,9 +1031,6 @@ run (string "a" <> mmany next <> string "b") "ab"
 Ok "" "ab"</ghci></pre>
 
 <p> Ещё мы получим возможность определять свои собственные функции, универсальные для любых моноидов. Например, функцию, обобщающую <code>count</code> и <code>search</code>. Назовём её <code>collect</code>:
-<pre><hs>instance Monoid b => Monoid (Parser  i b) where
-  mappend p1 p2 = mappend <$> p1 <*> p2
-  mempty = pure mempty</hs></pre>
 
 <pre><hs>collect p = do x <- (p <|> mzero <$ next)
               xs <- collect p <|> pure mzero
