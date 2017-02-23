@@ -60,8 +60,8 @@ integer = read <$> some digit
 
 digit = check (`elem` ['0'..'9']) >> next
 
-oneof :: (b -> Parser i a) -> [b] -> Parser i a
-oneof p lst = getAlt $ foldMap (Alt . p) lst
+--oneof :: (b -> Parser i a) -> [b] -> Parser i a
+p `oneof` lst = asum $ p <$> lst
 
 msome p = mconcat <$> some p
 mmany p = mconcat <$> many p
@@ -73,3 +73,13 @@ only p = (:[]) <$> p
 
 --collect p = (p <|> mempty <$ next) <> (collect p <|> mempty)
 collect p = mmany (p <|> mempty <$ next) 
+
+skip p = p >> epsilon 
+
+p1 ?> p2 = p1 >> epsilon >> p2 >> epsilon
+
+_E = _T ?> term '+' ?> _E <|> _T
+_T = term '(' ?> _E ?> term ')' <|> _N
+_N = digit ?> (_N <|> epsilon)
+
+bracket = skip (term '(') ?> many bracket ?> skip (term ')')
