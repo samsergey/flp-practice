@@ -3,24 +3,21 @@ import Data.Ord
 import Data.Foldable
 import Control.Monad
 import Control.Applicative
-
+import Safe
 
 data Parser i a = Parser { run :: [i] -> Result [i] a}
 
 
 data Result i a = Ok a i
                 | Fail i
+                | Error String
   deriving (Show, Eq)
-
-instance Functor (Result i) where
-  fmap f x = case x of
-    Ok x r -> Ok (f x) r
-    Fail r -> Fail r
 
 instance Monad (Parser i) where
   t >>= f = Parser $ \r -> case run t r of
     Ok x r' -> run (f x) r'
     Fail r' -> Fail r'
+    Error m -> Error m
 
 instance Functor (Parser i) where
   fmap f p = p >>= (pure . f)
@@ -34,11 +31,13 @@ instance Alternative (Parser i) where
   t1 <|> t2 = Parser $ \r -> case run t1 r of
     Fail _ -> run t2 r
     Ok x r' -> Ok x r'
+    Error m -> Error m
 
 instance Monoid b => Monoid (Parser i b) where
   a `mappend` b = mappend <$> a <*> b
   mempty = pure mempty
 
+err m = Parser $ const (Error m)
 epsilon = Parser $ Ok ()
 
 notEnd = Parser $ \r -> case r of
@@ -81,7 +80,7 @@ longest p = maximumBy (comparing length) <$> search p
 
 search p = collect (only p)
 
-pred ?> p = p >>= \r -> if pred r then pure r else empty
+p <?> pred = p >>= \r -> if pred r then pure r else empty
 
 skip p = p >> epsilon 
 
@@ -91,4 +90,30 @@ _E = _T ?> term '+' ?> _E <|> _T
 _T = term '(' ?> _E ?> term ')' <|> _N
 _N = digit ?> (_N <|> epsilon)
 
-bracket = skip (term '(') ?> many bracket ?> skip (term ')')
+bracket = term '(' ?> mmany bracket ?> term ')'
+
+------------------------------------------------------------
+
+nonzero = (next <?> (/=0)) <|> err "expected non zero value!"
+
+push x = Parser $ \r -> Ok () (x:r)
+
+calcRPN expr = run (foldMap interprete $ words expr) []
+
+interprete op = op <:> case op of
+  "+" -> binop (+) next next
+  "-" -> binop (-) next next
+  "/" -> binop div nonzero next
+  n -> case readMay n of
+    Nothing -> err "is not a number!"
+    Just x -> push x
+
+binop f p1 p2 = "expected two arguments, got" <:> do
+  x <- p1 <|> err "none!"
+  y <- p2 <|> err "one!"
+  push (f y x)
+
+s <:> p = Parser $ \r -> case run p r of
+  Error m -> Error (s ++ ' ' : m)
+  x -> x
+------------------------------------------------------------

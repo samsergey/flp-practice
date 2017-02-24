@@ -16,9 +16,9 @@
 
     <div class='tasks'>
 
-      <h2>Вычисления арифметических выражений в ОПН</h2>
+      <h2>Обратная польская нотация</h2>
 
-      
+     
       <p>Обратной польской нотацией (ОПН) называется способ записи арифметических и логических выражений, который совмещает в себе простоту интерпретации с компактностью записи. Единственный недостаток ОПН -- плохая читаемость выражений человеком. Однако, так как эта форма используется, чаще всего, как внутреннее представление вычислений на одном из промежуточных этапов трансляции программ, человеку писать и читать ОПН не приходится.</p>
 
       <p>Отличительной особенностью ОПН является то, что все аргументы расположены перед знаком операции. В общем виде запись состоит из линейной последовательности операндов и знаков операций:
@@ -31,7 +31,7 @@
 	</table>
       </p>
 
-      <p>Вычисление выражений в обратной польской нотации использует стек. Алгоритм вычисления для стековой машины:<ul>
+      <p>Вычисление выражений в обратной польской нотации использует стек. Приведём алгоритм вычисления для стековой машины:<ul>
 	  <li>Обработка входного символа
 	  <li>Если на вход подан операнд, он помещается на вершину стека.
 	  <li>Если на вход подан знак операции, то соответствующая операция выполняется над требуемым количеством значений, извлечённых из стека, взятых в порядке добавления. Результат выполненной операции кладётся на вершину стека.
@@ -39,6 +39,8 @@
 	</ul>
 	После полной обработки входного набора символов результат вычисления выражения лежит на вершине стека.</p>
 
+      <h2>Простейшая реализация вычислителя ОПН</h2>
+      
       <p>Простейшая его реализация очень изящна и хорошо показывает принцип модульности: задача разбивается на отдельные логически замкнутые части (функции), которые комбинируюясь дают общее решение.</p>
 
       <p>Начнём с описания интерпретации отдельных команд:</p>
@@ -64,7 +66,7 @@ type Stack = [Double]
 
 <p>Таблицу команд легко описать как определение функции <code>interprete</code>:</p>
 
-<pre><hs><def>interprete :: Command -&gt; Stack -&gt; Stack</def>
+<pre><hs><def>interprete :: Stack -> Command -> Stack</def>
 interprete (x:y:s) "+" = (x+y):s
 interprete (x:y:s) "*" = (x*y):s
 interprete (x:y:s) "-" = (y-x):s
@@ -76,14 +78,16 @@ interprete s n = (read n):s
 
 <pre>interprete (interprete (interprete [] "2") "3") "+"</pre>
 
-<p>Это же левая свёртка! Замечательно. Значит, наш калькулятор можно описать так:</p>
+<p>Это же левая свёртка! Замечательно. Значит, наш калькулятор можно описать в виде свёртки:</p>
 
-<pre><hs><def>calculate :: String -&gt; Double</def>
-calculate = head . foldl interprete [] . words</hs></pre>
+<pre><hs><def>calculate :: String -> Stack</def>
+calculate = foldl interprete [] . words</hs></pre>
 
 <p>Функция <code>words</code> разделяет строку на лексемы (числа и операторы), а свёртка осуществляет вычисления. </p>
 
 <task>Убедитесь в том, что калькулятор правильно производит вычисления для корректных выражений.</task>
+
+<h2>Обработка некорректных ситуаций</h2>
 
 <p>Однако выражения могут быть и не корректными.</p>
 
@@ -91,65 +95,29 @@ calculate = head . foldl interprete [] . words</hs></pre>
 *** Exception: Prelude.read: no parse
 &gt; calculate "2 x *"
 *** Exception: Prelude.read: no parse
-&gt; calculate ""
-*** Exception: Prelude.head: empty list
 </ghci></pre>
 
 <p>В первом случае для операции <code>"+"</code> не хватило аргументов, правда из сообщения об ошибке это совершенно не следует! Это очень нехорошо. Ошибки "лезут" изнутри программы и совершенно неинформативны. Немного усовершенствуем нашу функцию, заодно облегчив её синтаксис:</p>
 
-<pre><hs><def>interprete :: Command -&gt; Stack -&gt; Stack</def>
+<pre><hs><def>interprete :: Stack -> Command -> Either String Stack</def>
 interprete s op = case op of
-  "+" -&gt; binop (+)
-  "*" -&gt; binop (*)
-  "-" -&gt; binop (-)
-  "/" -&gt; binop (/)
-  n   -&gt; case readMay n of
-           Just x -&gt; x : s
-           Nothing -&gt; error ("unknown command " ++ n)
+  "+" -> binop (+)
+  "*" -> binop (*)
+  "-" -> binop (-)
+  "/" -> binop (/)
+  n   -> case readMay n of
+           Just x  -> Right (x : s)
+           Nothing -> Left ("unknown command " ++ n)
   where
     binop f = case s of
-      x:y:s -&gt; f x y : s
-      [_]   -&gt; error "got only one argument"
-      []    -&gt; error "got no arguments"
+      x:y:s -> Right $ f x y : s
+      [_]   -> Left "got only one argument"
+      []    -> Left "got no arguments"
 </hs></pre>
 
 <p>Здесь для контроля работы функции <code>read</code> мы воспользовались тотальной функцией <code>readMay</code> из библиотеки <code>Safe</code>, она идёт по правильному пути -- возвращает частично-определённое значение.</p>
 
-<p>Ну, и функцию <code>calculate</code> надо немного подправить, чтобы ошибка соответствовала исключительной ситуации.</p>
-
-<pre><hs><def>calculate :: String -&gt; Double</def>
-calculate = head' . foldl interprete [] . words
-  where head' [] = error "stack is empty"
-        head' (x:_) = x
-</hs></pre>
-
-<p>Теперь хотя бы сообщения об ошибках будут осмысленными, </p>
-
-<pre><ghci>&gt; calculate "2 3 * +"
-*** Exception: got only one argument
-&gt; calculate "2 x *"
-*** Exception: unknown command x
-&gt; calculate ""
-*** Exception: stack is empty
-</ghci></pre>
-
-<task>Функция <code>calculate</code> работает ожидаемо, но она осталась нетотальной. Это значит, что она может привести в остановке исполнения программы. Дополните определение функции <code>interpreteM</code>:
-
-<pre><hs><def>interpreteM :: Failable f =&gt; Stack -&gt; Command -&gt; f Stack</def>
-interpreteM s op = case op of
-  "+" -&gt; binop (+)
-  "*" -&gt; binop (*)
-  "-" -&gt; binop (-)
-  "/" -&gt; binop (/)
-  n   -&gt; (: s) <$> readF n
-  where
-    readF s = _
-
-    binop f = _
-</hs></pre>
-</task>
-
-<p>Увы, для функции <code>interpreteM</code> не работает свёртка! Цепочка</p>
+<p>Увы, для нового варианта функции <code>interprete</code> не работает свёртка! Цепочка</p>
 
 <pre>interprete (interprete (interprete [] "2") "3") "+"</pre>
 
@@ -159,16 +127,16 @@ interpreteM s op = case op of
 
 <p>такую цепочку выполняет монадическая свёртка <code>foldM</code>:</p>
 
-<pre><hs>foldM f x = foldl (\res el -&gt; res &gt;&gt;= (`f` el)) (pure x)</hs></pre>
+<pre><hs>foldM f x = foldl (\res el -> res &gt;&gt;= (`f` el)) (pure x)</hs></pre>
 
-<p>Теперь можно переопределять функцию <code>calculate</code>, уточнив, что она работает с монадами, являющимися и альтернативными функторами:</p>
+<p>Теперь можно переопределять функцию <code>calculate</code>:</p>
 
-<pre><hs><def>calculate :: (Failable f, Monad f) =&gt; String -&gt; f Stack</def>
+<pre><hs><def>calculate :: String -> Either String Stack</def>
 calculate = foldM interpreteM [] . words</hs></pre>
 
-<task></task>
+<task>Добавьте в калькулятор операцию "унарный минус" и возможность вычислять квадратные корни от положительного аргумента.</task>
 
-<task>Добавьте в калькулятор возможность вычислять квадратные корни.</task>
+<task>Добавьте в калькулятор операции управляющие стеком: </task>
 
 
     </div>

@@ -102,66 +102,66 @@ print 6 &lt;|&gt; error "!!"	</hs></pre>
 </def></hs></pre></task>
 
       
-      <h2>Управление сообщениями об ошибках</h2>
+<!--       <h2>Управление сообщениями об ошибках</h2> -->
       
-      <p>Тип <code>Either</code> похож на тип <code>Maybe</code> тем, что у него есть одно "верное" значение — правое, и "неверное" — левое. Но в отличие от <code>Nothing</code>, тип <code>Left</code> может нести в себе какую-либо информацию, например, сообщение об ошибке или код ошибки.</p>
+<!--       <p>Тип <code>Either</code> похож на тип <code>Maybe</code> тем, что у него есть одно "верное" значение — правое, и "неверное" — левое. Но в отличие от <code>Nothing</code>, тип <code>Left</code> может нести в себе какую-либо информацию, например, сообщение об ошибке или код ошибки.</p> -->
 
-      <p>Однако тип <code>Either</code> не является альтернативным функтором. Это связано с тем, что для списков и <code>Maybe</code> элемент <code>strongpty</code> единственен и определяется однозначно, тогда как для <code>Either</code> существует множество вариантов нулевых значений. Какой из них поставить в определение для <code>strongpty</code>? Но мы можем схитрить: пусть левым элементом будет какой-нибудь моноид, для него-то точно существует нулевой элемент. Ну, а раз так, то разумно будет не пренебрегать тем, что моноиды можно объединять, и использовать это свойство для объединении значений <code>Left</code>:</p>
+<!--       <p>Однако тип <code>Either</code> не является альтернативным функтором. Это связано с тем, что для списков и <code>Maybe</code> элемент <code>strongpty</code> единственен и определяется однозначно, тогда как для <code>Either</code> существует множество вариантов нулевых значений. Какой из них поставить в определение для <code>strongpty</code>? Но мы можем схитрить: пусть левым элементом будет какой-нибудь моноид, для него-то точно существует нулевой элемент. Ну, а раз так, то разумно будет не пренебрегать тем, что моноиды можно объединять, и использовать это свойство для объединении значений <code>Left</code>:</p> -->
 
-      <pre><hs>instance Monoid m =&gt; Alternative (Either m) where
-  strongpty = Left mstrongpty
-  Left x  &lt;|&gt; Left y = Left (x &lt;&gt; y)  -- объединение нейтральных элементов дистрибутивно
-  Left _  &lt;|&gt; x      = x               -- нейтральный элемент для объединения
-  Right x &lt;|&gt; _      = Right x         -- нулевой элемент для объединения</hs></pre>
+<!--       <pre><hs>instance Monoid m =&gt; Alternative (Either m) where -->
+<!--   strongpty = Left mstrongpty -->
+<!--   Left x  &lt;|&gt; Left y = Left (x &lt;&gt; y)  -- объединение нейтральных элементов дистрибутивно -->
+<!--   Left _  &lt;|&gt; x      = x               -- нейтральный элемент для объединения -->
+<!--   Right x &lt;|&gt; _      = Right x         -- нулевой элемент для объединения</hs></pre> -->
 
-      <task>Убедитесь на следующих примерах, что приведённое определение работает корректно:
+<!--       <task>Убедитесь на следующих примерах, что приведённое определение работает корректно: -->
 
-      <pre><code>Left "fail" &lt;|&gt; Right 42
-Right 42 &lt;|&gt; Left "fail"
-Left "I am " &lt;|&gt; Left "a fail"
-</code></pre>
-      </task>
+<!--       <pre><code>Left "fail" &lt;|&gt; Right 42 -->
+<!-- Right 42 &lt;|&gt; Left "fail" -->
+<!-- Left "I am " &lt;|&gt; Left "a fail" -->
+<!-- </code></pre> -->
+<!--       </task> -->
 
-<p>Для типа <code>Either String</code> определим специальный тип:<pre><hs>type Messaged = Either String</hs></pre></p>
+<!-- <p>Для типа <code>Either String</code> определим специальный тип:<pre><hs>type Messaged = Either String</hs></pre></p> -->
       
-      <p>Теперь нужно научиться вводить в программу сообщения об ошибках, причём так, чтобы функторы <code>Maybe</code> и <code>[]</code> их игнорировали, а <code>Either</code> и <code>IO</code> использовали их. Эта возможность должна быть определена для всех четырёх контекстов сразу, иначе придётся переписывать функцию <code>sqrtA</code> для разных контестов, а это уже не DRY (Don't Repeat Yourself — один из универсальных принципов программирования).</p>
+<!--       <p>Теперь нужно научиться вводить в программу сообщения об ошибках, причём так, чтобы функторы <code>Maybe</code> и <code>[]</code> их игнорировали, а <code>Either</code> и <code>IO</code> использовали их. Эта возможность должна быть определена для всех четырёх контекстов сразу, иначе придётся переписывать функцию <code>sqrtA</code> для разных контестов, а это уже не DRY (Don't Repeat Yourself — один из универсальных принципов программирования).</p> -->
 
-      <p>Раз требуется обеспечить разные типы одной функциональностью, надо определить свой класс типов. А в нём определить функцию, вводящую в&nbsp;нулевой элемент указанное сообщение. Назовём этот класс <code>Failable</code>, а функцию — <code>message</code>.</p>
+<!--       <p>Раз требуется обеспечить разные типы одной функциональностью, надо определить свой класс типов. А в нём определить функцию, вводящую в&nbsp;нулевой элемент указанное сообщение. Назовём этот класс <code>Failable</code>, а функцию — <code>message</code>.</p> -->
 
-      <pre><hs>class Alternative f =&gt; Failable f where
-  message :: String -&gt; f a
-  -- определение, используемое по умолчанию
-  message _ = strongpty
-</hs></pre>
+<!--       <pre><hs>class Alternative f =&gt; Failable f where -->
+<!--   message :: String -&gt; f a -->
+<!--   -- определение, используемое по умолчанию -->
+<!--   message _ = strongpty -->
+<!-- </hs></pre> -->
 
-      <p>и определим четыре экземляра. Для <code>Maybe</code> и <code>[]</code> используется определение функции <code>message</code>, данное в классе, а для <code>Messaged</code> и <code>IO</code> — специфические:</p>
+<!--       <p>и определим четыре экземляра. Для <code>Maybe</code> и <code>[]</code> используется определение функции <code>message</code>, данное в классе, а для <code>Messaged</code> и <code>IO</code> — специфические:</p> -->
 
-      <pre><hs>instance Failable Maybe
-instance Failable []
-instance Failable Messaged where message = Left
-instance Failable IO where message = error
-</hs></pre>
+<!--       <pre><hs>instance Failable Maybe -->
+<!-- instance Failable [] -->
+<!-- instance Failable Messaged where message = Left -->
+<!-- instance Failable IO where message = error -->
+<!-- </hs></pre> -->
 
-      <task>Внесите в определение функции <code>sqrtA</code> изменения, позволяющие использовать её в четырёх различных контекстах:
-	<pre><hs> sqrtA 16 :: [Double]
- sqrtA 16 :: Maybe Double
- sqrtA 16 :: Messaged Double
- sqrtA 16
- sqrtA (-1) :: [Double]
- sqrtA (-1) :: Maybe Double
- sqrtA (-1) :: Messaged Double
- sqrtA (-1)</hs></pre>
-      </task>
-      <p>
-	Нам в дальнейшей работе пригодится класс <code>Failable</code>, поэтому стоит выделить его и определение экземпляров для типов <code>[]</code>, <code>Maybe</code>, <code>Messaged</code> и  <code>IO</code> в отдельный модуль <tt>Failable.hs</tt>
-      </p>
+<!--       <task>Внесите в определение функции <code>sqrtA</code> изменения, позволяющие использовать её в четырёх различных контекстах: -->
+<!-- 	<pre><hs> sqrtA 16 :: [Double] -->
+<!--  sqrtA 16 :: Maybe Double -->
+<!--  sqrtA 16 :: Messaged Double -->
+<!--  sqrtA 16 -->
+<!--  sqrtA (-1) :: [Double] -->
+<!--  sqrtA (-1) :: Maybe Double -->
+<!--  sqrtA (-1) :: Messaged Double -->
+<!--  sqrtA (-1)</hs></pre> -->
+<!--       </task> -->
+<!--       <p> -->
+<!-- 	Нам в дальнейшей работе пригодится класс <code>Failable</code>, поэтому стоит выделить его и определение экземпляров для типов <code>[]</code>, <code>Maybe</code>, <code>Messaged</code> и  <code>IO</code> в отдельный модуль <tt>Failable.hs</tt> -->
+<!--       </p> -->
 
-      <task>Перепишите функцию <code>bisection</code>, так, чтобы её тип стал таким: <pre><hs><def>bisection :: (Failable f, Eq a)
-  => (Double -> a) -> Double -> Double -> f Double</def></hs></pre></task>
+<!--       <task>Перепишите функцию <code>bisection</code>, так, чтобы её тип стал таким: <pre><hs><def>bisection :: (Failable f, Eq a) -->
+<!--   => (Double -> a) -> Double -> Double -> f Double</def></hs></pre></task> -->
 
 
-      <task>Подобно тому, как мы интегрировали функцию на указанной сетке, организуйте поиск особых точек методом бисекции на произвольной сетке:<pre><hs><def>findRoot :: (Failable f, Eq a)
-  => (Double -> a) -> [Double] -> f Double</def></hs></pre> При этом для пустой сетки и сетки с единственной точкой должны возвращаться соответствующие сообшения об ошибках.</task>
+<!--       <task>Подобно тому, как мы интегрировали функцию на указанной сетке, организуйте поиск особых точек методом бисекции на произвольной сетке:<pre><hs><def>findRoot :: (Failable f, Eq a) -->
+<!--   => (Double -> a) -> [Double] -> f Double</def></hs></pre> При этом для пустой сетки и сетки с единственной точкой должны возвращаться соответствующие сообшения об ошибках.</task> -->
 
       <h2>Монады</h2>
       
@@ -173,7 +173,6 @@ instance Failable IO where message = error
 <l></l> sqrtM &lt;$&gt; sqrtM (-1)
 <o>Just Nothing</o></ghci></pre>
       </p> 
-
       
       <p>
 	Результат мы получили, но он оказался в контексте дважды. Какой смысл имеет выражение <code>Just (Just 2)</code>? С точки зрения "успешности" вычислений это просто успешное вычисление, то есть <code>Just 2</code>. В свою очередь выражение <code>Just Nothing</code> означает, что вложенное вычисление окончилось неудачей, а вместе с ним и всё вычисление.</p>
@@ -235,6 +234,7 @@ Right (-16) &gt;&gt;= sqrtA
       <pre>f <$> x  ≡  x >>= (pure . f)
 f <*> x  ≡  f >>= (<$> x) </pre>
 
+      
 
     </div>
 
