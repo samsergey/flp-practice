@@ -85,8 +85,8 @@ triangle :: Pt -> Float -> Float -> Picture</hs></pre>
       </p>
 
       <task>SVG — это текстовый формат. Для того, чтобы упростить генерацию SVG напишите функцию <code>format</code> для форматирования строк по шаблону, последовательно заменяя символ <tt>'_'</tt> строками из списка. Например:
-	<pre><ghci> Main> format "_ said: '_'" ["John", "Hello!"]
-"John said: 'Hello!'"</ghci></pre>
+	<pre><ghci><l></l> format "_ said: '_'" ["John", "Hello!"]
+<o>"John said: 'Hello!'"</o></ghci></pre>
 	<em>Подсказка: воспользуйтесь функцией <code>splitOn</code> из модуля <code>Data.List.Split</code> для того, чтобы разбить форматируемую строку на части, а потом с помощью функции <code>zipWith</code> перемешайте эти части со строками из списка.</em>
       </task>
 

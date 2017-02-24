@@ -72,6 +72,8 @@ data Circuit = R Double | C Double | L Double
                | Par Circuit Circuit
                | Seq Circuit Circuit deriving Show
 
+
+
 data Resistance a = Short | Break | Value a deriving Show
 
 (<&&>) :: Num a => Resistance a -> Resistance a -> Resistance a

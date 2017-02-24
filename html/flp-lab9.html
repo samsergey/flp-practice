@@ -36,53 +36,53 @@ optional p = Just <$> p <|> pure Nothing</hs></pre>
       </ul>
       </p>
       
-      <pre><ghci>λ> run (many digit) "1234xse"
-Ok "1234" "xse"
-λ> run (many digit) "xse"
-Ok "" "xse"
-λ> run (some digit) "123xse"
-Ok "123" "xse"
-λ> run (some digit) "xse"
-Fail "xse"
-λ> run (optional digit) "123"
-Ok (Just '1') "23"
-λ> run (optional digit) "c123"
-Ok Nothing "c123"</ghci></pre>
+      <pre><ghci><l></l> run (many digit) "1234xse"
+<o>Ok "1234" "xse"</o>
+<l></l> run (many digit) "xse"
+<o>Ok "" "xse"</o>
+<l></l> run (some digit) "123xse"
+<o>Ok "123" "xse"</o>
+<l></l> run (some digit) "xse"
+<o>Fail "xse"</o>
+<l></l> run (optional digit) "123"
+<o>Ok (Just '1') "23"</o>
+<l></l> run (optional digit) "c123"
+<o>Ok Nothing "c123"</o></ghci></pre>
 
       <task>Пользоваться функцией <code>optional</code> в ряду с <code>some</code> и <code>many</code> не очень удобно. Последние две возвращают списки, а <code>optional</code> -- тип <code>Maybe</code> и если нам захочется их комбинировать, это будет непросто.
   Определите функцию <code>opt</code> -- аналогичную по смыслу <code>optional</code>, но возвращающую список. Воспользуйтесь универсальной функцией <code>toList</code>
 
-      <pre><ghci>λ> run (opt digit) "123"
-Ok "1" "23"
-λ> run (opt digit) "x123"
-Ok "" "23" </ghci></pre>
+      <pre><ghci><l></l> run (opt digit) "123"
+<o>Ok "1" "23"</o>
+<l></l> run (opt digit) "x123"
+<o>Ok "" "23"</o> </ghci></pre>
   
       </task>
 
       <task>Для полноты картины, добавьте функцию <code>only</code>, которая просто возвращает элемент в списке. Она понадобится нам позже.
-	<pre><ghci>λ> run (only digit) "123"
-Ok "1" "23" </ghci></pre>  
+	<pre><ghci><l></l> run (only digit) "123"
+<o>Ok "1" "23"</o> </ghci></pre>  
       </task>
   
       <task> Напишите транслятор <code>integer</code> для положительного целого числа с произвольным количеством цифр, возвращающий число типа <code>Integer</code></task>
 
-      <pre><ghci>λ> run integer "1234bc"
-Ok 1234 "bc"</ghci></pre>
+      <pre><ghci><l></l> run integer "1234bc"
+<o>Ok 1234 "bc"</o></ghci></pre>
             
       <task> Напишите модификатор <code>oneof p args</code> задающий множество возможных параметров транслятора <code>p</code>:
 <pre><hs><def>oneof :: (b -> Parser i a) -> [b] -> Parser i a</def></hs></pre>
-      <pre><ghci>λ> run (term `oneof` "cat") "catalog"
-Ok "c" "atalog"
-run (term `oneof` "cat") "dog"
-Fail "dog"
-λ> run (some (term `oneof` "cat")) "active"
-Ok "act" "ive"
-λ> run (some (term `oneof` "cat")) "xorg"
-Fail "xorg"
-λ> run (string `oneof` ["cat","dog","mouse"]) "dog"
-Ok "dog" ""
-λ> run (string `oneof` ["cat","dog","mouse"]) "bird"
-Fail "bird" </ghci></pre>
+      <pre><ghci><l></l> run (term `oneof` "cat") "catalog"
+<o>Ok "c" "atalog"</o>
+<l></l>run (term `oneof` "cat") "dog"
+<o>Fail "dog"</o>
+<l></l> run (some (term `oneof` "cat")) "active"
+<o>Ok "act" "ive"</o>
+<l></l> run (some (term `oneof` "cat")) "xorg"
+<o>Fail "xorg"</o>
+<l></l> run (string `oneof` ["cat","dog","mouse"]) "dog"
+<o>Ok "dog" ""</o>
+<l></l> run (string `oneof` ["cat","dog","mouse"]) "bird"
+<o>Fail "bird"</o> </ghci></pre>
       </task>
 
       <task> Напишите модификатор <code>except p args</code> задающий множество параметров для транслятора <code>p</code>, которые не должны встретиться. Например, <code>term `except` "cat"</code> означает любой символ, кроме <code>'c'</code>, <code>'a'</code> или <code>'t'</code>.</task>
@@ -91,12 +91,12 @@ Fail "bird" </ghci></pre>
 
       <task> Напишите транслятор <code>sepBy p s</code> для последовательности элементов, <code>p</code> разделённых элементами <code>s</code>. Он должен возвращать список элементов <code>p</code>
 
-      <pre><ghci>λ> run ((some next) `sepBy` spaces) "a cat jumped"
-Ok ["a", "cat", "jumped"] ""
-λ> run (integer `sepBy` (term ',')) "12,56,4"
-Ok [12, 56, 4] ""
-λ> run (sum <$> (integer `sepBy` (term ','))) "12,56,4"
-Ok 72 ""</ghci></pre>
+      <pre><ghci><l></l> run ((some next) `sepBy` spaces) "a cat jumped"
+<o>Ok ["a", "cat", "jumped"] ""</o>
+<l></l> run (integer `sepBy` (term ',')) "12,56,4"
+<o>Ok [12, 56, 4] ""</o>
+<l></l> run (sum <$> (integer `sepBy` (term ','))) "12,56,4"
+<o>Ok 72 ""</o></ghci></pre>
 </task>
 
       <details><summary>Общий взгляд на программу</summary>
@@ -145,7 +145,7 @@ oneof  except<br/>
 <p> Все альтернативные трансляторы образуют моноид, и для использования этого обстоятельства, в модуле <code>Data.Foldable</code> определёна функция <code>asum</code>.
 <pre><hs><def>asum :: (Foldable t, Alternative f) => t (f a) -> f a</def></hs></pre>
   Она суммирует альтернативы. Так, например, с её помощью можно определить комбинатор <code>oneof</code>:
-  <pre><hs><def>p `oneof` lst = asum $ p <$> lst</hs></pre>
+  <pre><hs>p `oneof` lst = asum $ p <$> lst</hs></pre>
 </p>
 
 <p>А можно ли комбинировать последовательности трансляторов, а не анализаторов? Можно, но тогда нужно уметь "складывать" результаты, то есть, это возможно, если результаты трансляции образуют моноид.  Определим экземпляр класса <code>Monoid</code> для типа <code>Parser</code> явно:
@@ -156,12 +156,12 @@ oneof  except<br/>
 
 <p>Это позволит легко соединять результаты трансляции, просто соединяя трансляторы.</p>
 
-<pre><ghci>run (string "a" <> some next <> string "b") "axb"
-Ok "axb" ""
-run (string "a" <> many next <> string "b") "axyzb"
-Ok "axyzb" ""
-run (string "a" <> many next <> string "b") "ab"
-Ok "ab" ""</ghci></pre>
+<pre><ghci><l></l>run (string "a" <> some next <> string "b") "axb"
+<o>Ok "axb" ""</o>
+<l></l>run (string "a" <> many next <> string "b") "axyzb"
+<o>Ok "axyzb" ""</o>
+<l></l>run (string "a" <> many next <> string "b") "ab"
+<o>Ok "ab" ""</o></ghci></pre>
 
 <task>Если вы посмотрите информацию о единичном типе <code>()</code>, то увидите, что он тоже является моноидом. Выясните правила сложения для единичного типа. Это значит, что и композиция анализаторов тоже определяется, как простая моноидальная композиция. Проверьте это на примере анализаторов <code>bracket</code> и <code>email</code>.</task>
 
@@ -171,9 +171,26 @@ Ok "ab" ""</ghci></pre>
 mmany p = mconcat <$> many p
 mopt p = mconcat <$> opt p</hs></pre>
 
-<task> Напишите универсальный инструмент <code>collect</code> для поиска подстрок, описываемых транслятором <code>p</code>  
-  <pre><hs><def>collect :: Monoid b => Parser [i] b -> Parser [i] b</def></hs></pre>
+<task>Используя универсальную функцию <code>collect</code> для поиска подстрок, описываемых транслятором <code>p</code>  
+  <pre><hs><def>collect :: Monoid b => Parser i b -> Parser i b</def>
+collect p = mmany (p <|> mempty <$ next)</hs></pre>
+  определите следующие функции:
+  <pre><hs><def>count :: Parser i a -> Parser i Integer
+search :: Parser i a -> Parser i [a]
+longest :: Parser i [a] -> Parser i [a]</def></hs></pre>
+   Ниже приводятся примеры их использования:
+<pre><ghci><l></l> run (count integer) "5 pigs, 122 cows, 47 cats"
+<o>Ok 3 ""</o>
+<l></l> run (search integer) "5 pigs, 122 cows, 47 cats"
+<o>Ok [5,12,47] ""</o>
+<l></l> run (longest (some digit)) "5 pigs, 122 cows, 47 cats"
+<o>Ok "122" ""</o>
+</ghci></pre>			    
 				      
+<task>Реализуйте комбинатор <code>&lt;?></code>, с помощью которого, можно было бы отфильтровывать трансляторы по указанному предикату для возвращаемого значения. Так, например можно было бы отыскивать в тексте только нечётные числа:
+<pre><ghci>λ> run (search (integer &lt;?> odd)) "5 pigs, 122 cows, 47 cats"
+Ok "" [5,47]</ghci></pre>
+</task><hr>
 
   
       <!-- ------------------------------------------------------------ -->

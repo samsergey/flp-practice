@@ -261,16 +261,33 @@ eqn {
 
 ghci {
     display: block;
-    border: dotted 1px gray;
+    border-radius: 4px;
     overflow-x: auto;
-    padding: 0.5em;
-    color: #ccc;
+    padding: 0em 0.5em 0.5em 0.5em;
+    color: #cfc;
     line-height: 1.4em;
-    background: #222;
+    background: #202520;
     /* font-weight: bold; */
     font-size:110%;
 }
 
+.promt {
+    display: inline-block;
+    margin-top: 1.2ex;
+    font-weight: bold;
+    color: #fcc;
+}
+
+o {
+    color: #4f4;
+}
+
+err {
+    display: block;
+    color: #fcc;
+    margin-top: 1.2ex;
+    font-weight: bold;
+}
 
 
 disclaim {

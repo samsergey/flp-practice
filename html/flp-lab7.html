@@ -20,37 +20,37 @@
       
       <p>Транслятор&nbsp;— это функция, которая преобразует входную последовательность символов (строку, или поток лексем) в некий результат. Результатом может быть любое значение: логическое, если нас интересует только соответствие текста заданной грамматике, последовательность выходных значений, синтаксическое дерево, или даже просто число. То есть, тип транслятора, в самом общем случае, может быть каким-то таким:</p>
 
-      <pre><hs>data Parser i a = Parser (i -> a)</hs></pre>
+      <pre><hs>data Parser i a = Parser ([i] -> a)</hs></pre>
       
-      <p>где <code>i</code>  тип входного потока, а <code>a</code>&nbsp;— тип результата. Например, лексический анализатор, читающий программу в виде строки, и возвращающий список лексем может иметь тип <code>Parser String [Token]</code>.</p>
+      <p>где <code>i</code>  тип элементов входного потока, а <code>a</code>&nbsp;— тип результата. Например, лексический анализатор, читающий программу в виде строки, и возвращающий список лексем может иметь тип <code>Parser Char [Token]</code>.</p>
       
       <p>Для того, чтобы нам было легче применять спрятанную в тип <code>Parser</code> функцию-преобразователь, дадим ей имя:</p>
 
-      <pre><hs>data Parser i a = Parser { run :: i -> a }</hs></pre>
+      <pre><hs>data Parser i a = Parser { run :: [i] -> a }</hs></pre>
       
       <p>Определим какой-нибудь самый простой транслятор. Очень простой. </p>
 
       <pre><hs>next = Parser head</hs></pre>
 
      
-      <p>  Он работает со списками (или строками) и просто возвращает первый элемент разбираемой последовательности, каким бы он ни был:</p>
+      <p>  Он просто возвращает первый элемент разбираемой последовательности, каким бы он ни был:</p>
 
-      <pre><ghci>λ> run next "abab"
-'a'
-λ> run next "bab"
-'b'</ghci></pre>
+      <pre><ghci><l></l> run next "abab"
+<o>'a'</o>
+<l></l> run next "bab"
+<o>'b'</o></ghci></pre>
 
       <p> Транслятор работает, но он практически бесполезен, ведь мы потеряли информацию о разбираемой строке и не сможем продолжить разбор. Это приводит к мысли, что возвращаемый результат должен каким-то образом содержать в себе разбираемую строку. Объединим их в типе <code>Result</code>, на который можно посмотреть и сравнить с чем-нибудь:</p>
 
-      <pre><hs>data Parser i a = Parser { run :: i -> Result i a}
+      <pre><hs>data Parser i a = Parser { run :: [i] -> Result [i] a}
 
 data Result i a = Result i a
   deriving (Show, Eq)
 	  
 next = Parser $ \(x:xs) -> Result xs x</hs></pre>
 
-      <pre><ghci>λ> run next "abab"
-Result "bab" 'a'</ghci></pre>
+      <pre><ghci><l></l> run next "abab"
+<o>Result "bab" 'a'</o></ghci></pre>
 
       <p> Теперь работа транслятора стала более осмысленной, он вернул первый элемент и сократил разбираемую строку.</p>
     
@@ -70,10 +70,10 @@ Result "bab" 'a'</ghci></pre>
       <p>Форма <code>case</code> потребовалась нам для того, чтобы "разобрать" результат работы транслятора <code>t1</code> и добыть остаток строки. Можно было воспользоваться формой <code>let</code> или <code>where</code>, но, во-первых, она читается более естественно: от <code>t1</code> к <code>t2</code>, а во-вторых, скоро мы добавим другие альтернативы.</p>
     
       <p>  Комбинатор <code>>></code> возвращает новый транслятор, так что его тоже можно применить к разбираемой строке с помощью функции <code>run</code>. Попробуем его использовать:</p>     
-      <pre><ghci>λ> run (next >> next) "abab"
-Result "ab" 'b'
-λ> run (next >> next >> next) "abab"
-Result "b" 'a'</ghci></pre>
+      <pre><ghci><l></l> run (next >> next) "abab"
+<o>Result "ab" 'b'</o>
+<l></l> run (next >> next >> next) "abab"
+<o>Result "b" 'a'</o></ghci></pre>
       
       <p>Переходя ко второму транслятору и далее мы потеряли информацию о первом встреченном символе, но пока она и не нужна: транслятор <code>next</code> её всё равно не использует. И мы тоже пока об этом думать не будем.</p>
 
@@ -111,16 +111,16 @@ Result "b" 'a'</ghci></pre>
 
       <p>Посмотрим, как он работает:</p>
 
-      <pre><ghci>λ> run (term 'a') "abab"
-Ok 'a' "bab"
-λ> run (term 'b') "abab"
-Fail "abab"
-λ> run (term 'a' >> term 'b') "abab"
-Ok 'b' "ab"
-λ> run (term 'b' >> term 'b') "abab"
-Fail "abab"
-λ> run (term 'a' >> next >> term 'a') "abab"
-Ok 'a' "b"
+      <pre><ghci><l></l> run (term 'a') "abab"
+<o>Ok 'a' "bab"</o>
+<l></l> run (term 'b') "abab"
+<o>Fail "abab"</o>
+<l></l> run (term 'a' >> term 'b') "abab"
+<o>Ok 'b' "ab"</o>
+<l></l> run (term 'b' >> term 'b') "abab"
+<o>Fail "abab"</o>
+<l></l> run (term 'a' >> next >> term 'a') "abab"
+<o>Ok 'a' "b"</o>
 </ghci></pre>
 
       <p> Очень хорошо! Но сразу же хочется сделать ещё лучше. А когда делаешь лучше главное&nbsp;— не сделать хуже. В этом нам поможет тестирование.</p>
@@ -144,7 +144,7 @@ tests = runTests
    ,(term 'b' >> term 'b', "abab", Fail "abab") ]</hs></pre>
       
       <p> Запускаем тесты...</p>
-      <pre><ghci>λ> tests</ghci></pre>
+      <pre><ghci><l></l> tests</ghci></pre>
       <p> и видим, что ничего не выводится. Значит, у нас всё хорошо. Испортите какой-нибудь из тестов и посмотрите, что будет.</p>
       </task>
 
@@ -157,7 +157,7 @@ tests = runTests
 <p>Result i a = Ok a i | Fail i<br/>
 (Show, Eq)</p>
 
-<p>Parser a = Parser { run :: i -> Result i a }</p></basic>
+<p>Parser a = Parser { run :: [i] -> Result [i] a }</p></basic>
 
 <part>комбинаторы</part>
 <p><basic>>></basic></p>
@@ -186,7 +186,7 @@ term c = notEnd >> Parser $ \(x:xs) -> if x == c
                                        else Fail (x:xs)</hs></pre>
 
       <p>Запускаем тесты...
-	<pre><ghci>λ> tests</ghci></pre>
+	<pre><ghci><l></l> tests</ghci></pre>
 	мы ничего не поломали!</p>
     
 
@@ -234,7 +234,7 @@ term c = notEnd >> Parser $ \(x:xs) -> if x == c
 <p>Result i a = Ok a i | Fail i<br/>
 (Show, Eq)</p>
 
-<p>Parser a = Parser { run :: i -> Result i a }</p></basic>
+<p>Parser a = Parser { run :: [i] -> Result [i] a }</p></basic>
 
 <part>модификаторы</part>
 <p><basic>neg</basic></p>

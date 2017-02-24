@@ -34,16 +34,16 @@
       <h2>Аппликативные функторы</h2>
     
       <task>Подгрузите модуль <code>Control.Applicative</code>. Теперь нам доступны новые возможности для работы с функторами. Посмотрите на то, как действуют операторы <code>&lt;|&gt;</code> и <code><*></code>, вычислив в <sl>GHCi</sl> следующие выражения.
-      <pre><ghci>Nothing &lt;|&gt; Just 5
-Just 3 &lt;|&gt; Just 5
-Just 3 &lt;|&gt; Nothing
-Nothing &lt;|&gt; Nothing
-Nothing &lt;*&gt; Just 5
-Just (4*) &lt;*&gt; Just 5
-Just (2*) &lt;*&gt; Nothing
-(+) &lt;$&gt; Just 3 &lt;*&gt; Just 7
-(+) &lt;$&gt; Nothing &lt;*&gt; Just 7
-(+) &lt;$&gt; Just 3 &lt;*&gt; Nothing</ghci></pre>
+      <pre><hs> Nothing &lt;|&gt; Just 5
+ Just 3 &lt;|&gt; Just 5
+ Just 3 &lt;|&gt; Nothing
+ Nothing &lt;|&gt; Nothing
+ Nothing &lt;*&gt; Just 5
+ Just (4*) &lt;*&gt; Just 5
+ Just (2*) &lt;*&gt; Nothing
+ (+) &lt;$&gt; Just 3 &lt;*&gt; Just 7
+ (+) &lt;$&gt; Nothing &lt;*&gt; Just 7
+ (+) &lt;$&gt; Just 3 &lt;*&gt; Nothing</hs></pre>
       Объясните своими словами, для чего нужны операторы <code>&lt;$&gt;</code> (<code>fmap</code>), <code>&lt;|&gt;</code>, <code>&lt;*&gt;</code>, применительно к функтору <code>Maybe</code>.</task>
 
       <task>Напишите функцию <code>sqrtM</code>, которая вычисляет квадратный корень вещественного числа и для отрицательных чисел возвращает <code>Nothing</code>. Вычислите с её помощью следующие выражения:
@@ -168,20 +168,20 @@ instance Failable IO where message = error
       <p>С помощью <code>fmap</code> можно применить любую функцию к функтору не разрушая его. А что насчёт функций, которые возвращают значение в контексте? Например, как можно дважды применить функцию <code>sqrtM</code>, чтобы вычислить <eq>\sqrt{\sqrt{16}}</eq>? Иными словами, как выполнить композицию функций, возвращающих не просто значение, а значение в некотором контексте <code>m</code>?</p>
       
       <p>Попробуем начать с использования оператора <code>&lt;$&gt;</code>:
-	<pre><ghci>*Main&gt; sqrtM &lt;$&gt; sqrtM 16
-Just (Just 2)
-*Main&gt; sqrtM &lt;$&gt; sqrtM (-1)
-Just Nothing</ghci></pre>
+	<pre><ghci><l></l> sqrtM &lt;$&gt; sqrtM 16
+<o>Just (Just 2)</o>
+<l></l> sqrtM &lt;$&gt; sqrtM (-1)
+<o>Just Nothing</o></ghci></pre>
       </p> 
 
       
       <p>
 	Результат мы получили, но он оказался в контексте дважды. Какой смысл имеет выражение <code>Just (Just 2)</code>? С точки зрения "успешности" вычислений это просто успешное вычисление, то есть <code>Just 2</code>. В свою очередь выражение <code>Just Nothing</code> означает, что вложенное вычисление окончилось неудачей, а вместе с ним и всё вычисление.</p>
 
-      <task> Определите функцию <code>join :: Maybe (Maybe a) -&gt; Maybe a</code>, которая занималась бы "соединением" контекстов так, чтобы можно было получить такие результаты: <pre><ghci>*Main&gt; join $ sqrtM &lt;$&gt; sqrtM 16
-Just 4
-*Main&gt; join $ sqrtM &lt;$&gt; sqrtM (-1)
-Nothing</ghci></pre>
+      <task> Определите функцию <code>join :: Maybe (Maybe a) -&gt; Maybe a</code>, которая занималась бы "соединением" контекстов так, чтобы можно было получить такие результаты: <pre><ghci><l></l> join $ sqrtM &lt;$&gt; sqrtM 16
+<o>Just 4</o>
+<l></l> join $ sqrtM &lt;$&gt; sqrtM (-1)
+<o>Nothing</o></ghci></pre>
       </task>
 
       <p>Связка <code>join $ f &lt;$&gt; x</code> универсальна и позволяет связывать в&nbsp;цепочки любые вычисления с контекстом. Для неё есть особое обозначение: <code>=&lt;&lt;</code></p>

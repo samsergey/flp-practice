@@ -25,10 +25,10 @@
   Ok x r' -> Ok x r'</hs></pre>
 
       <p> Теперь у нас появился выбор!!</p>
-      <pre><ghci>λ> run (term 'a' <|> term 'b') "abab"
-Ok 'a' "bab"
-λ> run (term 'a' <|> term 'b') "bbab"
-Ok 'b' "bab"  </ghci></pre>
+      <pre><ghci><l></l> run (term 'a' <|> term 'b') "abab"
+<o>Ok 'a' "bab"</o>
+<l></l> run (term 'a' <|> term 'b') "bbab"
+<o>Ok 'b' "bab"</o>  </ghci></pre>
 
       <p> Наличие свободного выбора и умение им пользоваться&nbsp;— это поистине великая вещь! Теперь мы можем определить транслятор для любой контекстно-свободной грамматики, ведь они описываются правилами такого рода:</p>
     <eqn>
@@ -89,7 +89,7 @@ testA = runTestsFor _A
     , ("ababa", Fail "ababa")] </hs></pre>
 
     
-    <pre><ghci>λ> testA</ghci></pre>
+    <pre><ghci><l></l> testA</ghci></pre>
 
     
     <p>Что же, похоже анализатор работает и его определение в программе замечательно соответствует описанию грамматики.</p>
@@ -115,25 +115,25 @@ _N = digit >> (_N <|> epsilon)</hs></pre>
 
     <p>Выглядит неплохо. Но не компилируется!</p>
 
-    <pre><ghci>parserM.hs:83:37-38: Couldn't match type ‘()’ with ‘Char’ …
-    Expected type: Parser [Char] Char
-      Actual type: Parser [Char] ()
+    <pre><ghci><err>parserM.hs:83:37-38: Couldn't match type ‘()’ with ‘Char’ …
+    Expected type: Parser Char Char
+      Actual type: Parser Char ()
     In the second argument of ‘(<|>)’, namely ‘_N’
     In the expression: term '(' >> _E >> term ')' <|> _N
-Compilation failed.</ghci></pre>
+Compilation failed.</err></ghci></pre>
 
     <details><summary>Учите английский!!</summary>
-    <pre><ghci>parserM.hs:83:37-38: Не смог сопоставить тип ‘()’ с ‘Char’ …
-     Ожидаемый тип: Parser [Char] Char
-    Полученный тип: Parser [Char] ()
+    <pre><ghci><err>parserM.hs:83:37-38: Не смог сопоставить тип ‘()’ с ‘Char’ …
+     Ожидаемый тип: Parser Char Char
+    Полученный тип: Parser Char ()
     Во втором аргументе ‘(<|>)’, а именно ‘_N’
     В выражении: term '(' >> _E >> term ')' <|> _N
-Компиляция не удалась.</ghci></pre></details>
+Компиляция не удалась.</err></ghci></pre></details>
     
     <p>Компилятор даёт исчерпывающее объяснение, что именно ему не понравилось. Вот бы все компиляторы так внятно изъяснялись! То есть, транслятор <code>term</code> возвращает тип <code>Char</code>, а анализатор <code>_N</code>&nbsp;— <code>()</code>, и их нельзя комбинировать оператором <code><|></code>. Вот его тип:</p>
 
-    <pre><ghci>λ> :t (<|>)
-(<|>) :: Parser i a -> Parser i a -> Parser i a</ghci></pre>
+    <pre><ghci><l></l> :t (<|>)
+<o>(<|>) :: Parser i a -> Parser i a -> Parser i a</o></ghci></pre>
 
     <p>Значит, надо привести типы комбинируемых выражений к одному. Проще всего это сделать так:</p>
 
@@ -157,7 +157,7 @@ _N = digit ?> (_N <|> epsilon)</hs></pre>
   , ("(13+4)+6345",   Ok () "" )
   , ("(13+4)+(6+32)", Ok () "" ) ]</hs></pre>
 
-    <pre><ghci>λ> testsG1</ghci></pre>
+    <pre><ghci><l></l> testsG1</ghci></pre>
 
     <hr/><task> Напишите анализатор <code>maybe p</code>, позволяющий выразить мысль, что элемент <code>p</code> может встретиться, а может и не встретиться.</task>
     
@@ -174,7 +174,7 @@ _N = digit ?> (_N <|> epsilon)</hs></pre>
 <p>Result i a = Ok a i | Fail i<br/>
 (Show, Eq)</p>
 
-<p>Parser a = Parser { run :: i -> Result i a }</p></basic>
+<p>Parser a = Parser { run :: [i] -> Result [i] a }</p></basic>
 
 <part>модификаторы</part>
 <p><basic>neg</basic>  maybe</p>
@@ -222,10 +222,10 @@ _N = digit ?> (_N <|> epsilon)</hs></pre>
 
       <pre><hs>double = next >>= (\x -> term x)</hs></pre>
     
-      <pre><ghci>λ> run double "aab"
-Ok 'a' "b"
-λ> run double "aba"
-Fail "ba" </ghci></pre>
+      <pre><ghci><l></l> run double "aab"
+<o>Ok 'a' "b"</o>
+<l></l> run double "aba"
+<o>Fail "ba"</o> </ghci></pre>
 
       <p> Можно записать и короче:</p>
 
@@ -250,10 +250,10 @@ digitToInt x = read [x] :: Int</hs></pre>
 
       <pre><hs>add = num1 >>= (\x -> term '+' >> num1 >>= (\y -> pure (x+y)))</hs></pre>
 
-      <pre><ghci>λ> run num1 "2"
-Ok 2 ""
-λ> run add "3+2"
-Ok 5 ""
+      <pre><ghci><l></l> run num1 "2"
+<o>Ok 2 ""</o>
+<l></l> run add "3+2"
+<o>Ok 5 ""</o>
 </ghci></pre>
 
       <p>Работает!! Но. Если вам кажется, что этот кошмар из значков и скобок&nbsp;— это абсолютно неудачный способ записывать трансляторы, то я вас поздравляю: вам так не кажется! Потерпите ещё совсем немного, скоро всё станет существенно лучше.</p>
@@ -296,39 +296,40 @@ instance Applicative (Parser i) where
       
       <p> Теперь мы можем производить различные действия над результатами трансляции, действуя при этом на сам транслятор. Вот что имеется в виду. </p>
 
-      <pre><ghci>λ> run ((2*) <$> num1) "5"
-Ok 10 ""
-λ> run ((+) <$> num1 <*> num1) "57"
-Ok 12 ""
-λ> run ((+) <$> num1 <*> (term '+' >> num1)) "5+7"
-Ok 12 ""</ghci></pre>
+      <pre><ghci><l></l> run ((2*) <$> num1) "5"
+<o>Ok 10 ""</o>
+<l></l> run ((+) <$> num1 <*> num1) "57"
+<o>Ok 12 ""</o>
+<l></l> run ((+) <$> num1 <*> (term '+' >> num1)) "5+7"
+<o>Ok 12 ""</o>
+</ghci></pre>
 
       <task>Для функторов, кроме функции <code>fmap</code> определн оператор <code><$</code>, который выражается следующим образом:<pre>x <$ y = const x <$> y</pre>. Перепишите определение оператора <code>?></code>, используя оператор <code><$</code>.</task>
       
 <p>После того, как мы объявили трансляторы аппликативными функторами, нам стала доступна функция <code>sequence</code>, превращающая список трансляторов в один транслятор, возвращающий список результатов:
 
-      <pre><ghci>λ> run (sequence [digit, digit, digit]) "1234"
-Ok "123" "4"</ghci></pre>
+      <pre><ghci><l></l> run (sequence [digit, digit, digit]) "1234"
+<o>Ok "123" "4"</o></ghci></pre>
 
       Вот&nbsp;— изящное определение для повторения <code>n</code> раз транслятора <code>p</code>:
       <pre><hs>repeatP n p = sequence $ replicate n p</hs></pre>
 
       Для этой задачи есть функция <code>replicateM</code>, определённая для любых монад:
 
-      <pre><ghci>λ> run (replicateM 3 digit) "1234"
-Ok "123" "4"</ghci></pre>
+      <pre><ghci><l></l> run (replicateM 3 digit) "1234"
+<o>Ok "123" "4"</o></ghci></pre>
 
       Очень полезна функция <code>mapM</code> -- монадический аналог функции отображения <code>map</code>. Посмотрим, что она может нам предложить:
 
-      <pre><ghci>λ> run (mapM term "cat") "catalog"
-Ok "cat" "alog"</ghci></pre>
+      <pre><ghci><l></l> run (mapM term "cat") "catalog"
+<o>Ok "cat" "alog"</o></ghci></pre>
 
       Из списка символов, <code>mapM term</code> произвела последовательность трансляторов <code>term</code> для этих символов, причём, получившийся транслятор возвращает список результатов этой последовательности. Теперь мы можем определить функцию, распознающую указанную строку:
 
-      <pre><hs>string :: Eq a => [a] -> Parser [a] [a]
+      <pre><hs>string :: Eq a => [a] -> Parser a [a]
 string = mapM term </hs></pre>
 
-      <pre><ghci>λ> run (string "cat") "catalog"
+      <pre><ghci><l></l> run (string "cat") "catalog"
 Ok "cat" "alog"</ghci></pre>
 
 <p>После определения комбинатора <code><*></code>, в нашем распоряжении автоматически появилась ещё пара полезных комбинаторов:
@@ -338,16 +339,16 @@ Ok "cat" "alog"</ghci></pre>
     </ul>
     Они бывают нужны когда требуется выполнить транслятор в цепочке, но его результат передаваться дальше не будет. Например, пусть нужно чтобы за целым числом следовал пробел. Простая последовательность не годится. мы потеряем прочитанное число:</p>
 
-<pre><ghci>λ> run (num1 >> term ' ') "1 4"
-Ok ' ' "4"</ghci></pre>
+<pre><ghci><l></l> run (num1 >> term ' ') "1 4"
+<o>Ok ' ' "4"</o></ghci></pre>
 
-     <pre><ghci>λ> run (num1 <* term ' ') "1 4"
-Ok 1 "4"</ghci></pre>
+     <pre><ghci><l></l> run (num1 <* term ' ') "1 4"
+<o>Ok 1 "4"</o></ghci></pre>
 
  <p>А вот&nbsp;— вычитание двух чисел, разделённых знаком <code>'-'</code></p>
 				   
-     <pre><ghci>λ> run ((-) <$> num1 <*> (term '-' *> num1)) "5-2"
-Ok 3 ""</ghci></pre>
+     <pre><ghci><l></l> run ((-) <$> num1 <*> (term '-' *> num1)) "5-2"
+<o>Ok 3 ""</o></ghci></pre>
 </p>
       
       <details><summary>Общий взгляд на программу</summary>
@@ -357,7 +358,7 @@ Ok 3 ""</ghci></pre>
 <p>Result i a = Ok a i | Fail i<br/>
 (Show, Eq)</p>
 
-<p>Parser a = Parser { run :: i -> Result i a }<br/>
+<p>Parser a = Parser { run :: [i] -> Result [i] a }<br/>
   (Functor, Applicative, Alternative, Monad)</p></basic>
 
 <part>модификаторы</part>

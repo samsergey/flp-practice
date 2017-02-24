@@ -1,10 +1,11 @@
 import Data.Monoid
+import Data.Ord
 import Data.Foldable
 import Control.Monad
 import Control.Applicative
 
 
-data Parser i a = Parser { run :: i -> Result i a}
+data Parser i a = Parser { run :: [i] -> Result [i] a}
 
 
 data Result i a = Ok a i
@@ -52,10 +53,10 @@ check p = notEnd >> (Parser $ \r -> if p (head r)
 
 term c = check (== c) >> next
 
-string :: Eq a => [a] -> Parser [a] [a]
+string :: Eq a => [a] -> Parser a [a]
 string = mapM term 
 
-integer :: Parser String Integer
+integer :: Parser Char Integer
 integer = read <$> some digit
 
 digit = check (`elem` ['0'..'9']) >> next
@@ -73,6 +74,14 @@ only p = (:[]) <$> p
 
 --collect p = (p <|> mempty <$ next) <> (collect p <|> mempty)
 collect p = mmany (p <|> mempty <$ next) 
+
+count p = getSum <$> collect (Sum 1 <$ p)
+
+longest p = maximumBy (comparing length) <$> search p
+
+search p = collect (only p)
+
+pred ?> p = p >>= \r -> if pred r then pure r else empty
 
 skip p = p >> epsilon 
 
