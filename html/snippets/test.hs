@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE BangPatterns #-}
 import Data.Complex
@@ -7,6 +9,7 @@ import Data.List
 import Data.Monoid
 import Control.Monad
 import Data.Ratio
+import Data.Foldable
 
 repeat' :: (Num b1, Enum b1) => b1 -> b -> [b]
 repeat' n k = const k <$> [1..n]
@@ -74,7 +77,10 @@ data Circuit = R Double | C Double | L Double
 
 
 
-data Resistance a = Short | Break | Value a deriving Show
+data Resistance a = Short
+                  | Value a
+                  | Break
+  deriving (Show,Eq,Functor)
 
 (<&&>) :: Num a => Resistance a -> Resistance a -> Resistance a
 Value r1 <&&> Value r2 = Value $ r1 + r2
@@ -214,3 +220,13 @@ findRoot f  mesh = go mesh <|> message "There was no roots found"
         go (x:y:xs) = bisectionA f x y <|> go (y:xs)
 
         
+c2 c = R 10 `Seq` (C (c*1e-9) `Par` (R 3 `Seq` L 0.5e-3))
+
+resonance c = bisection' (\w -> signum . imagPart <$> impedance c w)
+
+bisection' p a b = go a b (p a) (p b)
+  where go a b pa pb | pa == pb = empty
+                     | abs (a - b) < 1e-14 * abs c = pure c
+                     | otherwise = go a c pa pc <|> go c b pc pb
+          where c = (a + b) / 2
+                pc = p c

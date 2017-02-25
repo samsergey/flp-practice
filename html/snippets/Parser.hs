@@ -117,3 +117,11 @@ s <:> p = Parser $ \r -> case run p r of
   Error m -> Error (s ++ ' ' : m)
   x -> x
 ------------------------------------------------------------
+data P = P String Int (Maybe Bool) deriving Show
+
+readP = run (P <$> (read <$> next)
+               <*> (read <$> next)
+               <*> (readMay <$> next <|> pure empty)) . words
+  where
+    int_ = read <$> next
+    string_ = next

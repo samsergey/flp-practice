@@ -2,8 +2,15 @@ import Safe
 import Control.Applicative
 import Control.Monad
 
-type Command = String
-type Stack = [Double]
+type Command = Token
+type Stack = [Token]
+
+data Token = N Double
+           | Op String
+           | Block [Token]
+           | Var String
+           deriving Show
+
 
 
 interprete s op = case op of
@@ -28,38 +35,38 @@ interprete s op = case op of
 --calculate :: String -> Either String State
 --calculate = foldM interprete [] . words
 
-calculateD input dict = (foldM interpreteD [] $ words input) dict
+-- calculateD input dict = (foldM interpreteD [] $ words input) dict
 
-interpreteD s op = case op of
-  "+" -> binop (+)
-  "*" -> binop (*)
-  "-" -> binop (-)
-  "/" -> binop (/)
-  n   -> \d -> case readMay n <|> lookup n d of
-           Just x  -> x : s
-           Nothing -> error ("unknown command " ++ n)
-  where
-    binop f = \_ -> case s of
-      x:y:s -> f x y : s
-      [_]   -> error "got only one argument"
-      []    -> error "got no arguments"
+-- interpreteD s op = case op of
+--   "+" -> binop (+)
+--   "*" -> binop (*)
+--   "-" -> binop (-)
+--   "/" -> binop (/)
+--   n   -> \d -> case readMay n <|> lookup n d of
+--            Just x  -> x : s
+--            Nothing -> error ("unknown command " ++ n)
+--   where
+--     binop f = case s of
+--       x:y:s -> pure $ f x y : s
+--       [_]   -> error "got only one argument"
+--       []    -> error "got no arguments"
 
-calculateW input = foldM interpreteW mempty $ words input
+-- calculateW input = foldM interpreteW mempty $ words input
 
-interpreteW s op = case op of
-  "+" -> binop (+)
-  "*" -> binop (*)
-  "-" -> binop (-)
-  "/" -> binop (/)
-  n   -> case readMay n of
-           Just x  -> push x s
-           Nothing -> err ("unknown command" ++ n)
-  where
-    binop f = tell ("perform " ++ op) >> case s of
-      x:y:s -> tell "pushed result" >> push (f x y) s
-      [_]   -> err "got only one argument"
-      []    -> err "got no arguments"
+-- interpreteW s op = case op of
+--   "+" -> binop (+)
+--   "*" -> binop (*)
+--   "-" -> binop (-)
+--   "/" -> binop (/)
+--   n   -> case readMay n of
+--            Just x  -> push x s
+--            Nothing -> err ("unknown command" ++ n)
+--   where
+--     binop f = tell ("perform " ++ op) >> case s of
+--       x:y:s -> tell "pushed result" >> push (f x y) s
+--       [_]   -> err "got only one argument"
+--       []    -> err "got no arguments"
 
-    tell m = ([m],())
-    push x s = tell ("pushed " ++ show x) >> pure (x:s)
-    err m = tell ("error! " ++ m) >> pure s
+--     tell m = ([m],())
+--     push x s = tell ("pushed " ++ show x) >> pure (x:s)
+--     err m = tell ("error! " ++ m) >> pure s
