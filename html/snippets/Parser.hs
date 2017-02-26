@@ -117,11 +117,32 @@ s <:> p = Parser $ \r -> case run p r of
   Error m -> Error (s ++ ' ' : m)
   x -> x
 ------------------------------------------------------------
+
 data P = P String Int (Maybe Bool) deriving Show
 
-readP = run (P <$> (read <$> next)
-               <*> (read <$> next)
-               <*> (readMay <$> next <|> pure empty)) . words
+readP = run (P <$> string_
+               <*> int_
+               <*> optional bool_) . words
   where
     int_ = read <$> next
     string_ = next
+    bool_ = read <$> term `oneof` ["True", "False"]
+
+------------------------------------------------------------
+
+chainl p op = (appEndo . getDual <$> mmany (endo p op)) <*> p
+  where
+    endo p op = Dual . Endo <$> (p <**> (flip <$> op))
+
+chainr p op = (appEndo <$> mmany (endo p op)) <*> p
+  where
+    endo p op = Endo <$> (p <**> op)
+
+add = (+) <$ term '+'
+sub = (-) <$ term '-'
+
+foldr'' f x0 t = foldMap (Endo . f) t `appEndo` x0
+
+foldl'' f x0 t = getDual (foldMap (Dual . Endo . flip f) t) `appEndo` x0
+
+

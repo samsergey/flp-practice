@@ -224,15 +224,15 @@ instance Bounded Float where
 
       <p>Чтобы воспользоваться этим свойством преобразований нужно отделить применение преобразований от применения функции <code>affine</code>. Это можно сделать, расширив тип <code>Picture</code>, добавив в него явное преобразование изображения:
 	<pre><hs>data Picture = Picture (Box, [Primitive])
-             | Transform :$: Picture
+             | Transform :$ Picture
              deriving Show</hs></pre>
 	Это даёт нам возможность перед применением преобразований провести такую оптимизацию:
-	<pre>t1 :$: (t2 :$: p) = t1 &lt;&gt; t2 :$: p</pre> Для этого напишем функцию <code>transform</code>
+	<pre>t1 :$ (t2 :$ p) = t1 &lt;&gt; t2 :$ p</pre> Для этого напишем функцию <code>transform</code>
 
 	<pre><hs>transform p = case p of
   Picture p -> Picture p
-  Transform t :$: Picture p -> affine t (Picture p)
-  t1 :$: (t2 :$: p) -> transform $ (t1 &lt;&gt; t2) :$: p</hs></pre>
+  Transform t :$ Picture p -> affine t (Picture p)
+  t1 :$ (t2 :$ p) -> transform $ (t1 &lt;&gt; t2) :$ p</hs></pre>
 
 	Для преобразований определим тип-моноид <code>Transform</code>:
 	<pre><hs>data Transform = Transform (M Float) deriving Show
@@ -244,7 +244,7 @@ instance Monoid Transform where
     
       <task>Тип <code>Picture</code> расширился, значит, определение класса <code>Monoid</code> для него, а также все функции, имеющие тип <code>Picture -> a</code> требуют дополнения. Внесите необходимые исправления, прежде чем двигаться дальше.</task>
     
-      <task>Напишите, используя оператор <code>(:$:)</code>, следующие преобразователи изображений:
+      <task>Напишите, используя оператор <code>(:$)</code>, следующие преобразователи изображений:
 	<pre><hs>scaleX :: Float -> Picture -> Picture -- масштабирует координату x
 scaleY :: Float -> Picture -> Picture -- масштабирует координату y
 scale :: Float -> Picture -> Picture -- одинаково масштабирует обе координаты
@@ -260,7 +260,8 @@ s &lt;&gt; rotate 45 s
 s &lt;&gt; shift 10 30 s
 s &lt;&gt; (scaleX 2 . scaleY 3) s
 s &lt;&gt; rotate 60 s
-s &lt;&gt; (shift 30 0 . rotate 60) s </hs></pre></task>      
+s &lt;&gt; (shift 30 0 . rotate 60) s
+s &lt;&gt; (rotate 60 . shift 30 0) s </hs></pre></task>      
 
       <p>Обратите внимание на то, как мы "переопределили" по-своему действие оператора композиции <code>(.)</code>  для преобразований. Смысл композиции остался прежним и результат от наших действий не изменится, но изменилась последовательность вычислений и их эффективность. Это очень характерный приём функционального программирования.</p>
       
@@ -353,9 +354,9 @@ s &lt;&gt; (shift 30 0 . rotate 60) s </hs></pre></task>
       <task>Измените функцию <code>transform</code> следующим образом:
 	<pre><hs>transform :: Picture -> Picture
 transform pic = case pic of
-  t1 :$: (t2 :$: p) -> transform $ (t1 &lt;&gt; t2) :$: p
+  t1 :$ (t2 :$ p) -> transform $ (t1 &lt;&gt; t2) :$ p
   Picture p -> Picture p
-  Transform (m, s) :$: Picture p -> app style s . app affine m $ Picture p
+  Transform (m, s) :$ Picture p -> app style s . app affine m $ Picture p
   where
     app e m = if m == mempty then id else e m
     style s (Picture (b,p)) = Picture (b, [Group s p]) </hs></pre>
@@ -363,10 +364,10 @@ transform pic = case pic of
 
       <task>С помощью вспомогательных функций
 	<pre><hs>mkAffine :: M Float -> Picture -> Picture
-mkAffine m = (Transform (m, mempty) :$:)
+mkAffine m = (Transform (m, mempty) :$)
 
 mkStyle :: (t -> Attribute) -> t -> Picture -> Picture
-mkStyle k v = (Transform (mempty, [k v]) :$:)</hs></pre>
+mkStyle k v = (Transform (mempty, [k v]) :$)</hs></pre>
 	Переопределите геометрические функции-преобразователи и введите преобразователи стиля
 	<pre><hs>lineColor :: String -> Picture -> Picture -- цвет линии
 fill :: String -> Picture -> Picture -- цвет заливки
