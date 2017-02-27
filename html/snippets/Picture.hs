@@ -202,7 +202,7 @@ fractal model n = mconcat . take n . iterate (foldMap transform model)
 tree = fractal model 7 $ line [(0,0), (0,100)]
   where model = [ shiftT 0 100 <> scaleT 0.6 0.6 <> rotateT (-pi/6)
                 , shiftT 0 100 <> scaleT 0.7 0.7
-                , shiftT 0 100 <> scaleT 0.5 0.5 <> rotateT (pi/6)]
+                , shiftT 0 100 <> scaleT 0.5 0.5 <> rotateT (pi/4)]
 
 circles = fractal model 8 $ circle 150
   where model = [ shiftT 0 75 <> scaleT 0.5 0.5 <> rotateT (pi/3)
