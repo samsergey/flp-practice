@@ -41,17 +41,21 @@
   <body>
     <p id="header"></p>
 
-    <table>
+    <table align='center'>
       <tr>
 	<td>
+	  <h2>Основы функционального программирования</h2>
 	  <lab> 
 	    <topic>Использование <sl>Emacs</sl></topic>
-	    <topic>Использование REPL</topic>
+	    <topic>Использование <sl>GHCi</sl></topic>
 	    <topic>Определение функций</topic>
 	  </lab>
 	  <lab> 
 	    <topic>Знакомство с типами</topic>
 	    <topic>Списки и циклы</topic>
+	    <topic>Выделение части списка</topic>
+	    <topic>Свёртка списков</topic>
+	    <topic>Генерация списков</topic>
 	  </lab>
 	  <lab>
 	    <topic>Описание электрических цепей</topic>
@@ -59,6 +63,7 @@
 	    <topic>Алгебра сопротивлений</topic>
 	    <topic>Метод бисекции</topic>
 	  </lab>
+	  <h2>Алгебраические структуры</h2>
 	  <lab>
 	    <topic>Полугруппы и моноиды</topic>
 	    <topic>Произведение типов-моноидов</topic>
@@ -75,14 +80,13 @@
 	    <topic>Новые способы комбинирования изображений</topic>
 	    <topic>Стилевые атрибуты</topic>
 	  </lab>
-	<!-- </td> -->
-    	<!-- <td  class='column'> -->
 	  <lab>
 	    <topic>Функторы</topic>
 	    <topic>Аппликативные функторы</topic>
 	    <!-- <topic>Управление сообщениями об ошибках</topic> -->
 	    <topic>Монады</topic>
 	  </lab>
+	  <h2>Методы трансляции</h2>
 	  <lab>
 	    <topic>Транслятор и результат трансляции</topic>
 	    <topic>Последовательное выполнение трансляторов</topic>
@@ -93,6 +97,25 @@
             <topic>От анализа к трансляции</topic>
 	    <topic>Мы придумали монаду!</topic>
 	    <topic>Делай раз! Делай два!</topic>
+	  </lab>
+	  <lab>
+	    <topic>Повторите, пожалуйста!</topic>
+	    <topic>Трансляторы и моноиды</topic>
+	    <topic>Функциональные цепочки</topic>
+	  </lab>
+	  <h2>Примеры трансляции формальных языков</h2>
+	  <lab class='TODO'>
+	    <topic>Чтение данных в формате CSV</topic>
+	    <topic>Чтение данных в формате JSON</topic>
+	    <topic>Транслятор регулярных выражений</topic>
+	  </lab>
+	  <lab class='TODO'>
+	    <topic>Арифметические выражения в традиционной нотации</topic>
+	    <topic>Арифметические выражения в обратной польской нотации</topic>
+	  </lab>
+	  <lab class='TODO'>
+	    <topic>Лексический анализ</topic>
+	    <topic>Интерпретация стекового языка</topic>
 	  </lab>
 	</td>
       </tr>
@@ -109,11 +132,13 @@ var i = 0;
 Array.prototype.forEach.call(labs, function(el) {
     i++;
     var labRef = "flp-lab"+i+".html"
-    el.innerHTML = "<a class='toc1' href='"+labRef+"'>Занятие "+i+"</a>"+el.innerHTML
+    var href = el.className == "" ? "href='"+labRef+"'" : ""
+    el.innerHTML = "<a class='toc1' "+ href +">Занятие "+i+"</a>"+el.innerHTML
+      
     var topics = el.getElementsByTagName("topic")
     Array.prototype.forEach.call(topics, function(t) {
-	var ref = labRef+"#"+t.innerText;
-	t.innerHTML = "<a class='toc2' href='"+ref+"'>" + t.innerHTML + "</a>"
+	href = el.className == "" ? "href='" + labRef + "#" + t.innerText + "'" : ""
+	t.innerHTML = "<a class='toc2' "+href+">" + t.innerHTML + "</a>"
     });
 });
 

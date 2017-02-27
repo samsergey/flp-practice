@@ -218,9 +218,10 @@ chainl p o = p <**> (appEndo . getDual <$> mmany terms)
     terms = Dual . Endo <$> ((flip <$> o) <*> p)
 </hs></pre>
 
-<task>Посмотрите тип оператора <code>(<**>)</code> и объясните, почему мы используем его вместо <code>(<*>)</code>.</task>
+<task>Изучите тип оператора <code>(<**>)</code> и объясните его роль в определениях <code>chainl</code> и <code>chainr</code>.</task>
 
-
+<task>С помощью функции <code>assoc</code> убедитесь в том, что функции <code>chainl</code> и <code>chainr</code> соответствуют цепочкам лево- и правоассоциативных операций.
+<pre><hs>assoc a b = "(" ++ show a ++ "," ++ show b ++ ")"</hs></pre></task>
 
       <!-- ------------------------------------------------------------ -->
     </div>

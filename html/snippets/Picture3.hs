@@ -298,3 +298,9 @@ main = do
   writeSVG "test.html" $ scale 3 . opacity 0.5 $ foldMap toPicture l
 
 
+p = opacity 0.7 $ ((color "blue" $ plot sin (-15) 15) <>
+                   (color "green" $ plot (1/) 0.6 15) <>
+                   (color "red" $ plot sinc (-15) 15))
+
+p2 = (fill "blue" . opacity 0.6 $ barChart [1,2,4,8,9,3,1])
+  <> (fill "red" . opacity 0.6 $ barChart [3,5,2,8,5,9,1])
