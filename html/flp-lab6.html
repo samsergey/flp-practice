@@ -185,7 +185,7 @@ print 6 &lt;|&gt; error "!!"	</hs></pre>
 
       <p>Связка <code>join $ f &lt;$&gt; x</code> универсальна и позволяет связывать в&nbsp;цепочки любые вычисления с контекстом. Для неё есть особое обозначение: <code>=&lt;&lt;</code></p>
 
-      <pre>f =&lt;&lt; x  ≡  join $ f &lt;$&gt; x</pre>
+<p align='center'><tt>f =&lt;&lt; x  ≡  join $ f &lt;$&gt; x</tt></p>
 
 
       <p>Мы определили для типа <code>Maybe</code> функцию <code>join</code> и сразу повысили его "ранг", позволяя объединять в цепочку функции, возвращающие значения в контексте <code>Maybe</code>. Функторы (аппликативные) для которых определено соединение <code>join</code> называются <strong>монадами</strong>. </p>
@@ -225,14 +225,14 @@ Right (-16) &gt;&gt;= sqrtA
 
       <p>
 	Оператор <code>>>=</code> выражается через функцию <code>join</code> и наоборот.</p>
-      <pre>x >>= f  ≡  join $ f <$> x
- join x  ≡  x >>= id </pre>
+      <div class='equation' style='width:40%'><tt>x >>= f  ≡  join $ f <$> x<br/>
+&nbsp;join x  ≡  x >>= id</tt> </div>
 
       <p>
 	Если тип является монадой, то для полного определения всех его функториальных свойств достаточно определить две функции: <code>pure</code> и <code>&gt;&gt;=</code>. Остальные можно выразить через следующие тождества:</p>
 
-      <pre>f <$> x  ≡  x >>= (pure . f)
-f <*> x  ≡  f >>= (<$> x) </pre>
+      <div class='equation' style='width:45%'><tt>f <$> x  ≡  x >>= (pure . f)<br/>
+f <*> x  ≡  f >>= (<$> x)</tt> </div>
 
       
 

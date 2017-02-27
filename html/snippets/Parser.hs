@@ -1,9 +1,9 @@
 import Data.Monoid
 import Data.Ord
-import Data.Foldable
+import Data.Foldable hiding (elem)
 import Control.Monad
 import Control.Applicative
-import Safe
+--import Safe
 
 data Parser i a = Parser { run :: [i] -> Result [i] a}
 
@@ -14,6 +14,7 @@ data Result i a = Ok a i
   deriving (Show, Eq)
 
 instance Monad (Parser i) where
+  return = pure
   t >>= f = Parser $ \r -> case run t r of
     Ok x r' -> run (f x) r'
     Fail r' -> Fail r'
@@ -94,28 +95,28 @@ bracket = term '(' ?> mmany bracket ?> term ')'
 
 ------------------------------------------------------------
 
-nonzero = (next <?> (/=0)) <|> err "expected non zero value!"
+-- nonzero = (next <?> (/=0)) <|> err "expected non zero value!"
 
-push x = Parser $ \r -> Ok () (x:r)
+-- push x = Parser $ \r -> Ok () (x:r)
 
-calcRPN expr = run (foldMap interprete $ words expr) []
+-- calcRPN expr = run (foldMap interprete $ words expr) []
 
-interprete op = op <:> case op of
-  "+" -> binop (+) next next
-  "-" -> binop (-) next next
-  "/" -> binop div nonzero next
-  n -> case readMay n of
-    Nothing -> err "is not a number!"
-    Just x -> push x
+-- interprete op = op <:> case op of
+--   "+" -> binop (+) next next
+--   "-" -> binop (-) next next
+--   "/" -> binop div nonzero next
+--   n -> case readMay n of
+--     Nothing -> err "is not a number!"
+--     Just x -> push x
 
-binop f p1 p2 = "expected two arguments, got" <:> do
-  x <- p1 <|> err "none!"
-  y <- p2 <|> err "one!"
-  push (f y x)
+-- binop f p1 p2 = "expected two arguments, got" <:> do
+--   x <- p1 <|> err "none!"
+--   y <- p2 <|> err "one!"
+--   push (f y x)
 
-s <:> p = Parser $ \r -> case run p r of
-  Error m -> Error (s ++ ' ' : m)
-  x -> x
+-- s <:> p = Parser $ \r -> case run p r of
+--   Error m -> Error (s ++ ' ' : m)
+--   x -> x
 ------------------------------------------------------------
 
 data P = P String Int (Maybe Bool) deriving Show
@@ -130,18 +131,34 @@ readP = run (P <$> string_
 
 ------------------------------------------------------------
 
-chainl p op = (appEndo . getDual <$> mmany (endo p op)) <*> p
+-- ChainL = p {o p}
+-- p1 o p2 o p3 = (o p3) . (o p2 ) $ p1
+chainl1 p o = p <**> (appEndo . getDual <$> mmany terms)
   where
-    endo p op = Dual . Endo <$> (p <**> (flip <$> op))
+    terms = Dual . Endo <$> ((flip <$> o) <*> p)
 
-chainr p op = (appEndo <$> mmany (endo p op)) <*> p
+-- ChainR = {p o} p
+-- p1 o p2 o p3 = (p1 o). (p2 o) $ p3
+chainr1 p o = appEndo <$> mmany terms <*> p
   where
-    endo p op = Endo <$> (p <**> op)
+    terms = Endo <$> (p <**> o)
+
+chainl x0 p o = (appEndo . getDual) <$> mmany terms <*> pure x0
+  where
+    terms = Dual . Endo <$> (p <**> (flip <$> o <|> pure const))
+
+chainr x0 p o = appEndo <$> mmany terms <*> pure x0
+  where
+    terms =  Endo <$> (p <**> (o <|> pure const))
+
+
+pfoldMap m p = mmany (m <$> p)
+
 
 add = (+) <$ term '+'
 sub = (-) <$ term '-'
 
-foldr'' f x0 t = foldMap (Endo . f) t `appEndo` x0
+foldr'' f x0 t = appEndo (foldMap (Endo . f) t) x0
 
 foldl'' f x0 t = getDual (foldMap (Dual . Endo . flip f) t) `appEndo` x0
 

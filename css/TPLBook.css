@@ -51,6 +51,7 @@ tab {
 }
 
 tt {
+    font-size: 110%
     font-weight: bold;
     color: #423;
 }
@@ -289,6 +290,12 @@ err {
     font-weight: bold;
 }
 
+.equation {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    /* width: 40%; */
+}
 
 disclaim {
   display: block;
