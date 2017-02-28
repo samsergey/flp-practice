@@ -319,11 +319,33 @@ p = opacity 0.7 $ ((color "blue" $ plot sin (-15) 15) <>
 p2 = (fill "navy" . opacity 0.6 $ barChart [1,2,4,8,9,3,1])
   <> (fill "orange" . opacity 0.6 $ barChart [12,8,3,2,1,4,8])
 
-sierp 1 = line [(0,0),(3,0),(0,3),(0,0)]
-sierp n = let t = sierp (n-1) in t `above` (t `beside` t)
+sierp n = mrepeat n tri $ circle 1
+  where tri t = t `above` (t `beside` t)
 
 chart p lst = row $ (\i -> col $ replicate i $ p) <$> lst
 
+colorizeWith colors ps = zipWith fill (cycle colors) ps
+
+manyCharts colors tbl = col charts
+  where charts = colorizeWith colors $ lineChart <$> tbl
+
+overlayCharts colors tbl = opacity 0.5 $ mconcat charts
+  where charts = colorizeWith colors $ lineChart <$> tbl
+  
+stackCharts colors tbl = row charts
+  where
+    charts = stack <$> transpose tbl
+    stack lst = col $ colorizeWith colors $
+                rectangle 1 <$> lst 
+
+lineChart = line . trim . zip [0..]
+  where trim l = (0,0) : l ++ [(fst (last l),0)]
+
+table :: [[Float]]
+table = [[1,3,5,7,5,7,3,5]
+        ,[6,4,2,6,4,7,8,3]
+        ,[1,2,3,2,3,4,2,1]]
+                
 colors = (rotate 45 . color "black" . fill "red" $ square 50)
   <> (opacity 0.5 . fill "blue" $ circle 30)
   <> (color "orange" . lineWidth 5 $ line [(-40,40),(40,-40)])
@@ -332,12 +354,83 @@ mrepeat n f = mconcat . take n . iterate f
 
 fractal model n = mrepeat n (mconcat model) 
 
-tree = fractal model 7 $ line [(0,0), (0,1)]
-  where model = [ shift 0 1 . scale 0.6 . rotate (-30)
-                , shift 0 1 . scale 0.7 . rotate 5
-                , shift 0 1 . scale 0.5 . rotate 45]
+tree = mrepeat 8 (mconcat model) stem
+  where
+    stem = line [(0,0), (0,1)]
+    model = [ shift 0 1 . scale 0.6 . rotate (-30)
+            , shift 0 1 . scale 0.75 . rotate 5
+            , shift 0 1 . scale 0.5 . rotate 45]
+
+polygon n r = line $ [(r*sin a, r*cos a)
+                     | a <- [0,2*pi/fromIntegral n..2*pi]]
+
+pentaflake = (!! 5) $ iterate model $ polygon 5 1
+  where model = foldMap copy [0,72..288]
+        copy a = scale s . rotate a . shift 0 x
+        x = 2*cos(pi/5)
+        s = 1/(1+x)
 
 
-circles = fractal model 8 $ circle 1
-  where model = [ shift 0 0.75 . scale 0.5 . rotate 60
-                , shift 0 (-0.75) . scale 0.5 . rotate (-60) ]
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
+class Canvas a where
+  toCanvas :: a -> String
+
+writeCanvas f = writeFile f . toCanvas
+
+cmd :: String -> [Float] -> [String]
+cmd c [] = ["ctx." ++ c ++ "();"]
+cmd c args = ["ctx." ++ c ++ "(" ++ args' ++ ");"]
+  where args' = drop 1 $ foldMap (',':) $ show <$> args
+
+set a v = format "_ = _;" [a, show v]
+
+path pts = cmd "beginPath" [] <> pts <> cmd "stroke" [] <> cmd "fill" []
+moveTo (x,y) = cmd "moveTo" [x, y]
+lineTo (x,y) = cmd "lineTo" [x, y]
+arc (x,y) r a1 a2 = cmd "arc" [x, y, r, a1, a2]
+group attr g = [ "saveEnv()", foldMap toCanvas attr, g, "restoreEnv()"]
+ 
+instance Canvas Primitive where
+  toCanvas p = unlines $ case p of
+    Line [] -> mempty
+    Line (pt:pts) -> path $ moveTo pt <> foldMap lineTo pts
+    Circle pt r -> path $ arc pt r 0 (2*pi) 
+    Point pt -> path $ arc pt 2 0 (2*pi) 
+    Group attr ps -> group attr $ foldMap toCanvas ps
+
+instance Canvas Picture where
+  toCanvas p = header <> start <> foldMap toCanvas (contents p') <> finish
+    where
+      p' = adjust p
+      header = format "<canvas id='img' width='_' height='_'></canvas>\n"
+               [show $ width p'+18, show $ height p'+18]
+      start = unlines
+        [ "<script>"
+        , "var ctx = img.getContext('2d');"
+        , envOperations ]
+      finish = "</script>"
+
+envOperations = unlines
+  [ "var ss,fs,os;"
+  , "function saveEnv() {"
+  , "  ss = img.strokeStyle;"
+  , "  sf = img.fillStyle;"
+  , "  os = img.globalOpacity;"
+  , "  wl = img.lineWidth;"
+  , "}"
+  , "function restoreEnv() {"
+  , "  img.strokeStyle = ss;"
+  , "  img.fillStyle = sf;"
+  , "  img.globalOpacity = os;"
+  , "  img.lineWidth = wl;"
+  , "}"]
+  
+instance Canvas Attribute where
+  toCanvas attr = case attr of
+    Color c -> set "ctx.strokeStyle" c
+    Fill c -> set "ctx.fillStyle" c
+    LineWidth w -> set "ctx.lineWidth" w
+    Opacity o -> set "ctx.globalAlpha" o

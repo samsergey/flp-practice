@@ -201,7 +201,7 @@ fractal model n = mconcat . take n . iterate (foldMap transform model)
 
 tree = fractal model 7 $ line [(0,0), (0,100)]
   where model = [ shiftT 0 100 <> scaleT 0.6 0.6 <> rotateT (-pi/6)
-                , shiftT 0 100 <> scaleT 0.7 0.7
+                , shiftT 0 100 <> scaleT 0.7 0.7 <> rotateT (5/180*pi)
                 , shiftT 0 100 <> scaleT 0.5 0.5 <> rotateT (pi/4)]
 
 circles = fractal model 8 $ circle 150
@@ -217,9 +217,9 @@ tree' = [ transform (shiftT 0 100 <> scaleT 0.6 0.6 <> rotateT (-pi/6))
         , transform (shiftT 0 100 <> scaleT 0.7 0.7)
         , transform (shiftT 0 100 <> scaleT 0.5 0.5 <> rotateT (pi/6))]
 
-pentaflake = scale 100 100 $ fractal model 4 $ polygon 5 1
-  where model =  map copy [0,72..288]
-        copy a = scaleT s s <> rotateT (pi*a/180) <> shiftT 0 x
+pentaflake = scale 150 150 $ (!! 5) $ iterate model $ polygon 5 1
+  where model = foldMap copy [0,72..288]
+        copy a = transform $ scaleT s s <> rotateT (pi*a/180) <> shiftT 0 x
         x = 2*cos(pi/5)
         s = 1/(1+x)
 

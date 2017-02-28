@@ -10,6 +10,11 @@
     <script src="../lib/highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
     <script src="../lib/katex/katex.min.js"></script>
+    <style>
+      .col1 {
+      width:7em;
+      }
+    </style>
   </head>
   <body>
     <p id="header"></p>
@@ -40,7 +45,7 @@ data Primitive = Point Pt
 data Picture = Empty
              | Picture [Primitive] deriving Show</hs></pre>
 
-      <p>Сразу продумаем как можно помбинировать примитивы и изображения. Самый непротиворечивый способ — накладывать их друг на друга, то есть, изображать на одном холсте.</p>
+      <p>Сразу продумаем как можно комбинировать примитивы и изображения. Самый непротиворечивый способ — накладывать их друг на друга, то есть, изображать на одном холсте.</p>
       <div class='equation' style='width:70%'>
 	<table>
 	  <tr>
@@ -106,16 +111,16 @@ triangle :: Pt -> Float -> Float -> Picture</hs></pre>
       </task>
       
       <p>Сами примитивы ещё не образуют полноценного изображения. Для того, чтобы можно было увидеть картинку, нужно объединить примитивы в такую структуру:
-	<pre>"&lt;svg width='_' height='_' fill='none' stroke='black'&gt;...&lt;/svg&gt;"</pre>
+	<pre>"&lt;svg width='_' height='_' fill='none' stroke='blue'&gt;...&lt;/svg&gt;"</pre>
 	Здесь аттрибуты <tt>width</tt> и <tt>height</tt> задают размеры изображения, прочие параметры задают графические атрибуты, используемые по умолчанию.</p>
 
       <task>Определите экземпляр класса <code>SVG</code> для типа <code>Picture</code>, задав фиксированные размеры изображения, скажем, 400×300.</task>
 
-      <task>Запишите SVG-выражение, описывающее домик в файл <tt>test.html</tt> с помощью функции <code>writeFile</code> и убедитесь в том, что  изображение открывается в веб-браузере. Создайте вспомогательную функцию <code>writeSVG</code> для удобного экспорта изображений в файл. <pre><hs>writeSVG :: SVG a => String -> a -> IO ()</hs></pre></task>
+      <task>Запишите SVG-выражение, описывающее домик в файл <tt>test.html</tt> с помощью функции <code>writeFile</code> и убедитесь в том, что  изображение открывается в веб-браузере. Создайте вспомогательную функцию <code>writeSVG</code> для удобного экспорта изображений в файл. <pre><hs><def>writeSVG :: SVG a => String -> a -> IO ()</def></hs></pre></task>
 
-      <task>Напишите конструктор <pre><hs>polygon :: Pt -> Int -> Float -> Picture</hs></pre> для правильных многоугольников заданного размера (размер задаётся радиусом описанной окружности). Первый аргумент определяет центр пногоугольника.</task>
+      <task>Напишите конструктор <pre><hs><def>polygon :: Pt -> Int -> Float -> Picture</def></hs></pre> для правильных многоугольников заданного размера (размер задаётся радиусом описанной окружности). Первый аргумент определяет центр пногоугольника.</task>
       <task>Создайте изображение, показанное на рисунке:
-	<p><svg width='185.0' height='185.0' fill='none' stroke='blue'><circle cx='100.0' cy='100.0' r='80.0'/><circle fill='blue' cx='100.0' cy='100.0' r='1'/><polyline points=' 180.0,100.0 124.72136,176.08453 35.278633,147.02281 35.27864,52.977173 124.721375,23.915482 180.0,100.000015'/></svg></p></task>
+	<p align='center'><svg width='185.0' height='185.0' fill='none' stroke='blue'><circle cx='100.0' cy='100.0' r='80.0'/><circle fill='blue' cx='100.0' cy='100.0' r='1'/><polyline points=' 180.0,100.0 124.72136,176.08453 35.278633,147.02281 35.27864,52.977173 124.721375,23.915482 180.0,100.000015'/></svg></p></task>
 
       <h2>Определение размеров изображения</h2>
 
@@ -165,15 +170,15 @@ instance Bounded Float where
       
       <task>Переопределите конструкторы <code>point, line, square, ...</code>
 	<p>Для этого имеет смысл определить вспомогательную функцию <code>primitive</code>, которая выполняла бы необходимые вычисления обрамляющей рамки для формируемого изображения:
-	  <pre><hs>primitive :: Primitive -> Picture</hs></pre>
+	  <pre><hs><def>primitive :: Primitive -> Picture</def></hs></pre>
       </task>
 
       <task>Наконец, используйте информацию об обрамляющей рамке изображения для вычисления размеров, указываемых в заголовке SVG-файла. Для этого напишите ещё одну вспомогательную функцию для типа <code>Picture</code>:
-	<pre><hs>contents :: Picture -> [Primitive]</hs></pre>
+	<pre><hs><def>contents :: Picture -> [Primitive]</def></hs></pre>
       </task>
 
       <task>Определите в классе <code>Boxed</code> универсальную функцию <code>corner</code>, возвращающую углы обрамляющей рамки изображения, или примитива
-      <pre><hs>corner :: a -> ((Pt, Pt), (Pt, Pt))</hs></pre> и четыре селектора <code>left, right, upper, lower</code>
+      <pre><hs><def>corner :: a -> ((Pt, Pt), (Pt, Pt))</def></hs></pre> и четыре селектора <code>left, right, upper, lower</code>
       так, чтобы можно было бы получить правый нижний угол изображения с помощью выражения:
       <pre><hs> right . lower . corner $ p</hs></pre></task>
       
@@ -256,13 +261,13 @@ instance Monoid Transform where
       <task>Тип <code>Picture</code> расширился, значит, определение класса <code>Monoid</code> для него, а также все функции, имеющие тип <code>Picture -> a</code> требуют дополнения. Внесите необходимые исправления, прежде чем двигаться дальше.</task>
     
       <task>Напишите, используя оператор <code>(:$)</code>, следующие преобразователи изображений:
-	<pre><hs>scaleX :: Float -> Picture -> Picture -- масштабирует координату x
-scaleY :: Float -> Picture -> Picture -- масштабирует координату y
-scale :: Float -> Picture -> Picture -- одинаково масштабирует обе координаты
-rescaleTo :: Float -> Float -> Picture -> Picture -- приводит изображение к указанным размерам 
-shift :: Float -> Float -> Picture -> Picture -- параллельный перенос изображения
-rotate :: Float -> Picture -> Picture -- поворот на угол, задаваемый в градусах вокруг центра координат
-rotateAt :: Pt -> Float -> Picture -> Picture -- поворот вокруг указанной точки</hs></pre>
+	<pre><hs><def>scaleX :: Float -> Picture -> Picture</def> -- масштабирует координату x
+<def>scaleY :: Float -> Picture -> Picture</def> -- масштабирует координату y
+<def>scale :: Float -> Picture -> Picture</def> -- одинаково масштабирует обе координаты
+<def>rescaleTo :: Float -> Float -> Picture -> Picture</def> -- приводит изображение к указанным размерам 
+<def>shift :: Float -> Float -> Picture -> Picture</def> -- параллельный перенос изображения
+<def>rotate :: Float -> Picture -> Picture</def> -- поворот на угол, задаваемый в градусах вокруг центра координат
+<def>rotateAt :: Pt -> Float -> Picture -> Picture</def> -- поворот вокруг указанной точки</hs></pre>
       </task>
 
       <task>Проверьте на примере квадрата как работают преобразователи и их композиция:
@@ -319,7 +324,7 @@ s &lt;&gt; (rotate 60 . shift 30 0) s </hs></pre></task>
 	<pre><hs>rescaleTo 200 100 $ barChart [1,2,3,2,3,4,5,4,3,2]</hs></pre>
 	<p align='center'><svg fill='none' stroke='blue' width='204' height='104' ><polyline points=' 4.0,104.0 24.0,104.0 24.0,84.0 4.0,84.0 4.0,104.0'/><polyline points=' 24.0,104.0 44.0,104.0 44.0,64.0 24.0,64.0 24.0,104.0'/><polyline points=' 44.0,104.0 64.0,104.0 64.0,44.0 44.0,44.0 44.0,104.0'/><polyline points=' 64.0,104.0 84.0,104.0 84.0,64.0 64.0,64.0 64.0,104.0'/><polyline points=' 84.0,104.0 104.0,104.0 104.0,44.0 84.0,44.0 84.0,104.0'/><polyline points=' 104.0,104.0 124.0,104.0 124.0,24.0 104.0,24.0 104.0,104.0'/><polyline points=' 124.0,104.0 144.0,104.0 144.0,4.0 124.0,4.0 124.0,104.0'/><polyline points=' 144.0,104.0 164.0,104.0 164.0,24.0 144.0,24.0 144.0,104.0'/><polyline points=' 164.0,104.0 184.0,104.0 184.0,44.0 164.0,44.0 164.0,104.0'/><polyline points=' 184.0,104.0 204.0,104.0 204.0,64.0 184.0,64.0 184.0,104.0'/></svg></p>
       </task>
-    
+     
       <h2>Стиль изображений</h2>
 
       <p>Добавим нашему языку красок! Изменение атрибутов примитивов и изображений можно тоже рассмативать, как преобразование. С&nbsp;геометрическими преобразованиями мы уже разобралисьб а можно ли смешивать эти преобразования каким-либо однородным способом? Так, чтобы можно было бы написать и вычислить такое выражение:
@@ -343,24 +348,24 @@ s &lt;&gt; (rotate 60 . shift 30 0) s </hs></pre></task>
 
 	Перед нами теперь встают три задачи: <ul>
 	  <li> определить каким образом новые преобразования будут действовать на изображения;
-	  <li> определить, как интерпретировать атрибуты изображений в формате SVG;
+	  <li> определить, как интерпретировать атрибуты изображений в формате&nbsp;SVG;
 	  <li> созать набор функций-преобразователей: <code>color</code>, <code>fill</code> и т.д.;
 	</ul>
       </p>
 
-      
       <task>Имеет смысл присваивать стиль не каждому примитиву, а целым группам. Это соотвествует духу SVG, в котором существует элемент <code>g</code>, группирующий другие элементы.
 	В формате SVG для атрибутов принято единообразное обозначение: <tt>attribute=value</tt>. Перечисленным в типе <code>Attribute</code> конструкторам соответствуют следующие параметры элементов SVG:
+
 	<p>
 	  <table>
-	    <tr><td><code>LineColor</code></td><td><tt>stroke</tt></td></tr>
-	    <tr><td><code>Fill</code></td><td><tt>fill</tt></td></tr>
-	    <tr><td><code>LineWidth</code></td><td><tt>stroke-width</tt></td></tr>
-	    <tr><td><code>Opacity</code></td><td><tt>stroke-opacity</tt> и <tt>fill-opacity</tt></td></tr>
+	    <tr><td style='width:7em'><code>LineColor</code></td><td><tt>stroke</tt></td></tr>
+	    <tr><td style='width:7em'><code>Fill</code></td><td><tt>fill</tt></td></tr>
+	    <tr><td style='width:7em'><code>LineWidth</code></td><td><tt>stroke-width</tt></td></tr>
+	    <tr><td style='width:7em'><code>Opacity</code></td><td><tt>stroke-opacity</tt> и <tt>fill-opacity</tt></td></tr>
 	  </table>
 	</p>
 	
-	<p> Группа, для которой установлены цвет линии и заливки декларируется следующим образом:
+	<p> Группа, для которой установлены атрибуты, декларируется следующим образом:
 	  <pre>&lt;g stroke="red" fill="blue"&gt;...&lt;/g&gt;</pre>
 	  Определите экземпляр класса <code>SVG Attribute</code>.</p>
 
@@ -380,17 +385,17 @@ transform pic = case pic of
       Объясните как работает функция <code>app</code>.</task>
 
       <task>С помощью вспомогательных функций
-	<pre><hs>mkAffine :: M Float -> Picture -> Picture
+	<pre><hs><def>mkAffine :: M Float -> Picture -> Picture</def>
 mkAffine m = (Transform (m, mempty) :$)
 
-mkStyle :: (t -> Attribute) -> t -> Picture -> Picture
+<def>mkStyle :: (t -> Attribute) -> t -> Picture -> Picture</def>
 mkStyle k v = (Transform (mempty, [k v]) :$)</hs></pre>
 	Переопределите геометрические функции-преобразователи и введите преобразователи стиля
-	<pre><hs>lineColor :: String -> Picture -> Picture -- цвет линии
-fill :: String -> Picture -> Picture -- цвет заливки
-color :: String -> Picture -> Picture  -- одинаковый цвет линии и заливки
-lineWidth :: Float -> Picture -> Picture -- толщина линии
-opacity :: Float -> Picture -> Picture -- прозрачность фигуры</hs></pre>
+	<pre><hs><def>lineColor :: String -> Picture -> Picture</def> -- цвет линии
+<def>fill :: String -> Picture -> Picture</def> -- цвет заливки
+<def>color :: String -> Picture -> Picture </def> -- одинаковый цвет линии и заливки
+<def>lineWidth :: Float -> Picture -> Picture</def> -- толщина линии
+<def>opacity :: Float -> Picture -> Picture</def> -- прозрачность фигуры</hs></pre>
       </task>
 
       <task> Проверьте корректность работы стилей на примере:
@@ -399,7 +404,8 @@ opacity :: Float -> Picture -> Picture -- прозрачность фигуры<
 	
       	<p align='center'><svg width='208' height='158' fill='none' stroke='blue'><g  fill="navy" stroke-opacity=0.6 fill-opacity=0.6><polyline points=' 4,154 32.57,154 32.57,141.5 4,141.5 4,154'/><polyline points=' 32.57,154 61.14,154 61.14,129 32.57,129 32.57,154'/><polyline points=' 61.14,154 89.71,154 89.71,104 61.14,104 61.14,154'/><polyline points=' 89.71,154 118.28,154 118.28,54 89.71,54 89.71,154'/><polyline points=' 118.28,154 146.85,154 146.85,41.5 118.28,41.5 118.28,154'/><polyline points=' 146.85,154 175.42,154 175.42,116.5 146.85,116.5 146.85,154'/><polyline points=' 175.42,154 204,154 204,141.5 175.42,141.5 175.42,154'/></g><g  fill="orange" stroke-opacity=0.6 fill-opacity=0.6><polyline points=' 4,154 32.57,154 32.57,4 4,4 4,154'/><polyline points=' 32.57,154 61.14,154 61.14,54 32.57,54 32.57,154'/><polyline points=' 61.14,154 89.71,154 89.71,116.5 61.14,116.5 61.14,154'/><polyline points=' 89.71,154 118.28,154 118.28,129 89.71,129 89.71,154'/><polyline points=' 118.28,154 146.85,154 146.85,141.5 118.28,141.5 118.28,154'/><polyline points=' 146.85,154 175.42,154 175.42,104 146.85,104 146.85,154'/><polyline points=' 175.42,154 204,154 204,54 175.42,54 175.42,154'/></g></svg></p>
       </task>
-      
+
+     
       <p>Построенный нами встроенный язык построения изображений имеет несколько замечательных свойств:
 	<ul>
 	  <li> Он декларативен, но, в то же время, позволяет производить сколь угодно сложные вычисления для построения изображений;
@@ -408,28 +414,69 @@ opacity :: Float -> Picture -> Picture -- прозрачность фигуры<
 	</ul>
       </p>
 
-      <task>Объясните, как вычисляются и строятся следующие изображения:
-      <pre><hs>sierp 1 = line [(0,0),(3,0),(0,3),(0,0)]
-sierp n = let t = sierp (n-1) in t `above` (t `beside` t)</hs></pre>
-      <pre><ghci>rescaleTo 200 200 . rotate (-135) $ sierp 6</ghci></pre>
+      <h2>Примеры использования</h2>
 
-      <pre><hs>fractal model n = mconcat . take n . iterate (foldMap transform model) 
-
-tree = fractal model 7 $ line [(0,0), (0,100)]
-  where model = [ shiftT 0 100 <> scaleT 0.6 0.6 <> rotateT (-pi/6)
-                , shiftT 0 100 <> scaleT 0.7 0.7
-                , shiftT 0 100 <> scaleT 0.5 0.5 <> rotateT (pi/4)]
-
-circles = fractal model 8 $ circle 150
-  where model = [ shiftT 0 75 <> scaleT 0.5 0.5 <> rotateT (pi/3)
-                , shiftT 0 (-75) <> scaleT 0.5 0.5 <> rotateT (-pi/3) ]
-
-pithagor = fractal model 10 $ square 100
-  where model = [ shiftT 0 100 <> scaleT s s <> rotateT (pi/4)
-                , shiftT 100 100 <> scaleT s s <> rotateT (-pi/4)]
-        s = 1/sqrt 2
-</hs></pre>
+      <p>Построение линейчатой диаграммы по таблице данных</p>
+      <pre><hs>lineChart = line . trim . zip [0..]
+  where trim l = (0,0) : l ++ [(fst (last l),0)]</hs></pre>
       
+ <p align='center'><svg width='208.0' height='158.0' fill='none' stroke='blue'><g  fill="goldenrod"><polyline points=' 4,154 4,97.75 44,116.5 84,41.5 124,79 164,4 204,79 204,154'/></g></svg><br/>
+   <code>fill "goldenrod" $ lineChart [3,2,6,4,8,4]</code></p>
+ 
+      <p>Так можно раскрасить последовательно несколько изображений:</p>
+	<pre><hs>colorizeWith colors ps = zipWith fill (cycle colors) ps</hs></pre>
+
+      <p align='center'><svg width='176.0' height='50.0' fill='none' stroke='blue'><g  fill="green"><circle cx='7' cy='43' r='3'/></g><g  fill="gray"><circle cx='16' cy='40' r='6'/></g><g  fill="green"><circle cx='31' cy='37' r='9'/></g><g  fill="gray"><circle cx='52' cy='34' r='12'/></g><g  fill="green"><circle cx='79' cy='31' r='15'/></g><g  fill="gray"><circle cx='112' cy='28' r='18'/></g><g  fill="green"><circle cx='151' cy='25' r='21'/></g></svg></br>
+  <code>row.colorizeWith ["green","gray"] $ circle <$> [3,6..20]</code>
+      </p>
+      
+      <p>Пусть нам дана таблица данных:
+	<pre><hs>table = [[1,3,5,7,5,7,3,5]
+        ,[6,4,2,6,4,7,8,3]
+        ,[1,2,3,2,3,4,2,1]] :: [[Float]]
+</hs></pre>
+	Можно построить несколько способов изображения диаграмм по таблице значений</p>
+      
+      <pre><hs>manyCharts colors tbl = col charts
+  where charts = colorizeWith colors $ lineChart <$> tbl</hs></pre>
+	<p align='center'><img src="img/manyCharts.png" alt="" width='40%'/><br/>
+	  <code>manyCharts ["red","green","orange"] table</code></p>  
+
+<pre><hs>overlayCharts colors tbl = opacity 0.5 $ mconcat charts
+  where charts = colorizeWith colors $ lineChart <$> tbl</hs></pre>
+	<p align='center'><img src="img/overlayCharts.png" alt="" width='40%'/><br/>
+	  <code>overlayCharts ["red","green","orange"] table</code></p>  
+  
+<pre><hs>stackCharts colors tbl = row charts
+  where
+    charts = stack <$> transpose (reverse tbl)
+    stack lst = col $ colorizeWith colors $
+                rectangle 1 <$> lst </hs></pre>
+	<p align='center'><img src="img/stackCharts.png" alt="" width='40%'/><br/>
+	  <code>stackCharts ["red","green","orange"] table</code></p>  
+      
+      <task>Объясните, как вычисляются и строятся следующие изображения:
+      <pre><hs>sierp n = rotate (-135) $ mrepeat n tri $ circle 1
+  where tri t = t `above` (t `beside` t)</hs></pre>
+	<p align='center'><img src="img/triangle.png" alt="" width='40%'/><br/>
+	  <code>rescaleTo 200 200 sierp</code></p>  
+
+      <pre><hs>tree = mrepeat 7 (mconcat model) stem
+  where
+    stem = line [(0,0), (0,1)]
+    model = [ shift 0 1 . scale 0.6 . rotate (-30)
+            , shift 0 1 . scale 0.7 . rotate 5
+            , shift 0 1 . scale 0.5 . rotate 45 ]</hs></pre>
+	<p align='center'><img src="img/tree.png" alt="" width='40%'/><br/>
+	  <code>scale 200 $ color "darkgreen" tree</code></p>  
+
+      <pre><hs>pentaflake = (!! 5) $ iterate model $ polygon 5 1
+  where
+    model = foldMap copy [0,72..288]
+    copy a = scale (1/(1+x)) . rotate a . shift 0 x
+    x = 2*cos(pi/5)</hs></pre>
+      
+    <p align='center'><img src="img/pentaflake.png" alt="" width='40%'/><br/><code>scale 200 pentaflake</code></p>  
 </task>
       
       <task>Напишите функцию <code>plot</code>
