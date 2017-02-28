@@ -13,6 +13,7 @@
   </head>
   <body>
     <p id="header"></p>
+    
     <h2>Язык для описания изображений</h2>
 
     <div class='tasks'>
@@ -36,7 +37,8 @@ data Primitive = Point Pt
                | Line [Pt]
                deriving Show
 
-data Picture = Picture [Primitive] deriving Show</hs></pre>
+data Picture = Empty
+             | Picture [Primitive] deriving Show</hs></pre>
 
       <p>Сразу продумаем как можно помбинировать примитивы и изображения. Самый непротиворечивый способ — накладывать их друг на друга, то есть, изображать на одном холсте.</p>
       <div class='equation' style='width:70%'>
@@ -59,9 +61,11 @@ data Picture = Picture [Primitive] deriving Show</hs></pre>
 
 	
       <p>
-	Более того, изображения образуют моноид с операцией наложения (убедитесь мысленно, что наложение ассоциативно и имеет нейтральный элемент). Определим экземпляр класса <code>Monoid</code> для типа <code>Picture</code>:</p>
+	Более того, изображения образуют моноид с операцией наложения (убедитесь мысленно, что наложение ассоциативно). Определим экземпляр класса <code>Monoid</code> для типа <code>Picture</code>:</p>
       <pre><hs>instance Monoid Picture where
-  mempty = Picture mempty
+  mempty = Empty
+  Empty `mappend` p = p
+  p `mappend` Empty = p
   Picture p1 `mappend` Picture p2 = Picture (p1 &lt;&gt; p2)</hs></pre>
 
       <task>Напишите функции-конструкторы для элементарных фигур:
@@ -118,15 +122,16 @@ triangle :: Pt -> Float -> Float -> Picture</hs></pre>
       <p>Правильнее было бы не фиксировать размеры поля изображения в SVG-описании, а вычислять его, находя минимальные и максимальные значения координат примитивов. Эта информация будет нужна нам и для размещения изображений друг относительно друга.</p>
 
       <p>Включим "рамку", обрамляющую изображения, в тип <code>Picture</code> и определим тип для координат рамки:</p>
-      <pre><hs>data Picture = Picture (Box, [Primitive])
+      <pre><hs>data Picture = Empty
+             | Picture (Box, [Primitive])
              deriving Show
 
 type Box = ( (Min Float, Min Float)
            , (Max Float, Max Float) )
 
 instance Bounded Float where
-  minBound = -1000
-  maxBound = 1000</hs></pre>
+  minBound = -1/0
+  maxBound = 1/0</hs></pre>
       
       <p>В типе <code>Box</code> первая пара задаёт левый нижний угол изображения, а вторая – правый верхний. Для того, чтобы использовать полугруппы <code>Min</code> и <code>Max</code>, экпортируем их (и только их) из библиотеки <code>Data.Semigroup</code>. <pre><hs>import Data.Semigroup (Min(..), Max(..))</hs></pre> Для того, чтобы тип <code>Box</code> стал моноидом, мы определили минимальную и максимальную границы значений координат.</p>
 
@@ -144,6 +149,7 @@ instance Bounded Float where
     where ((_,Min y1),(_,Max y2)) = box p</hs></pre>
 	  Для экзепляров класса <code>Boxed</code> достаточно определить функцию <code>box</code>, все остальные выводятся через неё. Так, например определяется экземпляр <code>Boxed</code> для типа <code>Picture</code>:
 	  <pre><hs>instance Boxed Picture where
+  box Empty = ((Min 0, Min 0), (Max 0, Max 0))
   box (Picture (b,_)) = b</hs></pre>
 
 	  А так можно опредлить размеры для точки:
@@ -223,7 +229,8 @@ instance Bounded Float where
       <p>Композиция афинных преобразований соответствует перемножению матриц. Это значит, что функцию <code>affine</code> можно вынести за скобки: <eqn>\mathrm{affine}\,T_1 \circ \mathrm{affine}\,T_2 \circ ... \circ T_n = \mathrm{affine}\,(T_1\,T_2,\,...\,T_n).</eqn> Сначала перемножить несколько небольших матриц, а потом применить к большому числу точек выгоднее, чем применять их ко всем точкам по очереди.</p>
 
       <p>Чтобы воспользоваться этим свойством преобразований нужно отделить применение преобразований от применения функции <code>affine</code>. Это можно сделать, расширив тип <code>Picture</code>, добавив в него явное преобразование изображения:
-	<pre><hs>data Picture = Picture (Box, [Primitive])
+	<pre><hs>data Picture = Empty
+             | Picture (Box, [Primitive])
              | Transform :$ Picture
              deriving Show</hs></pre>
 	Это даёт нам возможность перед применением преобразований провести такую оптимизацию:</p>
@@ -232,9 +239,11 @@ instance Bounded Float where
 	Для этого напишем функцию <code>transform</code>
 
 	<pre><hs>transform p = case p of
-  Picture p -> Picture p
+  t1 :$ (t2 :$ p) -> transform $ (t1 &lt;&gt; t2) :$ p
   Transform t :$ Picture p -> affine t (Picture p)
-  t1 :$ (t2 :$ p) -> transform $ (t1 &lt;&gt; t2) :$ p</hs></pre>
+  Transform t :$ Empty -> Empty
+  Picture p -> Picture p
+  Empty -> Empty</hs></pre>
 
 	Для преобразований определим тип-моноид <code>Transform</code>:
 	<pre><hs>data Transform = Transform (M Float) deriving Show
@@ -278,9 +287,12 @@ s &lt;&gt; (rotate 60 . shift 30 0) s </hs></pre></task>
 
       <task>То, что начало координат области изображения SVG расположено в левом верхнем углу и ось ординат направлена вниз, традиционно для компьютерной графики, но неудобно. Удобнее было бы вообще не думать о том, где находится центр координат, показывая всё, что содержит в себе изображение, даже если координаты объектов отрицательны. Тип <code>Picture</code> содержит в себе информацию об области, обрамляющей изображение, и эту информацию можно использовать для приведения всех координат изображения в видимую область положительных координат. Измените определение функции <code>toSVG</code> для типа <code>Picture</code> так, чтобы перед выводом ось ординат направлялась вверх, а минимальные координаты изображения перемещались в начало координат.</task>
 
-      <task>Постройте картинку, задаваемую выражением:
-      	<pre><hs>mconcat $ take 48 $ iterate (rotate 7.5) $ square 50 `at` (25,25)</hs></pre>
-	<p align='center'><img src="img/wheel.png"/></p>
+      <task>Объясните, что делает функция <code>mrepeat</code>:
+      <pre><hs>mrepeat n f = mconcat . take n . iterate f</hs></pre>
+      </task>
+      
+      <task>С помощью функции <code>mrepeat</code> постройте картинку, задаваемую выражением:	
+      	<pre><hs>mrepeat 48 (rotate 7.5) $ square 50 `at` (25,25)</hs></pre>
       </task>
 
       <h2>Новые способы комбинирования изображений</h2>
@@ -299,22 +311,22 @@ s &lt;&gt; (rotate 60 . shift 30 0) s </hs></pre></task>
 
       <task>Напишите функцию <code>chart :: Picture -> [Int] -> Picture</code>, которая строила бы диаграммы для списков целочисленных значений, как показано на примере:
 	<pre><hs>chart (square 10) [1,2,1,2,3,2,1,4,2,3,6,5,4,3,4,3,1,2,1]</hs></pre>
-	<p align='center'><img src="img/chart1.png"/></p>
+	<p align='center'>
+<svg width='198.0' height='68.0' fill='none' stroke='blue'><polyline points=' 4,64 14,64 14,54 4,54 4,64'/><polyline points=' 14,54 24,54 24,44 14,44 14,54'/><polyline points=' 14,64 24,64 24,54 14,54 14,64'/><polyline points=' 24,64 34,64 34,54 24,54 24,64'/><polyline points=' 34,54 44,54 44,44 34,44 34,54'/><polyline points=' 34,64 44,64 44,54 34,54 34,64'/><polyline points=' 44,44 54,44 54,34 44,34 44,44'/><polyline points=' 44,54 54,54 54,44 44,44 44,54'/><polyline points=' 44,64 54,64 54,54 44,54 44,64'/><polyline points=' 54,54 64,54 64,44 54,44 54,54'/><polyline points=' 54,64 64,64 64,54 54,54 54,64'/><polyline points=' 64,64 74,64 74,54 64,54 64,64'/><polyline points=' 74,34 84,34 84,24 74,24 74,34'/><polyline points=' 74,44 84,44 84,34 74,34 74,44'/><polyline points=' 74,54 84,54 84,44 74,44 74,54'/><polyline points=' 74,64 84,64 84,54 74,54 74,64'/><polyline points=' 84,54 94,54 94,44 84,44 84,54'/><polyline points=' 84,64 94,64 94,54 84,54 84,64'/><polyline points=' 94,44 104,44 104,34 94,34 94,44'/><polyline points=' 94,54 104,54 104,44 94,44 94,54'/><polyline points=' 94,64 104,64 104,54 94,54 94,64'/><polyline points=' 104,14 114,14 114,4 104,4 104,14'/><polyline points=' 104,24 114,24 114,14 104,14 104,24'/><polyline points=' 104,34 114,34 114,24 104,24 104,34'/><polyline points=' 104,44 114,44 114,34 104,34 104,44'/><polyline points=' 104,54 114,54 114,44 104,44 104,54'/><polyline points=' 104,64 114,64 114,54 104,54 104,64'/><polyline points=' 114,24 124,24 124,14 114,14 114,24'/><polyline points=' 114,34 124,34 124,24 114,24 114,34'/><polyline points=' 114,44 124,44 124,34 114,34 114,44'/><polyline points=' 114,54 124,54 124,44 114,44 114,54'/><polyline points=' 114,64 124,64 124,54 114,54 114,64'/><polyline points=' 124,34 134,34 134,24 124,24 124,34'/><polyline points=' 124,44 134,44 134,34 124,34 124,44'/><polyline points=' 124,54 134,54 134,44 124,44 124,54'/><polyline points=' 124,64 134,64 134,54 124,54 124,64'/><polyline points=' 134,44 144,44 144,34 134,34 134,44'/><polyline points=' 134,54 144,54 144,44 134,44 134,54'/><polyline points=' 134,64 144,64 144,54 134,54 134,64'/><polyline points=' 144,34 154,34 154,24 144,24 144,34'/><polyline points=' 144,44 154,44 154,34 144,34 144,44'/><polyline points=' 144,54 154,54 154,44 144,44 144,54'/><polyline points=' 144,64 154,64 154,54 144,54 144,64'/><polyline points=' 154,44 164,44 164,34 154,34 154,44'/><polyline points=' 154,54 164,54 164,44 154,44 154,54'/><polyline points=' 154,64 164,64 164,54 154,54 154,64'/><polyline points=' 164,64 174,64 174,54 164,54 164,64'/><polyline points=' 174,54 184,54 184,44 174,44 174,54'/><polyline points=' 174,64 184,64 184,54 174,54 174,64'/><polyline points=' 184,64 194,64 194,54 184,54 184,64'/></svg></p>
       </task>
 
       <task>Напишите функцию <code>barChart :: [Double] -> Picture</code>, которая строила бы столбчатую диаграмму для числовых списков, используя ширину столбца 1:
 	<pre><hs>rescaleTo 200 100 $ barChart [1,2,3,2,3,4,5,4,3,2]</hs></pre>
 	<p align='center'><svg fill='none' stroke='blue' width='204' height='104' ><polyline points=' 4.0,104.0 24.0,104.0 24.0,84.0 4.0,84.0 4.0,104.0'/><polyline points=' 24.0,104.0 44.0,104.0 44.0,64.0 24.0,64.0 24.0,104.0'/><polyline points=' 44.0,104.0 64.0,104.0 64.0,44.0 44.0,44.0 44.0,104.0'/><polyline points=' 64.0,104.0 84.0,104.0 84.0,64.0 64.0,64.0 64.0,104.0'/><polyline points=' 84.0,104.0 104.0,104.0 104.0,44.0 84.0,44.0 84.0,104.0'/><polyline points=' 104.0,104.0 124.0,104.0 124.0,24.0 104.0,24.0 104.0,104.0'/><polyline points=' 124.0,104.0 144.0,104.0 144.0,4.0 124.0,4.0 124.0,104.0'/><polyline points=' 144.0,104.0 164.0,104.0 164.0,24.0 144.0,24.0 144.0,104.0'/><polyline points=' 164.0,104.0 184.0,104.0 184.0,44.0 164.0,44.0 164.0,104.0'/><polyline points=' 184.0,104.0 204.0,104.0 204.0,64.0 184.0,64.0 184.0,104.0'/></svg></p>
       </task>
-
-      <task>Объясните, как вычисляются и строятся следующие изображения:</task>
-      
+    
       <h2>Стиль изображений</h2>
 
       <p>Добавим нашему языку красок! Изменение атрибутов примитивов и изображений можно тоже рассмативать, как преобразование. С&nbsp;геометрическими преобразованиями мы уже разобралисьб а можно ли смешивать эти преобразования каким-либо однородным способом? Так, чтобы можно было бы написать и вычислить такое выражение:
-	<pre><hs>(rotate 45 . color "red" $ square 20 `at` (30,20))
- <> (opacity 0.5 . fill "blue" $ circle 30)</hs></pre></p>
-      <p align='center'><svg width='83.961945' height='112.246216' fill='none' stroke='blue'><g  fill="red"><polyline points=' 44.6066,74.71068 79.961945,39.355343 44.6066,4.0 9.251263,39.355343 44.6066,74.71068'/></g><g  stroke-opacity=0.5 fill-opacity=0.5 fill="blue"><circle cx='34.0' cy='78.246216' r='30.0'/></g></svg></p>
+	<pre><hs>(rotate 45 . color "black" . fill "red" $ square 50) <>
+(opacity 0.5 . fill "blue" $ circle 30) <>
+(color "orange" . lineWidth 5 $ line [(-40,40),(40,-40)])</hs></pre></p>
+      <p align='center'><svg width='88.0' height='118.71068' fill='none' stroke='blue'><g  stroke="black" fill="red"><polyline points=' 44,74.71 79.35,39.35 44,4 8.64,39.35 44,74.71'/></g><g  stroke-opacity=0.5 fill-opacity=0.5 fill="blue"><circle cx='44' cy='74.71' r='30'/></g><g  stroke="orange" stroke-width=5.0><polyline points=' 4,34.71 84,114.71'/></g></svg></p>
       
       <p>Кроме того, видно, что атрибуты изображения или примитива естественным образом комбинируются: можно задать и цвет линии и цвет заливки, а также прозрачность и все эти свойства "сложатся" у одного изображения. Это наводит на моноидальные мысли.</p>
       
@@ -359,8 +371,9 @@ s &lt;&gt; (rotate 60 . shift 30 0) s </hs></pre></task>
 	<pre><hs>transform :: Picture -> Picture
 transform pic = case pic of
   t1 :$ (t2 :$ p) -> transform $ (t1 &lt;&gt; t2) :$ p
-  Picture p -> Picture p
   Transform (m, s) :$ Picture p -> app style s . app affine m $ Picture p
+  Picture p -> Picture p
+  Empty -> Empty
   where
     app e m = if m == mempty then id else e m
     style s (Picture (b,p)) = Picture (b, [Group s p]) </hs></pre>
@@ -380,6 +393,12 @@ lineWidth :: Float -> Picture -> Picture -- толщина линии
 opacity :: Float -> Picture -> Picture -- прозрачность фигуры</hs></pre>
       </task>
 
+      <task> Проверьте корректность работы стилей на примере:
+	<pre><hs>opacity 0.6 $ (fill "navy" $ barChart [1,2,4,8,9,3,1]) <>
+(fill "orange" $ barChart [12,8,3,2,1,4,8])</hs></pre>
+	
+      	<p align='center'><svg width='208' height='158' fill='none' stroke='blue'><g  fill="navy" stroke-opacity=0.6 fill-opacity=0.6><polyline points=' 4,154 32.57,154 32.57,141.5 4,141.5 4,154'/><polyline points=' 32.57,154 61.14,154 61.14,129 32.57,129 32.57,154'/><polyline points=' 61.14,154 89.71,154 89.71,104 61.14,104 61.14,154'/><polyline points=' 89.71,154 118.28,154 118.28,54 89.71,54 89.71,154'/><polyline points=' 118.28,154 146.85,154 146.85,41.5 118.28,41.5 118.28,154'/><polyline points=' 146.85,154 175.42,154 175.42,116.5 146.85,116.5 146.85,154'/><polyline points=' 175.42,154 204,154 204,141.5 175.42,141.5 175.42,154'/></g><g  fill="orange" stroke-opacity=0.6 fill-opacity=0.6><polyline points=' 4,154 32.57,154 32.57,4 4,4 4,154'/><polyline points=' 32.57,154 61.14,154 61.14,54 32.57,54 32.57,154'/><polyline points=' 61.14,154 89.71,154 89.71,116.5 61.14,116.5 61.14,154'/><polyline points=' 89.71,154 118.28,154 118.28,129 89.71,129 89.71,154'/><polyline points=' 118.28,154 146.85,154 146.85,141.5 118.28,141.5 118.28,154'/><polyline points=' 146.85,154 175.42,154 175.42,104 146.85,104 146.85,154'/><polyline points=' 175.42,154 204,154 204,54 175.42,54 175.42,154'/></g></svg></p>
+      </task>
       
       <p>Построенный нами встроенный язык построения изображений имеет несколько замечательных свойств:
 	<ul>
@@ -389,8 +408,32 @@ opacity :: Float -> Picture -> Picture -- прозрачность фигуры<
 	</ul>
       </p>
 
+      <task>Объясните, как вычисляются и строятся следующие изображения:
+      <pre><hs>sierp 1 = line [(0,0),(3,0),(0,3),(0,0)]
+sierp n = let t = sierp (n-1) in t `above` (t `beside` t)</hs></pre>
+      <pre><ghci>rescaleTo 200 200 . rotate (-135) $ sierp 6</ghci></pre>
+
+      <pre><hs>fractal model n = mconcat . take n . iterate (foldMap transform model) 
+
+tree = fractal model 7 $ line [(0,0), (0,100)]
+  where model = [ shiftT 0 100 <> scaleT 0.6 0.6 <> rotateT (-pi/6)
+                , shiftT 0 100 <> scaleT 0.7 0.7
+                , shiftT 0 100 <> scaleT 0.5 0.5 <> rotateT (pi/4)]
+
+circles = fractal model 8 $ circle 150
+  where model = [ shiftT 0 75 <> scaleT 0.5 0.5 <> rotateT (pi/3)
+                , shiftT 0 (-75) <> scaleT 0.5 0.5 <> rotateT (-pi/3) ]
+
+pithagor = fractal model 10 $ square 100
+  where model = [ shiftT 0 100 <> scaleT s s <> rotateT (pi/4)
+                , shiftT 100 100 <> scaleT s s <> rotateT (-pi/4)]
+        s = 1/sqrt 2
+</hs></pre>
+      
+</task>
+      
       <task>Напишите функцию <code>plot</code>
-	<pre><hs>plot :: (Float -> Float) -> Float -> Float</hs></pre>
+	<pre><hs><def>plot :: (Float -> Float) -> Float -> Float</def></hs></pre>
 	которая строит график произвольной числовой функции в указанных пределах по оси <eq>x</eq>. Пример использования:
 	<pre><hs>rescaleTo 400 300 $ lineColor "blue" (plot sinc (-15) 15)</hs></pre>
 

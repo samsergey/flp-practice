@@ -61,34 +61,40 @@ instance Boxed Pt where
   width _ = 0
   height _ = 0
 
-data Picture = Picture (Box, [Primitive])
+data Picture = Empty
+             | Picture (Box, [Primitive])
              | Transform :$: Picture
              deriving Show
 
 contents :: Picture -> [Primitive]
+contents Empty = []
 contents (Picture (_, p)) = p
 contents p = contents (transform p)
 
 transform :: Picture -> Picture
 transform pic = case pic of
   t1 :$: (t2 :$: p) -> transform $ (t1 <> t2) :$: p
-  Picture p -> Picture p
-  Transform (m,s) :$: Picture p -> app style s . app affine m $ Picture p
+  Transform (m,s) :$: p -> app style s . app affine m $ p
+  p -> p
   where
     app e m = if m == mempty then id else e m
+    style _ Empty = Empty
     style s (Picture (b,p)) = Picture (b, [Group s p]) 
 
 instance Monoid Picture where
-  mempty = Picture mempty 
+  mempty = Empty
+  Empty `mappend` p = p
+  p `mappend` Empty = p
   Picture p1 `mappend` Picture p2 = Picture (p1 <> p2)
   p1 `mappend` p2 = transform p1 <> transform p2
 
 instance Boxed Picture where
-  box p = b where Picture (b,_) = transform p
+  box Empty = ((0, 0), (0, 0)) 
+  box p = let Picture (b,_) = transform p in b
 
 instance Bounded Float where
-  minBound = -1000
-  maxBound = 1000
+  minBound = -1/0
+  maxBound = 1/0
   
 primitive :: Primitive -> Picture
 primitive p = Picture (box p, [p])
@@ -132,7 +138,7 @@ instance SVG Primitive where
       showPt (x,y) = format " _,_" [short x, short y]
 
 instance SVG Picture where
-  toSVG (Picture (_,[])) = "<svg></svg>"
+  toSVG Empty = "<svg></svg>"
   toSVG p =
     format "<svg width='_' height='_' fill='none' stroke='blue'>_</svg>"
     [show (width p+8), show (height p+8), foldMap toSVG (contents (transform (adjust p)))]
@@ -186,10 +192,12 @@ instance Affine Primitive where
   affine m p = case p of
     Point pt    -> Point $ affine m pt
     Line pts    -> Line $ (affine m) <$> pts
-    Circle pt r -> Circle (affine m pt) r
+    Circle pt r -> Circle (affine m pt) (sqrt (x*x + y*y))
+      where M [[x],[y],_] = m <> M [[r],[0]]
     Group s g   -> Group s (affine m <$> g)
 
 instance Affine Picture where
+  affine m Empty = Empty
   affine m (Picture (_,ps)) = let p' = affine m <$> ps
                               in Picture (foldMap box p', p')
   affine m p = affine m (transform p)
@@ -209,6 +217,8 @@ scaleY a = mkAffine $ M [[1,0,0],[0,a,0],[0,0,1]]
 scale :: Float -> Picture -> Picture
 scale a = mkAffine $ M [[a,0,0],[0,a,0],[0,0,1]]
 
+shearX a = mkAffine $ M [[1,tan (pi/180*a),0],[0,1,0],[0,0,1]]
+
 rotate :: Float -> Picture -> Picture
 rotate a = mkAffine $ M [[c,-s,0],[s,c,0],[0,0,1]]
   where c = cos phi
@@ -221,16 +231,20 @@ p `at` (x,y) = shift (x-x1) (y-y1) p
 
 
 beside :: Picture -> Picture -> Picture
+beside Empty p = p
+beside p Empty = p
 beside p1 p2 = p1 <> p2 `at` (right.lower.corner) p1
 
 above :: Picture -> Picture -> Picture
+above Empty p = p
+above p Empty = p
 above p1 p2 = p1 `at` (left.upper.corner) p2 <> p2 
 
 row :: Foldable t => t Picture -> Picture
-row ps = foldl beside mempty ps
+row ps = foldl beside Empty ps
 
 col :: Foldable t => t Picture -> Picture
-col ps = foldr above mempty ps
+col ps = foldr above Empty ps
 
 
 mkStyle :: (t -> Attribute) -> t -> Picture -> Picture
@@ -248,7 +262,7 @@ lineWidth = mkStyle LineWidth
 opacity :: Float -> Picture -> Picture
 opacity = mkStyle Opacity
 
-rescaleTo  a b p = scaleX (a/width p) . scaleY (b/height p) $ p
+rescaleTo a b p = scaleX (a/width p) . scaleY (b/height p) $ p
 
 barChart lst =  row $ rectangle 1 <$> lst
 
@@ -302,5 +316,28 @@ p = opacity 0.7 $ ((color "blue" $ plot sin (-15) 15) <>
                    (color "green" $ plot (1/) 0.6 15) <>
                    (color "red" $ plot sinc (-15) 15))
 
-p2 = (fill "blue" . opacity 0.6 $ barChart [1,2,4,8,9,3,1])
-  <> (fill "red" . opacity 0.6 $ barChart [3,5,2,8,5,9,1])
+p2 = (fill "navy" . opacity 0.6 $ barChart [1,2,4,8,9,3,1])
+  <> (fill "orange" . opacity 0.6 $ barChart [12,8,3,2,1,4,8])
+
+sierp 1 = line [(0,0),(3,0),(0,3),(0,0)]
+sierp n = let t = sierp (n-1) in t `above` (t `beside` t)
+
+chart p lst = row $ (\i -> col $ replicate i $ p) <$> lst
+
+colors = (rotate 45 . color "black" . fill "red" $ square 50)
+  <> (opacity 0.5 . fill "blue" $ circle 30)
+  <> (color "orange" . lineWidth 5 $ line [(-40,40),(40,-40)])
+
+mrepeat n f = mconcat . take n . iterate f
+
+fractal model n = mrepeat n (mconcat model) 
+
+tree = fractal model 7 $ line [(0,0), (0,1)]
+  where model = [ shift 0 1 . scale 0.6 . rotate (-30)
+                , shift 0 1 . scale 0.7 . rotate 5
+                , shift 0 1 . scale 0.5 . rotate 45]
+
+
+circles = fractal model 8 $ circle 1
+  where model = [ shift 0 0.75 . scale 0.5 . rotate 60
+                , shift 0 (-0.75) . scale 0.5 . rotate (-60) ]
