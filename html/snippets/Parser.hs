@@ -51,6 +51,10 @@ check p = notEnd >> (Parser $ \r -> if p (head r)
                                     then Ok () r
                                     else Fail r)
 
+neg p = Parser $ \r -> case run p r of
+  Fail _ -> Ok () r
+  Ok _ _ -> Fail r
+
 term c = check (== c) >> next
 
 string :: Eq a => [a] -> Parser a [a]
@@ -61,7 +65,7 @@ integer = read <$> some digit
 
 digit = check (`elem` ['0'..'9']) >> next
 
---oneof :: (b -> Parser i a) -> [b] -> Parser i a
+oneof :: (b -> Parser i a) -> [b] -> Parser i a
 p `oneof` lst = asum $ p <$> lst
 
 msome p = mconcat <$> some p
@@ -119,16 +123,33 @@ bracket = term '(' ?> mmany bracket ?> term ')'
 --   x -> x
 ------------------------------------------------------------
 
-data P = P String Int (Maybe Bool) deriving Show
+data Person = Person { name :: String
+                     , age :: Int
+                     , hobby :: [String] } deriving Show
 
-readP = run (P <$> string_
-               <*> int_
-               <*> optional bool_) . words
-  where
-    int_ = read <$> next
-    string_ = next
-    bool_ = read <$> term `oneof` ["True", "False"]
+person = Person <$> string_
+                <*> number_
+                <*> listOf string_
 
+readPerson = parse
+
+number_ = read <$> some digit
+
+string_ = term '\'' *> some (term `except` "'") <* term '\''
+
+bool_ = (True <$ string "true") <|> (False <$ string "false")
+
+listOf p = ((p `sepBy` term ',') <|> pure [])
+
+clean = collect $
+  (string "'" <> some (term `except` "'") <> string "'") <|>
+  only (term `except` " \n\t")
+
+parse p s = case run p s of
+  Ok r _ -> Just r
+  Fail _ -> Nothing
+
+readCSV p = parse clean >=> parse 
 ------------------------------------------------------------
 
 -- ChainL = p {o p}
@@ -151,9 +172,7 @@ chainr x0 p o = appEndo <$> mmany terms <*> pure x0
   where
     terms =  Endo <$> (p <**> (o <|> pure const))
 
-
 pfoldMap m p = mmany (m <$> p)
-
 
 add = (+) <$ term '+'
 sub = (-) <$ term '-'
@@ -163,3 +182,26 @@ foldr'' f x0 t = appEndo (foldMap (Endo . f) t) x0
 foldl'' f x0 t = getDual (foldMap (Dual . Endo . flip f) t) `appEndo` x0
 
 
+sepBy p s = only p <> many (s *> p)
+
+except p xs = neg (p `oneof` xs) *> next
+
+data JSON = N Int
+          | S String
+          | B Bool
+          | A [JSON]
+          | O [(String, JSON)]
+          deriving Show
+
+json = N <$> number_ <|>
+       S <$> string_ <|>
+       B <$> bool_ <|>
+       A <$> listOf json `between` "[]" <|>
+       O <$> listOf (pairOf string_ json) `between` "{}"
+  where
+    pairOf p1 p2 = (,) <$> p1 <*> (term ':' *> p2)
+    between p [s1,s2] = term s1 *> p <* term s2
+
+
+
+readJSON = parse cleanJSON >=> parse json

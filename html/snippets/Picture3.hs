@@ -6,6 +6,8 @@ import Data.List (transpose, sort)
 import Triscape
 import System.Random
 
+import qualified Data.Map as M
+
 times :: (Monoid a, Integral i) => i -> a -> a
 0 `times` _ = mempty
 1 `times` a = a
@@ -370,9 +372,8 @@ pentaflake = (!! 5) $ iterate model $ polygon 5 1
         x = 2*cos(pi/5)
         s = 1/(1+x)
 
-
-
 --------------------------------------------------------------------------------
+
 --------------------------------------------------------------------------------
 
 class Canvas a where

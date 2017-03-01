@@ -404,7 +404,6 @@ mkStyle k v = (Transform (mempty, [k v]) :$)</hs></pre>
 	
       	<p align='center'><svg width='208' height='158' fill='none' stroke='blue'><g  fill="navy" stroke-opacity=0.6 fill-opacity=0.6><polyline points=' 4,154 32.57,154 32.57,141.5 4,141.5 4,154'/><polyline points=' 32.57,154 61.14,154 61.14,129 32.57,129 32.57,154'/><polyline points=' 61.14,154 89.71,154 89.71,104 61.14,104 61.14,154'/><polyline points=' 89.71,154 118.28,154 118.28,54 89.71,54 89.71,154'/><polyline points=' 118.28,154 146.85,154 146.85,41.5 118.28,41.5 118.28,154'/><polyline points=' 146.85,154 175.42,154 175.42,116.5 146.85,116.5 146.85,154'/><polyline points=' 175.42,154 204,154 204,141.5 175.42,141.5 175.42,154'/></g><g  fill="orange" stroke-opacity=0.6 fill-opacity=0.6><polyline points=' 4,154 32.57,154 32.57,4 4,4 4,154'/><polyline points=' 32.57,154 61.14,154 61.14,54 32.57,54 32.57,154'/><polyline points=' 61.14,154 89.71,154 89.71,116.5 61.14,116.5 61.14,154'/><polyline points=' 89.71,154 118.28,154 118.28,129 89.71,129 89.71,154'/><polyline points=' 118.28,154 146.85,154 146.85,141.5 118.28,141.5 118.28,154'/><polyline points=' 146.85,154 175.42,154 175.42,104 146.85,104 146.85,154'/><polyline points=' 175.42,154 204,154 204,54 175.42,54 175.42,154'/></g></svg></p>
       </task>
-
      
       <p>Построенный нами встроенный язык построения изображений имеет несколько замечательных свойств:
 	<ul>
@@ -423,7 +422,7 @@ mkStyle k v = (Transform (mempty, [k v]) :$)</hs></pre>
  <p align='center'><svg width='208.0' height='158.0' fill='none' stroke='blue'><g  fill="goldenrod"><polyline points=' 4,154 4,97.75 44,116.5 84,41.5 124,79 164,4 204,79 204,154'/></g></svg><br/>
    <code>fill "goldenrod" $ lineChart [3,2,6,4,8,4]</code></p>
  
-      <p>Так можно раскрасить последовательно несколько изображений:</p>
+      <p>Так можно раскрасить несколько изображений, чередуя цвета:</p>
 	<pre><hs>colorizeWith colors ps = zipWith fill (cycle colors) ps</hs></pre>
 
       <p align='center'><svg width='176.0' height='50.0' fill='none' stroke='blue'><g  fill="green"><circle cx='7' cy='43' r='3'/></g><g  fill="gray"><circle cx='16' cy='40' r='6'/></g><g  fill="green"><circle cx='31' cy='37' r='9'/></g><g  fill="gray"><circle cx='52' cy='34' r='12'/></g><g  fill="green"><circle cx='79' cy='31' r='15'/></g><g  fill="gray"><circle cx='112' cy='28' r='18'/></g><g  fill="green"><circle cx='151' cy='25' r='21'/></g></svg></br>

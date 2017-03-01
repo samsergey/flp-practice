@@ -18,29 +18,41 @@
 
       <h2>Чтение данных в формате CSV</h2>
     
-      <p>Хранение данных в виде текстоых таблиц удобно как для человека, так и для машины. Среди табулированных данных особенно часты встречается формат значений, разделяемых запятыми CSV (Comma Separated Values). Приведём пример простой "базы данных", хранящей информацию о некотрых персонах:
+      <p>Хранение данных в виде текстовых таблиц удобно как для человека, так и для машины. Среди табулированных данных особенно часто встречается формат значений, разделяемых запятыми — CSV (Comma Separated Values). Приведём пример простой "базы данных", хранящей информацию о некотрых персонах:
 
-	<pre>'James Mitchell', 32, 'golf, beer'
-'Mary Kay', 25, 'James Mitchell'
-'Garry Potter', 14, 'magic, troubles'</pre>
+	<pre>'James Mitchell', 32, 'golf',           yes
+'Garry Potter',   14, 'magic'
+'Mary Kay',       25, 'James Mitchell', no
+'Goofy',          65, 'troubles',       yes</pre>
 
 	Эти данные будут соответствовать списку записей данных типа <code>Person</code>:
 
 	<pre><hs>data Person { name :: String
             , age :: Int
-            , hobby :: [String] } deriving Show</hs></pre></p>
+            , hobby :: String
+	    , married :: Maybe Bool } deriving Show</hs></pre>
+	Обратите внимание на то, что последнего поля в таблице может и не быть.</p>
+      
+      <p>Транслятор отражает структуру типа данных. Типу-произведению соответствует аппликативная последовательность:
+      <pre><hs>person = Person <$> string_
+                <*> number_
+                <*> string_
+		<*> optional bool_</hs></pre>
+      </p>
 
-      <task>Напишите транслятор <code>getString</code>, читающий строку, ограниченную одинарными кавычками.</task>
+      <task>Определите трансляторы для элементов:
+	<pre><hs>number_ = _
+string_ = _
+bool_ = _</hs></pre>
+      </task>
 
-      <task>Напишите, используя аппликативные свойства трансляторов, транслятор <code>getPerson</code>, читающий строку в таблице.</task>
+      <task>Напишите функцию <code>parse</code>, которая возвращает только результат (в случае успешной трансляции).<pre><hs><def>parse :: Parser String a -> String -> Maybe a</def></hs></pre></task>
+      
+      <task>Напишите функцию <code>clean</code>, которая убирала бы в таблицк лишние пробелы и знаки табуляции  (оставляя их в строковых полях).
+	<pre><ghci><l></l> cleanJSON "'James Mitchell', 32, 'golf'"
+<o>Just "'James Mitchell',32,'golf'"</o></hs></pre></task>
 
-      <task>Напишите функцию <code>readCSV :: Parser String a -> String -> [a]</code> которая читает строку, содержащую СSV-таблицу, возвращая двумерную таблицу строк.</task>
-
-      <task>Добавьте к типу <code>Person</code> поле <code>married :: Maybe Bool</code> и соответствующую ей колонку в таблице. При этом у этого поля может не быть никакого значения. Например: 
-	<pre>'James Mitchell', 32, 'golf, beer', yes
-'Mary Kay', 25, 'James Mitchell', no
-'Garry Potter', 14, 'magic, troubles'</pre>
-</task>
+      <task>Напишите функцию <code>readCSV</code> которая читает строку, содержащую СSV-таблицу, возвращая список объектов, считываемых указанным транслятором.<pre><hs><def>readCSV :: Parser String a -> String -> [a]</def></hs></pre></task>
 
       <h2>Чтение данных в формате JSON</h2>
 
@@ -66,9 +78,9 @@
 	</disclaim>
       </p>
 
-<p>Приведём пример выражения JSON (мы пользуемся стандартом JSON5, допускающим одинарные кавычки):</p>
+      <p>Приведём пример выражения JSON (мы пользуемся стандартом JSON5, допускающим одинарные кавычки):</p>
 
-<pre><tt>{
+      <pre><tt>{
     'workers' :
     [
 	{
@@ -78,7 +90,7 @@
 	},
 	{
 	    'name' : 'Mary Kay',
-	    'hobby': ['cats','BMW','James Mitchell']
+	    'hobby': ['James Mitchell']
 	},
 	{
 	    'name': 'Garry Potter',
@@ -87,62 +99,35 @@
     ]
 }</tt></pre>
 
-      <p>Чтение JSON означает интерпретацию строки и создание соответствующей структуры данных. Приведённый выше пример в программе на языке Хаскелл, должен быть прочтён как-то так:</p>
+      <p>Чтение JSON означает интерпретацию строки и создание соответствующей структуры данных.</p>
 
-      <pre><hs>Workers
-  [ Person "James Mitchell" 32 ["golf", "eating pizza" ]
-  , Person "Mary Kay" 25 ["cats", "BMW", "James Mitchell"]
-  , Person "Garry Potter" 14 [] ]</hs></pre>
+      <p>Для представления данных определим тип <code>JSON</code>:
+	<pre><hs>data JSON = N Int
+          | S String
+          | B Bool
+          | A [JSON]
+          | O [(String, JSON)]
+          deriving Show</hs></pre></p>
+      
+      <p>
+	Транслятор отражает структуру типа:
 
-      Мы легко создадим трансляторы, соответствующие объекту и массиву:
+      <pre><hs>json = N <$> number_ <|>
+       S <$> string_ <|>
+       B <$> bool_ <|>
+       A <$> listOf json `between` "[]" <|>
+       O <$> listOf (pairOf string_ json) `between` "{}"</hs></pre>
+      </p>
 
-      <pre><hs>object p = term '{' *> p <* term '}'
-arrayOf p = term '[' *> (p `sepBy` term ',' <|> pure []) <* term ']'</hs></pre>
+      <task>Определите трансляторы для элементов:
 
-      А для пары напишем специальный комбинатор:
+	<pre><hs>listOf p = _
+pairOf p1 p2 = _
+between p [s1,s2] = _</hs></pre>
+      </task>
 
-<pre><hs>infix 5 .:
-key .: p  = string (show key) *> term ':' *> p <* opt (term ',')</hs></pre>
-
-Осталось определить трансляторы для строк и чисел:
-
-<pre><hs>string_ = term '\'' *> many (term `except` "'") <* term '\''
-number_ = integer</hs></pre>
-
- <p> Вот, собственно, и всё! Остальную работу для нас выполнят операторы <code><$></code> и <code><*></code>:</p>
-
- <pre><hs>data Person = Person String Integer [String]
-       deriving Show
-
-person = object $
-  Person <$> "name"  .: string_
-         <*> "age"   .: integer_
-         <*> "hobby" .: arrayOf string_</hs></pre>
-
-Проверяем на примере без пробелов:
-
- <pre><ghci><l></l> run person "{'name':'James','age':15,'hobby':['golf','pizza']}"
-<o>Ok (Person "James Mitchell" 15 ["golf","eating pizza"]) ""</o></ghci></pre>
-
- <task>Напишите функцию <code>cleanJSON</code>, которая убирала бы лишние пробелы из JSON (оставляя их в строках).
- <pre><ghci><l></l> cleanJSON "{ 'name': 'James Mitchell', 'age': 15, 'hobby': ['golf', 'eating pizza']}"
-<o>"{'name':'James Mitchell','age':15,'hobby':['golf','eating pizza']}"</o></hs></pre></task>
-
- <task> Так в Хаскеле можно прочитать текст в виде строки из файла с указанным именем, а потом обработав, вывести результат:
-					       
- <pre><hs>import System.IO  
-  
-main = do text <- readFile "test.json"
-          print $ readJSON workers text</hs></pre>
-
- <p> Напишите функцию <code>readJSON</code>, принимающую транслятор и строку, а возвращающую результат разбора. </p>
-
- <pre><hs>readJSON :: Parser String a -> String -> Maybe a</hs></pre>
- 
-<p>Определите транслятор JSON выражения, для объекта <tt>"workers"</tt> (как в примере выше).
- </task>
-
-<task>Добавьте каждому объекту <code>Person</code> поле <tt>"best friend"</tt>, содержащее информацию о лучшем друге в виде структуры <code>Person</code>. Причём, друга может и не быть.</task>
+ <task> Напишите функцию <code>readJSON</code>:
+   <pre><hs>readJSON :: String -> Maybe JSON</hs></pre></task>
 
 
 <h2>Транслятор регулярных выражений</h2>
@@ -155,7 +140,7 @@ main = do text <- readFile "test.json"
 
 <p>То есть, это трансляция строки в транслятор. Такой процесс называется суперкомпилированием.</p>
 
- <p>Мы не будем здесь реализовывать полный набор функции, реализованных в стандартах POSIX или Perl, остановимся на основных элементах и их комбинаторах:</p>
+ <p>Мы не будем здесь реализовывать полный набор функций, реализованных в стандартах POSIX или Perl, остановимся на основных элементах и их комбинаторах:</p>
 					
  <p>Регулярное выражение может быть:</p>
    <ul>
