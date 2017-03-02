@@ -23,6 +23,7 @@ data Primitive = Point Pt
                | Line [Pt]
                | Circle Pt Float
                | Group [Attribute] [Primitive]
+               | Text (M Float) String
                deriving Show
 
 data Attribute = Color String
@@ -56,6 +57,7 @@ instance Boxed Primitive where
     Line pts -> foldMap box pts
     Point pt -> box pt
     Circle (x,y) r -> box $ Line [(x-r,y-r),(x+r,y+r)]
+    Text m s -> box $ affine m $ Line [(0,0),(fromIntegral (length s)/2,1)]
     Group _ g -> foldMap box g
 
 instance Boxed Pt where
@@ -119,6 +121,7 @@ rectangle a b = primitive $ Line [(0,0), (a,0), (a,b), (0,b), (0,0)]
 triangle :: Float -> Float -> Picture
 triangle a h = primitive $ Line [(0,0), (a,0), (a/2,h), (0,0)]
 
+text s = primitive $ Text (M [[1,0,0],[0,-1,0],[0,0,1]]) s
 --------------------------------------------------------------------------------
 
 format :: String -> [String] -> String
@@ -135,13 +138,17 @@ instance SVG Primitive where
     Point (x,y) -> format "<circle fill='blue' stroke='none' cx='_' cy='_' r='1'/>" [short x, short y]
     Line pts -> format "<polyline points='_'/>" [foldMap showPt pts]
     Circle (x,y) r -> format "<circle cx='_' cy='_' r='_'/>" [short x, short y, short r]
+    Text m s -> format "<text fill='black' stroke='none' text-anchor='start' font-size=1 textLength=_ lengthAdjust='spacingAndGlyphs' transform='_'>_</text>" [short (fromIntegral (length s)/2),matrix,s]
+      where
+        matrix = format "matrix(_,_,_,_,_,_)" $ short <$> [a,b,c,d,e,f]
+        M [[a,c,e],[b,d,f],[0,0,1]] = m
     Group s g -> format "<g _>_</g>" [foldMap toSVG s, foldMap toSVG g]
     where 
       showPt (x,y) = format " _,_" [short x, short y]
 
 instance SVG Picture where
   toSVG Empty = "<svg></svg>"
-  toSVG p =
+  toSVG p =x
     format "<svg width='_' height='_' fill='none' stroke='blue'>_</svg>"
     [show (width p+8), show (height p+8), foldMap toSVG (contents (transform (adjust p)))]
 
@@ -196,6 +203,7 @@ instance Affine Primitive where
     Line pts    -> Line $ (affine m) <$> pts
     Circle pt r -> Circle (affine m pt) (sqrt (x*x + y*y))
       where M [[x],[y],_] = m <> M [[r],[0]]
+    Text m' s    -> Text (m <> m') s
     Group s g   -> Group s (affine m <$> g)
 
 instance Affine Picture where
