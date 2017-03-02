@@ -192,6 +192,12 @@ longest :: Parser [i] [a] -> Parser [i] [a]</def></hs></pre>
 Ok "" [5,47]</ghci></pre>
 </task>
 
+ <task>Напишите транслятор <code>replace p f</code>, который изменял бы части входной последовательности, описываемые транслятором <code>p</code> с помощью функции <code>f</code>:<pre><hs><def>replace :: Parser [b] a -> (a -> [b]) -> Parser [b] [b]</def></hs></pre> Например:
+ <pre><ghci><l></l> run (replace (string "cat") (const "kitten")) "the cat has a cup"
+<o>Ok "the kitten has a cup" ""</o>
+<l></l> run (replace (term `oneof` "cat") (\x -> [toUpper x])) "the cat has a cup"
+<o>Ok "The CAT hAs A Cup" ""</o></ghci></pre> В последнем примере используется функция <code>toUpper</code> из библиотеки <code>Data.Char</code>.</task>					
+					
 <h2>Функциональные цепочки</h2>
 
  <p> Моноидальные свойства трансляторов позволят нам изящно определить ещё пару полезных комбинаторов <code>chainl</code> и <code>chainr</code>. Прежде чем их реализовывать, посмотрим, какие возможности они нам дадут:

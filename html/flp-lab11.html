@@ -23,7 +23,7 @@
 
       <p>Отличительной особенностью ОПН является то, что все аргументы расположены перед знаком операции. В общем виде запись состоит из линейной последовательности операндов и знаков операций:
 	<table>
-	  <tr><td>выражение</td><td>запись в ОПН</td></tr><hr/>
+	  <tr><td>выражение</td><td>запись в ОПН</td></tr>
 	  <tr><td><eq>1+2</eq></td><td><code>1 2 +</code></td></tr>
 	  <tr><td><eq>1+2\times 3</eq></td><td><code>1 2 3 * +</code></td></tr>
 	  <tr><td><eq>(1+2)\times 3</eq></td><td><code>1 2 + 3 *</code></td></tr>
@@ -109,9 +109,9 @@ frac = div <$ term '/' </hs></pre>
 <p>Имея такую свёртку легко напишем транслятор арифметических выражений, производящий вычисления в ходе трансляции:</p>
 
 <pre><hs>expr = _E
-  where _E  = foldP _T (add <|> sub)
-        _T  = foldP _P (mul <|> frac)
-        _P = between '(' ')' _E <|> integer
+  where _E = _T `chainl` (add <|> sub)
+        _T = _P `chainl` (mul <|> frac)
+        _P = _E `between` "()" <|> integer
 
 	add = (+) <$ term '+'
         sub = (-) <$ term '-'

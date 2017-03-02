@@ -1,11 +1,12 @@
 import Data.Monoid
 import Data.Ord
+import Data.Char
 import Data.Foldable hiding (elem)
 import Control.Monad
 import Control.Applicative
 --import Safe
 
-data Parser i a = Parser { run :: [i] -> Result [i] a}
+data Parser i a = Parser { run :: i -> Result i a}
 
 
 data Result i a = Ok a i
@@ -57,15 +58,13 @@ neg p = Parser $ \r -> case run p r of
 
 term c = check (== c) >> next
 
-string :: Eq a => [a] -> Parser a [a]
 string = mapM term 
 
-integer :: Parser Char Integer
+integer :: Parser String Integer
 integer = read <$> some digit
 
 digit = check (`elem` ['0'..'9']) >> next
 
-oneof :: (b -> Parser i a) -> [b] -> Parser i a
 p `oneof` lst = asum $ p <$> lst
 
 msome p = mconcat <$> some p
@@ -149,7 +148,7 @@ parse p s = case run p s of
   Ok r _ -> Just r
   Fail _ -> Nothing
 
-readCSV p = parse clean >=> parse 
+readCSV p = parse clean >=> parse p 
 ------------------------------------------------------------
 
 -- ChainL = p {o p}
@@ -200,8 +199,44 @@ json = N <$> number_ <|>
        O <$> listOf (pairOf string_ json) `between` "{}"
   where
     pairOf p1 p2 = (,) <$> p1 <*> (term ':' *> p2)
-    between p [s1,s2] = term s1 *> p <* term s2
+
+between p [s1,s2] = term s1 *> p <* term s2
 
 
 
-readJSON = parse cleanJSON >=> parse json
+-- readJSON = parse cleanJSON >=> parse json
+
+------------------------------------------------------------
+
+regexp_ = chainr1 (msome element) alt
+  where
+    alt = (<|>) <$ term '|'
+    element = (group <|> (only <$> symbol)) <**> modifier
+    group = regexp_ `between` "()"
+    symbol = anychar <|> charClass <|> literal 
+
+literal = term <$> term `except` "?+*()[]|."
+anychar = next <$ term '.'
+
+charClass = c `between` "[]"
+   where
+     c = except term <$> (term '^' *> chars)
+         <|> oneof term <$> chars
+     chars = msome (range <|> only char)
+     char = term `except` "]"
+     range = enumFromTo <$> char <*> (term '-' *> char)
+
+modifier = option <|> repeat0 <|> repeat1 <|> pure id
+  where
+    option = mopt <$ term '?'
+    repeat1 = msome <$ term '+'
+    repeat0 = mmany <$ term '*'
+
+regexp s = case run regexp_ s of
+  Ok p "" -> p
+  _ -> empty
+
+params = search (regexp "[a-z]+=[^&]+")
+
+replace :: Parser [b] a -> (a -> [b]) -> Parser [b] [b]
+replace p f = collect (f <$> p <|> only next)
