@@ -96,53 +96,58 @@ instance DeMorgan s => DeMorgan (Lumped s) where
 
 ------------------------------------------------------------
 
-data Element = R Double
-             | C Double
-             | L Double
-             deriving Show
-
 data Circuit a = Zero
                | One
                | Elem a
-               | Plus (Circuit a) (Circuit a)
-               | Times (Circuit a) (Circuit a)
+               | Par (Circuit a) (Circuit a)
+               | Seq (Circuit a) (Circuit a)
   deriving (Show, Eq, Functor)
 
 instance DeMorgan (Circuit a) where
   zero = Zero
   one = One
-  (<-->) = Times
-  (<||>) = Plus
+  (<-->) = Seq
+  (<||>) = Par
   inv = id
 
 reduceDM c = case c of
   Zero -> zero
   One -> one
   Elem b -> b
-  Plus a b -> reduceDM a <||> reduceDM b
-  Times a b -> reduceDM a <--> reduceDM b
+  Par a b -> reduceDM a <||> reduceDM b
+  Seq a b -> reduceDM a <--> reduceDM b
+
+data Element = R Double
+             | C Double
+             | L Double
+             deriving Show
+
+resistanceAlg el =  case el of
+  R r -> Value r
+  C _ -> Break
+  L _ -> Short
+
+connectedAlg el = case el of
+  R _ -> True
+  C _ -> False
+  L _ -> True
+  
+capacityAlg el = case el of
+  R _ -> Short
+  C c -> Value c
+  L _ -> Short
+
+impedanceAlg el = Value <$> case el of
+  R r -> \w -> r :+ 0
+  C c -> \w -> 0 :+ (-1)/(w*c)
+  L l -> \w -> 0 :+ (w*l)  
 
 reduceDMWith w f x = reduceDM $ (fmap w . f) <$> x
 
-resistance = fmap getFrac . reduceDMWith Frac f
-  where f (R r) = Value r
-        f (C _) = Break
-        f (L _) = Short
-
-connected = reduceDM . fmap f
-  where f (R _) = True
-        f (C _) = False
-        f (L _) = True
-
-capacity = fmap (getFrac . getDual) . reduceDMWith (Dual . Frac) f
-  where f (R _) = Short
-        f (C c) = Value c
-        f (L _) = Short
-
-impedance w = fmap getFrac . reduceDMWith Frac (Value . f)
-  where f (R r) = r :+ 0
-        f (C c) = 0 :+ (-1)/(w*c)
-        f (L l) = 0 :+ (w*l)
+connected   = reduceDM . fmap connectedAlg
+resistance  = fmap getFrac . reduceDMWith Frac resistanceAlg
+impedance   = fmap (fmap getFrac) . reduceDMWith (fmap Frac) impedanceAlg
+capacity    = fmap (getFrac . getDual) . reduceDMWith (Dual . Frac) capacityAlg
 
 r = Elem . R
 c = Elem . C
@@ -162,32 +167,31 @@ data Layer = Insulation { coefficient :: Double
 
 thermalResistance :: Circuit Layer -> Double
 thermalResistance = getFrac . reduceDM . fmap (Frac . f)
-  where f (Insulation h s l) = l/(s*h)
+  where f (Insulation h l s) = l/(s*h)
         f (Surface a s) = 1/(s*a)
 
 insulation c = fmap Elem . Insulation c
-surface h = Elem . Surface h
+surface = fmap Elem . Surface
 
 concrete = insulation 0.5
 glass = insulation 1.05
 air = insulation 0.024
 pp = insulation 0.07
-edge = surface 5
 
-system = edge 3 <--> (wall 2 <||> window 1) <--> edge 3
+system = surface 1.5 3 <--> (wall 2 <||> window 1) <--> surface 6 3
   where
     wall = concrete 0.5 <--> pp 0.1
-    window = glass 0.05 <--> air 0.1 <--> glass 0.05
+    window = glass 0.005 <--> air 0.01 <--> glass 0.005
 
 flux s dT = dT / thermalResistance s
 
 ------------------------------------------------------------
 
-distribute (Times a (Plus b c)) = distribute $ (a <--> b) <||> (a <--> c)
-distribute (Times (Plus a b) c) = distribute $ (a <--> c) <||> (b <--> c)
-distribute (Times (Times a b) c) = distribute $ a <--> (c <--> b)
-distribute (Times a b) = distribute a <--> distribute b
-distribute (Plus a b) = distribute a <||> distribute b
+distribute (Seq a (Par b c)) = distribute $ (a <--> b) <||> (a <--> c)
+distribute (Seq (Par a b) c) = distribute $ (a <--> c) <||> (b <--> c)
+distribute (Seq (Seq a b) c) = distribute $ a <--> (c <--> b)
+distribute (Seq a b) = distribute a <--> distribute b
+distribute (Par a b) = distribute a <||> distribute b
 distribute x = x
 
 edges :: Circuit a -> [(a,a)]
@@ -200,3 +204,4 @@ n = Elem
 
 g :: Circuit Int
 g = (n 1 --> (n 3 --> n 4)) <+> (n 2 --> (n 1 <+> n 3)) 
+
