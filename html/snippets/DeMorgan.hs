@@ -135,25 +135,25 @@ connected = reduceMap f
       L _ -> True
 
 resistance :: Circuit Element -> Lumped Double
-resistance = fmap getFrac . reduceMap f
+resistance = fmap getFrac . reduceMap (fmap Frac . f)
   where
-    f el = Frac <$> case el of
+    f el = case el of
       R r -> Value r
       C _ -> Break
       L _ -> Short
 
-impedance :: Circuit Element -> Double -> Lumped (Complex Double)
-impedance = fmap (fmap getFrac) . reduceMap f
+impedance :: Double -> Circuit Element -> Lumped (Complex Double)
+impedance w = fmap getFrac . reduceMap (fmap Frac . f)
   where
-    f el = (fmap Frac . Value) <$> case el of
-      R r -> \w -> r :+ 0
-      C c -> \w -> 1 / (0 :+ w*c)
-      L l -> \w -> 0 :+ w*l
+    f el = Value $ case el of
+      R r -> r :+ 0
+      C c -> 1 / (0 :+ w*c)
+      L l -> 0 :+ w*l
 
 capacity :: Circuit Element -> Lumped Double
-capacity = fmap (getFrac . getDual) . reduceMap f
+capacity = fmap (getFrac . getDual) . reduceMap (fmap (Dual . Frac) . f)
   where
-    f el = Dual . Frac <$> case el of
+    f el = case el of
       R _ -> Short
       C c -> Value c
       L _ -> Short
@@ -164,7 +164,7 @@ coil = Elem . L
 key True = One
 key False = Zero
 
-s k = res 10 <--> ((res 2 <--> coil 5e-3 <--> key k) <||> cap 10e-9)
+s k = res 10 <--> cap 10e-6 <--> ((res 2 <--> coil 5e-3 <--> key k) <||> cap 10e-9)
 
 ------------------------------------------------------------
 
@@ -175,9 +175,9 @@ data Layer = Insulation { coefficient :: Double
                         , area :: Double } deriving Show
 
 thermalResistance :: Circuit Layer -> Double
-thermalResistance = getFrac . reduce . fmap f
+thermalResistance = getFrac . reduceMap (Frac . f)
   where
-    f el = Frac $ case el of
+    f el = case el of
       Insulation h l s -> l/(s*h)
       Surface a s -> 1/(s*a)
 
@@ -196,8 +196,8 @@ pp = insulation 0.07
 system :: Circuit Layer
 system = surface 1.5 3 <--> (wall 2 <||> window 1) <--> surface 6 3
   where
-    wall = concrete 0.5 <--> pp 0.1
-    window = glass 0.005 <--> air 0.01 <--> glass 0.005
+    wall s = concrete 0.5 s <--> pp 0.1 s
+    window s = glass 0.005 s <--> air 0.01 s <--> glass 0.005 s
 
 ------------------------------------------------------------
 

@@ -64,22 +64,20 @@
       <p>
 	Определим класс для алгебр де Моргана и ряд полезных функций:
 <pre><hs>class DeMorgan a where
-  zero :: a
-  one :: a
+  {-# MINIMAL inv,((<-->)|(<||>)),(zero|one) #-}
   inv :: a -> a
-  (<-->) :: a -> a -> a
-  (<||>) :: a -> a -> a
 
-  a <--> b = inv (inv a <||> inv b)
-  a <||> b = inv (inv a <--> inv b)
-  one = inv zero
+  zero :: a
   zero = inv one
 
-  row :: Foldable t => t a -> a
-  row = foldl1 (<-->)
-  col :: Foldable t => t a -> a
-  col = foldl1 (<||>)
-  {-# MINIMAL inv,((<-->)|(<||>)),(zero|one) #-}</hs></pre>
+  one :: a
+  one = inv zero
+
+  (<-->) :: a -> a -> a
+  a <--> b = inv (inv a <||> inv b)
+
+  (<||>) :: a -> a -> a
+  a <||> b = inv (inv a <--> inv b)</hs></pre>
       при этом мы воспользовались законом де Моргана для того, чтобы упростить работу с этим классом. Для определения экземпляра достаточно определить только одну их двух моноидальных операций, её нейтральный элемент и инволюцию.
       </p>
 
@@ -194,7 +192,7 @@ instance DeMorgan a => DeMorgan (Dual a) where
 <p>Определим алгебру де Моргана для этого типа, при условии, что значения элементов тоже образуют такую алгебру:</p>
     
     <pre><hs>instance DeMorgan s => DeMorgan (Lumped s) where
-  zero = Short
+  zero = Break
 
   Value r1 <--> Value r2 = Value $ r1 <--> r2
   Short <--> r = r
@@ -276,19 +274,43 @@ connected = reduceMap f
 <o>False</o></ghci></pre>
 
 <p>Функция <code>resistance</code> определяет эффективное сопротивление цепи для постоянного тока, используя алгебру для дробных чисел:
- <pre><hs><def>connected :: Circuit Element -> Bool</def>
-connected = reduceMap f
+ <pre><hs><def>resistance :: Circuit Element -> Lumped Double
+resistance = fmap getFrac . reduceMap (fmap Frac . f)
   where
     f el = case el of
-      R _ -> True
-      C _ -> False
-      L _ -> True</hs></pre></p>
+      R r -> Value r
+      C _ -> Break
+      L _ -> Short</hs></pre> Здесь вычислительная работа производится внутри типа <code>Lumped</code>, Который мы объявили функтором.</p>
 
-<pre><ghci><l></l> connected (s True)
-<o>True</o>
-<l></l> connected (s False)
-<o>False</o></ghci></pre>
+<pre><ghci><l></l> resistance (s True)
+<o>Value 12</o>
+<l></l> resistance (s False)
+<o>Break</o></ghci></pre>
 
+<p>Вот расчёт импеданса цепи:<pre><hs><def>impedance :: Double -> Circuit Element -> Lumped (Complex Double)</def>
+impedance w = fmap getFrac . reduceMap (fmap Frac . f)
+  where
+    f el = Value $ case el of
+      R r -> r :+ 0
+      C c -> 1 / (0 :+ w*c)
+      L l -> 0 :+ w*l</hs></pre>
+
+<pre><ghci><l></l> impedance 1e3 (s False)
+<o>Value (10.0 :+ (-99999.99999999997))</o>
+<l></l>  impedance 1e3 (s True)
+<o>Value (12.00020001420084 :+ 5.0002100065000405)</o>
+<l></l>  impedance 1e6 (s False)
+<o>Value (10.0 :+ (-100.0))</o>
+<l></l>  impedance 1e6 (s True)
+<o>Value (10.000832986116954 :+ (-102.04081598653629))</o></ghci></pre>
+
+ <p>Если речь идёт о расчёте батареи конденсаторов, то нужно поменять агебру на дуальную:<pre><hs><def>capacity :: Circuit Element -> Lumped Double</def>
+capacity = fmap (getFrac . getDual) . reduceMap (fmap (Dual . Frac) . f)
+  where
+    f el = case el of
+      R _ -> Short
+      C c -> Value c
+      L _ -> Short</hs></pre></p>
 							
       <h2>Полукольца</h2>
   
@@ -316,8 +338,73 @@ connected = reduceMap f
 	   
 
  <p>Ещё один полезный пример: расчёт тепловой мощности, тряемой через теплоизолированную стену здания с окном:</p> 
+Для описания слоёв теплоизоляторов и их границ определим тип <code>Layer</code>
+ <pre><hs>data Layer = Insulation { coefficient :: Double
+                        , thickness :: Double
+                        , area :: Double }
+           | Surface    { coefficient :: Double
+                        , area :: Double } deriving Show</hs></pre>
 
+ и способ вычисления термического сопротивления для этих слоёв:
+
+ <pre><hs><def>layerRes :: </def>
+layerRes el = case el of
+  Insulation h l s -> l/(s*h)
+  Surface a s -> 1/(s*a)
+</hs></pre>
  
+Для простоты описания теплотехничекой системы определим два "умных" конструктора, которые подготавливают типы для соединения слоёв в цепь:
+ <pre><hs><def>insulation :: Double -> Double -> Double -> Circuit Layer</def>
+insulation h = fmap Elem . Insulation h
+
+<def>surface :: Double -> Double -> Circuit Layer</def>
+surface = fmap Elem . Surface</hs></pre>
+
+ Наконец, перечислим некоторые материалы, задавая для них коэффициент теплопроводности:
+ <pre><hs>concrete, glass, air, stf :: Double -> Double -> Circuit Layer
+-- бетон
+concrete = insulation 0.5
+-- стекло
+glass = insulation 1.05
+-- воздух (неподвижный)
+air = insulation 0.024
+-- пенопласт
+stf = insulation 0.07
+</hs></pre>
+Все эти конструкторы представляют собой функции от толщины слоя и его площади.
+
+ Теперь можно описывать теплотехническую систему:
+ <pre><hs><def>system :: Circuit Layer</def>
+system = surface 1.5 3 <--> (wall 2 <||> window 1) <--> surface 6 3
+  where
+    wall s = concrete 0.5 s <--> stf 0.1 s
+    window s = glass 0.005 s <--> air 0.01 s <--> glass 0.005 s</hs></pre>
+
+ и вычислить её термическое сопротивление:
+						
+ <pre><hs><def>thermalResistance :: Circuit Layer -> Double</def>
+thermalResistance = getFrac . reduceMap (Frac . layerRes)</hs></pre>
+
+<pre><ghci><l></l> thermalResistance system
+<o>0.5932453290943858</o></ghci></pre>
+<pre><ghci><l></l> 40 / thermalResistance system
+<o>67.42573103957128</o></ghci></pre>
+
+У моноидов есть одно чрезвычайно полезное свойство: функции, возвращающие моноид, сами обращуют моноид. То же самое можно доказать и для аглебр де Моргана:
+<pre><hs>instance DeMorgan b => DeMorgan (a -> b) where
+  zero = const zero
+  one = const one
+  inv f = inv . f
+  f <||> g = \x -> f x <||> g x
+  f <--> g = \x -> f x <--> g x</hs></pre> Здесь мы моглм бы использовать аппликативные свойства типа <code>(->)</code>, но для наглядности "доказательства" определили всё явно. 
+
+Это свойство алгебры даёт нам возможность упростить описание теплотехничекой схемы, "вынеся за скобки" общий аргумент -- площадь слоя:
+ <pre><hs><def>system :: Circuit Layer</def>
+system = surface 1.5 3 <--> (wall 2 <||> window 1) <--> surface 6 3
+  where
+    wall = concrete 0.5 <--> stf 0.1
+    window = glass 0.005 <--> air 0.01 <--> glass 0.005</hs></pre>
+		      
     </div>
     <p id="footer"></p>
     <script src="../lib/postprocessing.js"></script>
