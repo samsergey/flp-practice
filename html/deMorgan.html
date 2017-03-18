@@ -64,7 +64,7 @@
       <p>
 	Определим класс для алгебр де Моргана и ряд полезных функций:
 <pre><hs>class DeMorgan a where
-  {-# MINIMAL inv,((<-->)|(<||>)),(zero|one) #-}
+  {-# MINIMAL inv,((<->)|(<|>)),(zero|one) #-}
   inv :: a -> a
 
   zero :: a
@@ -73,11 +73,11 @@
   one :: a
   one = inv zero
 
-  (<-->) :: a -> a -> a
-  a <--> b = inv (inv a <||> inv b)
+  (<->) :: a -> a -> a
+  a <-> b = inv (inv a <|> inv b)
 
-  (<||>) :: a -> a -> a
-  a <||> b = inv (inv a <--> inv b)</hs></pre>
+  (<|>) :: a -> a -> a
+  a <|> b = inv (inv a <-> inv b)</hs></pre>
       при этом мы воспользовались законом де Моргана для того, чтобы упростить работу с этим классом. Для определения экземпляра достаточно определить только одну их двух моноидальных операций, её нейтральный элемент и инволюцию.
       </p>
 
@@ -85,11 +85,11 @@
       <pre><hs>instance DeMorgan Bool where
   zero = False
   inv = not
-  (<-->) = (&&)</hs></pre></p>
+  (<->) = (&&)</hs></pre></p>
 
       <p>
 	Убедимся в том, что три данные нами определения в полной мере задают алгебру для типа <code>Bool</code>:
-	<pre><ghci><l></l> True <||> False
+	<pre><ghci><l></l> True <|> False
 <o>True</o>
 <l></l> one :: Bool
 <o>True</o></ghci></pre>
@@ -99,18 +99,18 @@
 <p>Определим алгебру де Моргана для таблиц, представленных вложенными списками:
       <pre><hs>instance DeMorgan [[a]] where
   zero = [[]]
-  (<||>) = (++)
+  (<|>) = (++)
   inv = transpose</hs></pre>
       Вот как эта алгебра работает:
 	<pre><ghci><l></l> inv [[1,2],[3,4]]
 <o>[[1,3],[2,4]]</o>
-<l></l> [[1,2],[3,4]] <--> [[5],[6]]
+<l></l> [[1,2],[3,4]] <-> [[5],[6]]
 <o>[[1,2,5],[3,4,6]]</o>
-<l></l> [[1,2],[3,4]] <||> [[5,6]]
+<l></l> [[1,2],[3,4]] <|> [[5,6]]
 <o>[[1,2],[3,4],[5,6]]</o></ghci></pre>
 
 <p>Так можно построить табулирующую функцию <code>table</code>
-<pre><hs>table f vals = ([[" "]] <--> h) <||> (inv h <--> c)
+<pre><hs>table f vals = ([[" "]] <-> h) <|> (inv h <-> c)
   where
     h = [show <$> vals]
     c = [show <$> [ f x y | x <- vals] | y <- vals]
@@ -127,8 +127,8 @@ showTable tbl = putStrLn . unlines $ concat <$> tbl</hs></pre>
 <o>6 1 2 3 4 5 0</o></ghci></pre>
  </p>
 
- <p> Из соображений эффективности стоило бы явно определить оператор <code><--></code> для типа <code>[[a]]</code>:
- <pre><hs>  (<-->) = zipWith (++)</hs></pre></p>				     
+ <p> Из соображений эффективности стоило бы явно определить оператор <code><-></code> для типа <code>[[a]]</code>:
+ <pre><hs>  (<->) = zipWith (++)</hs></pre></p>				     
 							
  <hr/>
 		
@@ -139,25 +139,25 @@ showTable tbl = putStrLn . unlines $ concat <$> tbl</hs></pre>
 instance Fractional a => DeMorgan (Frac a) where
   zero = 0
   inv = (1/)
-  (<-->) = (+)</hs></pre>
+  (<->) = (+)</hs></pre>
       </p>
       <p>Очень удобно, что  тип <code>Frac</code> наделён числовыми совйствами. Для него автоматически определены арифметические операции и представление в виде чисел. Последнее особенно удобно для записи небольших выражений:</p>
 
-      <pre><ghci><l></l> getFrac $ 2 <||> 6
+      <pre><ghci><l></l> getFrac $ 2 <|> 6
 <o>1.5</o>
-<l></l> getFrac $ 2 <--> 6 :: Frac Float
+<l></l> getFrac $ 2 <-> 6 :: Frac Float
 <o>8.0</o></ghci></pre>      
 
       <p>Таким образом складываются электрические и термические сопротивления. Например, выразим эффективное сопротивление цепи, показанной на рисунке 
-      <p align='center'><img src="img/circ1.png" alt="" width='40%'/><br/><code>(3 <--> 7) <||> (11 <--> (12 <||> (1 <--> 5)))</code></p>
+      <p align='center'><img src="img/circ1.png" alt="" width='40%'/><br/><code>(3 <-> 7) <|> (11 <-> (12 <|> (1 <-> 5)))</code></p>
       
       <p>А вычислить силу тока при напряжении <eq>12\,V</eq> можно так:</p>
-<pre><ghci><l></l> getFrac $ 12 / (3 <--> 7) <||> (11 <--> (12 <||> (1 <--> 5)))
+<pre><ghci><l></l> getFrac $ 12 / (3 <-> 7) <|> (11 <-> (12 <|> (1 <-> 5)))
 <o>2.0</o></ghci></pre>		
       </p>
 
       <p>
-	Для расчёта эффективной жёсткости сложной системы пружин, или же ёмкости батареи конденсаторов, тоже годится тип <code>Frac</code>, но для этих расчётов нужно поменять местами операторы <code><||></code> и <code><--></code>, а также элементы <code>zero</code> и <code>one</code>. Математики с радостью узнают в этом преобразовании переход к дуальной алгебре. Звучит красиво, но не хотелось бы писать <code>2&nbsp;<-->&nbsp;3</code> имея в виду параллельное соединение пружин.</p>
+	Для расчёта эффективной жёсткости сложной системы пружин, или же ёмкости батареи конденсаторов, тоже годится тип <code>Frac</code>, но для этих расчётов нужно поменять местами операторы <code><|></code> и <code><-></code>, а также элементы <code>zero</code> и <code>one</code>. Математики с радостью узнают в этом преобразовании переход к дуальной алгебре. Звучит красиво, но не хотелось бы писать <code>2&nbsp;<->&nbsp;3</code> имея в виду параллельное соединение пружин.</p>
       
       <p>Тут математика даёт нам возможность воспользоваться её плодами. Для любой алгебры де Моргана определена дуальная ей алгебра, в которой "всё наоборот". Опишем это обстоятельство на языке Haskell. Создадим новый тип-обёртку  <code>Dual</code> для дуальных алгебр и сообщим, что если алгебра <code>a</code> является алгеброй де Моргана, то и дуальная ей тоже будет алгеброй де Моргана. Определение экземпляра класса <code>DeMorgan</code> для типа <code>Dual a</code> является доказательством этого утверждения по построению.
 
@@ -168,12 +168,12 @@ instance DeMorgan a => DeMorgan (Dual a) where
   zero = Dual one
   one = Dual zero
   inv x = inv <$> x
-  Dual a <||> Dual b = Dual $ a <--> b
-  Dual a <--> Dual b = Dual $ a <||> b
+  Dual a <|> Dual b = Dual $ a <-> b
+  Dual a <-> Dual b = Dual $ a <|> b
 </hs></pre>
 
 Теперь можно рассчитать эффективную жёсткость системы из трёх пружин, одна из которых последовательно соединяется с парой пружин, соединёных параллельно:
-<pre><ghci><l></l> getFrac . getDual $ 600 <--> (200 <||> 300)
+<pre><ghci><l></l> getFrac . getDual $ 600 <-> (200 <|> 300)
 <o>450.0</o></ghci></pre>
 
  <p>Вывод типов позволяет указывать какую именно алгебру мы используем только "на выходе" из вычислений. Так мы можем явно и, в то же время, просто можем изменять способ вычисления выражения.</p>
@@ -194,11 +194,11 @@ instance DeMorgan a => DeMorgan (Dual a) where
     <pre><hs>instance DeMorgan s => DeMorgan (Lumped s) where
   zero = Break
 
-  Value r1 <--> Value r2 = Value $ r1 <--> r2
-  Short <--> r = r
-  r <--> Short = r
-  _ <--> Break = Break
-  Break <--> _ = Break
+  Value r1 <-> Value r2 = Value $ r1 <-> r2
+  Short <-> r = r
+  r <-> Short = r
+  _ <-> Break = Break
+  Break <-> _ = Break
 
   inv Short = Break
   inv Break = Short
@@ -219,8 +219,8 @@ instance DeMorgan a => DeMorgan (Dual a) where
 	     <pre><hs>instance DeMorgan (Circuit a) where
   zero = Zero
   one = One
-  (<-->) = Seq
-  (<||>) = Par
+  (<->) = Seq
+  (<|>) = Par
   inv = Inv
 </hs></pre> Инволюция или инверсия для элемента цепи имеет не очень много смысла, но для корректности мы включим её в описание типа.</p>
 
@@ -231,8 +231,8 @@ reduce circ = case circ of
   One -> one
   Elem b -> b
   Inv a -> inv (reduce a)
-  Par a b -> reduce a <||> reduce b
-  Seq a b -> reduce a <--> reduce b</hs></pre>
+  Par a b -> reduce a <|> reduce b
+  Seq a b -> reduce a <-> reduce b</hs></pre>
 			 Функция <code>reduce</code> подобна функции <code>fold</code>, которая сворачивает свободный моноид (список моноидов) в произвольный моноид:
  <pre><hs><def>fold :: (Foldable t, Monoid m) => t m -> m</def></hs></pre>
  От функции <code>fold</code> для функуторов  можно произвести полезнейшую функцию <code>foldMap</code>:
@@ -254,7 +254,7 @@ key False = One</hs></pre></p>
       
       <p>Определим простенькую цепь, показанную на рисунке:
 	<pre><hs><def>s :: Bool -> Circuit Element</def>
-s k = res 10 <--> ((res 2 <--> coil 5e-3 <--> key k) <||> cap 10e-9)</hs></pre>
+s k = res 10 <-> ((res 2 <-> coil 5e-3 <-> key k) <|> cap 10e-9)</hs></pre>
       </p>
       
       <p>Теперь построим различные примеры интерпретации. Для этого нужно описать интерпретацию отдельных элементов и указать используемую алгебру.</p>
@@ -287,7 +287,7 @@ resistance = fmap getFrac . reduceMap (fmap Frac . f)
 <l></l> resistance (s False)
 <o>Break</o></ghci></pre>
 
-<p>Вот расчёт импеданса цепи:<pre><hs><def>impedance :: Double -> Circuit Element -> Lumped (Complex Double)</def>
+ <p>Вот расчёт импеданса цепи:<pre><hs><def>impedance :: Double -> Circuit Element -> Lumped (Complex Double)</def>
 impedance w = fmap getFrac . reduceMap (fmap Frac . f)
   where
     f el = Value $ case el of
@@ -311,10 +311,80 @@ capacity = fmap (getFrac . getDual) . reduceMap (fmap (Dual . Frac) . f)
       R _ -> Short
       C c -> Value c
       L _ -> Short</hs></pre></p>
-							
-      <h2>Полукольца</h2>
+							   
+
+ <p>Ещё один полезный пример: расчёт тепловой мощности, тряемой через теплоизолированную стену здания с окном:</p> 
+Для описания слоёв теплоизоляторов и их границ определим тип <code>Layer</code>
+ <pre><hs>data Layer = Insulation { coefficient :: Double
+                        , thickness :: Double
+                        , area :: Double }
+           | Surface    { coefficient :: Double
+                        , area :: Double } deriving Show</hs></pre>
+
+ и способ вычисления термического сопротивления для этих слоёв:
+
+ <pre><hs><def>layerRes :: Layer -> Double</def>
+layerRes el = case el of
+  Insulation h l s -> l/(s*h)
+  Surface a s -> 1/(s*a)
+</hs></pre>
+ 
+Для простоты описания теплотехничекой системы определим два "умных" конструктора, которые подготавливают типы для соединения слоёв в цепь:
+ <pre><hs><def>insulation :: Double -> Double -> Double -> Circuit Layer</def>
+insulation h = fmap Elem . Insulation h
+
+<def>surface :: Double -> Double -> Circuit Layer</def>
+surface = fmap Elem . Surface</hs></pre>
+
+ Наконец, перечислим некоторые материалы, задавая для них коэффициент теплопроводности:
+ <pre><hs>concrete, glass, air, stf :: Double -> Double -> Circuit Layer
+concrete = insulation 0.5   -- бетон
+glass    = insulation 1.05  -- стекло
+air      = insulation 0.024 -- воздух (неподвижный)
+stf      = insulation 0.07  -- пенопласт
+</hs></pre>
+Все эти конструкторы представляют собой функции от толщины слоя и его площади.
+
+ Теперь можно описывать теплотехническую систему:
+ <pre><hs><def>system :: Circuit Layer</def>
+system = surface 1.5 3 <-> (wall 2 <|> window 1) <-> surface 6 3
+  where
+    wall s = concrete 0.5 s <-> stf 0.1 s
+    window s = glass 0.005 s <-> air 0.01 s <-> glass 0.005 s</hs></pre>
+
+ и вычислить её термическое сопротивление:
+						
+ <pre><hs><def>thermalResistance :: Circuit Layer -> Double</def>
+thermalResistance = getFrac . reduceMap (Frac . layerRes)</hs></pre>
+
+<pre><ghci><l></l> thermalResistance system
+<o>0.5932453290943858</o></ghci></pre>
+
+Термическое сопротивление позволяет выяснить потери тепла (в ваттах) при заданной разности температур по разные стороны стены.
+
+<pre><ghci><l></l> 40 / thermalResistance system
+<o>67.42573103957128</o></ghci></pre>
+
+У моноидов есть одно чрезвычайно полезное свойство: функции, возвращающие моноид, сами образуют моноид. С этим связан ряд любопытных и изящных приёмов функционального программирования. Подобное свойство можно доказать и для аглебр де Моргана:
+<pre><hs>instance DeMorgan b => DeMorgan (a -> b) where
+  zero = const zero
+  one = const one
+  inv f = inv . f
+  f <|> g = \x -> f x <|> g x
+  f <-> g = \x -> f x <-> g x</hs></pre> Здесь мы моглм бы использовать аппликативные свойства типа <code>(->)</code>, но для наглядности "доказательства" определили всё явно. 
+
+Это свойство алгебры даёт нам возможность упростить описание теплотехничекой схемы, "вынеся за скобки" общий аргумент -- площадь слоя:
+ <pre><hs><def>system :: Circuit Layer</def>
+system = surface 1.5 3 <-> (wall 2 <|> window 1) <-> surface 6 3
+  where
+    wall = concrete 0.5 <-> stf 0.1
+    window = glass 0.005 <-> air 0.01 <-> glass 0.005</hs></pre>
+
+      <h2>Заключение</h2>
   
-      <p>Алгебры де Моргана относятся к <strong>полукольцам</strong>.
+ <p>Алгебры де Моргана это частный случай алгебраических структур.
+
+					    относятся к <strong>полукольцам</strong>.
 	Полукольцом с единицей называется алгебраическая структура, определяющая две бинарные операции <eq>+</eq> и <eq>\times</eq>, условно, называющиеся сложением и умножением. Для которых выполняются следующие условия:<ul>
 	  <li> операция <eq>+</eq> образует коммутативный моноид с нейтральным элементом <eq>0</eq>;
 	  <li> операция <eq>\times</eq> образует моноид с нейтральным элементом <eq>1</eq>;
@@ -334,77 +404,8 @@ capacity = fmap (getFrac . getDual) . reduceMap (fmap (Dual . Frac) . f)
       <p>
 	Как видно, полукольца широко встречаются в задачах построения сложных систем с помощью комбинирования простых, а это и есть основы функционального (и не только) программирования.</p> 
 
- <p> Заголовок звучит страшно, но </p>
-	   
 
- <p>Ещё один полезный пример: расчёт тепловой мощности, тряемой через теплоизолированную стену здания с окном:</p> 
-Для описания слоёв теплоизоляторов и их границ определим тип <code>Layer</code>
- <pre><hs>data Layer = Insulation { coefficient :: Double
-                        , thickness :: Double
-                        , area :: Double }
-           | Surface    { coefficient :: Double
-                        , area :: Double } deriving Show</hs></pre>
-
- и способ вычисления термического сопротивления для этих слоёв:
-
- <pre><hs><def>layerRes :: </def>
-layerRes el = case el of
-  Insulation h l s -> l/(s*h)
-  Surface a s -> 1/(s*a)
-</hs></pre>
- 
-Для простоты описания теплотехничекой системы определим два "умных" конструктора, которые подготавливают типы для соединения слоёв в цепь:
- <pre><hs><def>insulation :: Double -> Double -> Double -> Circuit Layer</def>
-insulation h = fmap Elem . Insulation h
-
-<def>surface :: Double -> Double -> Circuit Layer</def>
-surface = fmap Elem . Surface</hs></pre>
-
- Наконец, перечислим некоторые материалы, задавая для них коэффициент теплопроводности:
- <pre><hs>concrete, glass, air, stf :: Double -> Double -> Circuit Layer
--- бетон
-concrete = insulation 0.5
--- стекло
-glass = insulation 1.05
--- воздух (неподвижный)
-air = insulation 0.024
--- пенопласт
-stf = insulation 0.07
-</hs></pre>
-Все эти конструкторы представляют собой функции от толщины слоя и его площади.
-
- Теперь можно описывать теплотехническую систему:
- <pre><hs><def>system :: Circuit Layer</def>
-system = surface 1.5 3 <--> (wall 2 <||> window 1) <--> surface 6 3
-  where
-    wall s = concrete 0.5 s <--> stf 0.1 s
-    window s = glass 0.005 s <--> air 0.01 s <--> glass 0.005 s</hs></pre>
-
- и вычислить её термическое сопротивление:
-						
- <pre><hs><def>thermalResistance :: Circuit Layer -> Double</def>
-thermalResistance = getFrac . reduceMap (Frac . layerRes)</hs></pre>
-
-<pre><ghci><l></l> thermalResistance system
-<o>0.5932453290943858</o></ghci></pre>
-<pre><ghci><l></l> 40 / thermalResistance system
-<o>67.42573103957128</o></ghci></pre>
-
-У моноидов есть одно чрезвычайно полезное свойство: функции, возвращающие моноид, сами обращуют моноид. То же самое можно доказать и для аглебр де Моргана:
-<pre><hs>instance DeMorgan b => DeMorgan (a -> b) where
-  zero = const zero
-  one = const one
-  inv f = inv . f
-  f <||> g = \x -> f x <||> g x
-  f <--> g = \x -> f x <--> g x</hs></pre> Здесь мы моглм бы использовать аппликативные свойства типа <code>(->)</code>, но для наглядности "доказательства" определили всё явно. 
-
-Это свойство алгебры даёт нам возможность упростить описание теплотехничекой схемы, "вынеся за скобки" общий аргумент -- площадь слоя:
- <pre><hs><def>system :: Circuit Layer</def>
-system = surface 1.5 3 <--> (wall 2 <||> window 1) <--> surface 6 3
-  where
-    wall = concrete 0.5 <--> stf 0.1
-    window = glass 0.005 <--> air 0.01 <--> glass 0.005</hs></pre>
-		      
+					  
     </div>
     <p id="footer"></p>
     <script src="../lib/postprocessing.js"></script>
