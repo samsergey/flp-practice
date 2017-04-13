@@ -7,7 +7,7 @@ import Triscape
 import System.Random
 
 import qualified Data.Map as M
-
+q
 times :: (Monoid a, Integral i) => i -> a -> a
 0 `times` _ = mempty
 1 `times` a = a
