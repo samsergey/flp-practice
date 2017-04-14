@@ -18,4 +18,38 @@ for(var i = 1; i <= 100; i++)
 	console.log(fizzbuzz(i))
 ```
 
-Использование аккумулятора, тем более, строки, наводит на моноидальные мысли. Один моноид напрашивается сам собой -- строка, в которую мы что-то добавляем
+Использование аккумулятора, тем более, строки, наводит на моноидальные мысли. Один моноид напрашивается сам собой -- строка, в которую мы что-то добавляем, но в этом решении задействован ещё один менее явный моноид. Давайте перепишем функцию fizzbuzz, вынеся за скобки присваивание:
+
+```js
+function fizzbuzz(n) {
+  var res = ((n % 3 == 0) ? "Fizz" : "") + ((n % 5 == 0) ? "Buzz" : "")
+  return res == "" ? String(n) : res
+}
+```
+
+```js
+function when(p,s) { return x => p(x) ? s : "" } 
+```
+
+```js
+function fizzbuzz(n) {
+  var res = (when (n % 3 == 0, "Fizz") + (when(n % 5 == 0, "Buzz")
+  return res == "" ? String(n) : res
+}
+```
+
+```js
+function fizzbuzz(n) {
+  return Math.min(String(n), when (n % 3 == 0, "Fizz") + when(n % 5 == 0, "Buzz"))
+}
+```
+
+```haskell
+fizzbuzz n = min (show n) (when (n % 3 == 0) "Fizz" <> when (n % 5 == 0) "Buzz")
+```
+
+```haskell
+fizzbuzz = min <$> show <*> when (divBy 3) "Fizz" <> when (divBy 5) "Buzz"
+```
+
+
