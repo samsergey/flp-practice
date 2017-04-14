@@ -148,11 +148,10 @@ instance SVG Primitive where
 
 instance SVG Picture where
   toSVG Empty = "<svg></svg>"
-  toSVG p =x
+  toSVG p =
     format "<svg width='_' height='_' fill='none' stroke='blue'>_</svg>"
     [show (width p+8), show (height p+8), foldMap toSVG (contents (transform (adjust p)))]
 
-adjust :: Picture -> Picture
 adjust p = (scaleY (-1) p) `at` (4,4)
 
 instance SVG Attribute where
@@ -160,7 +159,7 @@ instance SVG Attribute where
     Color c -> showAttr "stroke" c
     Fill c -> showAttr "fill" c
     LineWidth w -> showAttr "stroke-width" w
-    Opacity o -> showAttr "stroke-opacity" o <> showAttr "fill-opacity" o
+    Opacity o -> showAttr "stroke-opacity" <> showAttr "fill-opacity" $ o
     where
       showAttr a v = format " _=_" [a, show v]
 
@@ -212,25 +211,25 @@ instance Affine Picture where
                               in Picture (foldMap box p', p')
   affine m p = affine m (transform p)
 
-mkAffine :: M Float -> Picture -> Picture
-mkAffine m = (Transform (m, mempty) :$:)
+mkAffine :: [[Float]] -> Picture -> Picture
+mkAffine m = (Transform (M m, mempty) :$:)
 
 shift :: Float -> Float -> Picture -> Picture
-shift x y = mkAffine $ M [[1,0,x],[0,1,y],[0,0,1]]
+shift x y = mkAffine [[1,0,x],[0,1,y],[0,0,1]]
 
 scaleX :: Float -> Picture -> Picture
-scaleX a = mkAffine $ M [[a,0,0],[0,1,0],[0,0,1]]
+scaleX a = mkAffine [[a,0,0],[0,1,0],[0,0,1]]
 
 scaleY :: Float -> Picture -> Picture
-scaleY a = mkAffine $ M [[1,0,0],[0,a,0],[0,0,1]]
+scaleY a = mkAffine [[1,0,0],[0,a,0],[0,0,1]]
 
 scale :: Float -> Picture -> Picture
-scale a = mkAffine $ M [[a,0,0],[0,a,0],[0,0,1]]
+scale a = mkAffine [[a,0,0],[0,a,0],[0,0,1]]
 
-shearX a = mkAffine $ M [[1,tan (pi/180*a),0],[0,1,0],[0,0,1]]
+shearX a = mkAffine [[1,tan (pi/180*a),0],[0,1,0],[0,0,1]]
 
 rotate :: Float -> Picture -> Picture
-rotate a = mkAffine $ M [[c,-s,0],[s,c,0],[0,0,1]]
+rotate a = mkAffine [[c,-s,0],[s,c,0],[0,0,1]]
   where c = cos phi
         s = sin phi
         phi = pi*a/180
@@ -443,3 +442,9 @@ instance Canvas Attribute where
     Fill c -> set "ctx.fillStyle" c
     LineWidth w -> set "ctx.lineWidth" w
     Opacity o -> set "ctx.globalAlpha" o
+
+
+data Convex = Convex [Pt]
+
+instance Monoid Convex where
+  
