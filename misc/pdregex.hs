@@ -42,6 +42,7 @@ isError r = case r of
   Follow r1 r2 -> isError r1 || isError r2
   _            -> False 
 
-match r s = foldl pd r s
+match :: Eq a => Regexp a -> [a] -> Regexp a
+match r = foldl pd r
 
 
