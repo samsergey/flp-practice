@@ -96,6 +96,8 @@ _N = digit ?> (_N <|> epsilon)
 
 bracket = term '(' ?> mmany bracket ?> term ')'
 
+end = neg notEnd
+
 ------------------------------------------------------------
 
 -- nonzero = (next <?> (/=0)) <|> err "expected non zero value!"
