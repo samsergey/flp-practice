@@ -8,13 +8,12 @@ runDFA :: Eq i => DFA s i o -> [i] -> o
 runDFA (DFA is f s0 post) = post . foldl f s0 . filter (`elem` is)
 
 mod3 = DFA [0,1] f 0 id
-  where f s x = case (s,x) of
-                  (0, 0) -> 0
-                  (0, 1) -> 1
-                  (1, 0) -> 2
-                  (1, 1) -> 0
-                  (2, 0) -> 1
-                  (2, 1) -> 2
+  where f 0 0 = 0
+        f 0 1 = 1
+        f 1 0 = 2
+        f 1 1 = 0
+        f 2 0 = 1
+        f 2 1 = 2
 
 toBase b = reverse
          . map (`mod` b)
@@ -74,3 +73,19 @@ evena = DFA "ab" f 0 (== 2)
           (1, 'a') -> 2
           (2, 'a') -> 1
           (s,'b') -> s
+
+data DMA s i o = DMA [i] ([s] -> i -> [s]) ([s] -> o)
+
+runDMA :: Eq i => DMA s i o -> [i] -> o
+runDMA (DMA is f post) = post . foldl f [] . filter (`elem` is)
+
+brackets = DMA "()" f null
+  where f ('(':s) ')' = s
+        f s x = x:s
+
+calcRPN = DMA (const True) f id
+  where f (x:y:s) "+" = (x+y):s
+        f (x:y:s) "-" = (y-x):s
+        f (x:y:s) "*" = (x*y):s
+        f (x:y:s) "/" = (y `div` x):s
+        f s n = read n : s
