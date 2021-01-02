@@ -77,15 +77,41 @@ evena = DFA "ab" f 0 (== 2)
 data DMA s i o = DMA [i] ([s] -> i -> [s]) ([s] -> o)
 
 runDMA :: Eq i => DMA s i o -> [i] -> o
+runDMA (DMA [] f post) = post . foldl f []
 runDMA (DMA is f post) = post . foldl f [] . filter (`elem` is)
 
-brackets = DMA "()" f null
+brackets = DMA [] f null
   where f ('(':s) ')' = s
-        f s x = x:s
+        f ('[':s) ']' = s
+        f ('{':s) ']' = s
+        f s x | x `elem` "[]{}()" = x:s
+              | otherwise = s
 
-calcRPN = DMA (const True) f id
+calcRPN = DMA [] f id
   where f (x:y:s) "+" = (x+y):s
         f (x:y:s) "-" = (y-x):s
         f (x:y:s) "*" = (x*y):s
         f (x:y:s) "/" = (y `div` x):s
         f s n = read n : s
+
+dijkstra = DMA [] f fst
+  where f (s, o) x
+          | operator x = pushOperator x (s, o)
+          | digit x = pushDigit x (s, o)
+          | x == "(" = ("(" : s, o)
+          | otherwise = (s, o)
+
+        pushDigit d (s, []) = (s, [d])
+        pushDigit d (s, n:o) = (s, (d:n):o)
+        
+        pushOperator x ([], o) = ([x], o)
+        pushOperator x (y:s, o)
+          | prec x > prec y = (x:y:s, o)
+          | otherwise = pushOperator x (s, y:o)
+
+        prec x = case x of
+          "+" -> 1
+          "-" -> 1
+          "*" -> 2
+          "/" -> 2
+                                       
