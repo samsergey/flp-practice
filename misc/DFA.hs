@@ -1,3 +1,8 @@
+import Data.List (transpose)
+import Data.Semigroup
+import Data.Monoid
+
+  
 data DFA s i o = DFA
   { symbols :: [i]
   , func :: s -> i -> s
@@ -94,24 +99,46 @@ calcRPN = DMA [] f id
         f (x:y:s) "/" = (y `div` x):s
         f s n = read n : s
 
-dijkstra = DMA [] f fst
-  where f (s, o) x
-          | operator x = pushOperator x (s, o)
-          | digit x = pushDigit x (s, o)
-          | x == "(" = ("(" : s, o)
-          | otherwise = (s, o)
+-- dijkstra = DMA [] f fst
+--   where f (s, o) x
+--           | operator x = pushOperator x (s, o)
+--           | digit x = pushDigit x (s, o)
+--           | x == "(" = ("(" : s, o)
+--           | otherwise = (s, o)
 
-        pushDigit d (s, []) = (s, [d])
-        pushDigit d (s, n:o) = (s, (d:n):o)
+--         pushDigit d (s, []) = (s, [d])
+--         pushDigit d (s, n:o) = (s, (d:n):o)
         
-        pushOperator x ([], o) = ([x], o)
-        pushOperator x (y:s, o)
-          | prec x > prec y = (x:y:s, o)
-          | otherwise = pushOperator x (s, y:o)
+--         pushOperator x ([], o) = ([x], o)
+--         pushOperator x (y:s, o)
+--           | prec x > prec y = (x:y:s, o)
+--           | otherwise = pushOperator x (s, y:o)
 
-        prec x = case x of
-          "+" -> 1
-          "-" -> 1
-          "*" -> 2
-          "/" -> 2
+--         prec x = case x of
+--           "+" -> 1
+--           "-" -> 1
+--           "*" -> 2
+--           "/" -> 2
                                        
+newtype M = M [[Double]] deriving Show
+
+outer f l1 l2 = [[f x y | x <- l2 ] | y <- l1]
+dot v1 v2 = sum $ zipWith (*) v1 v2
+
+instance Semigroup M where
+  M m1 <> M m2 = M $ outer dot m1 (transpose m2)
+
+game = outer (flip passes) [1..10] [1..10]
+  where
+    passes 3 22 = 1
+    passes 5 8 = 1
+    passes 11 26 = 1
+    passes 17 4 = 1
+    passes 21 9 = 1
+    passes 20 29 = 1
+    passes 19 7 = 1
+    passes 27 1 = 1
+    passes r c | r `elem` [3,5,11,17,21,20,19,27] = 0
+               | r - c < 0 && c - r - 6 <= 0 = 9
+               | otherwise = 0
+               
