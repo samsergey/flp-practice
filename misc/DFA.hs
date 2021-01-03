@@ -120,15 +120,20 @@ calcRPN = DMA [] f id
 --           "*" -> 2
 --           "/" -> 2
                                        
-newtype M = M [[Double]] deriving Show
+data M = M [[Double]] | I deriving Show
 
 outer f l1 l2 = [[f x y | x <- l2 ] | y <- l1]
 dot v1 v2 = sum $ zipWith (*) v1 v2
 
 instance Semigroup M where
+  m <> I = m
+  I <> m = m
   M m1 <> M m2 = M $ outer dot m1 (transpose m2)
 
-game = outer (flip passes) [1..10] [1..10]
+instance Monoid M where
+  mempty = I
+
+game = M $ outer (flip passes) [1..30] [1..30]
   where
     passes 3 22 = 1
     passes 5 8 = 1
@@ -138,7 +143,19 @@ game = outer (flip passes) [1..10] [1..10]
     passes 20 29 = 1
     passes 19 7 = 1
     passes 27 1 = 1
+    passes 29 30 = 1
+    passes 28 30 = 5/6
+    passes 26 30 = 3/6
+    passes 25 30 = 2/6
+    passes 30 30 = 1
     passes r c | r `elem` [3,5,11,17,21,20,19,27] = 0
-               | r - c < 0 && c - r - 6 <= 0 = 9
+               | r - c < 0 && c - r - 6 <= 0 = 1/6
                | otherwise = 0
                
+--times :: (Num n, Integral i) => i -> n -> n
+0 `times` _ = mempty
+1 `times` a = a
+2 `times` a = a <> a
+n `times` a
+  | even n = (n` div` 2) `times` (a <> a)
+  | odd n  = (n - 1) `times` a <> a
