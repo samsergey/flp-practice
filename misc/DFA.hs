@@ -99,26 +99,40 @@ calcRPN = DMA [] f id
         f (x:y:s) "/" = (y `div` x):s
         f s n = read n : s
 
--- dijkstra = DMA [] f fst
---   where f (s, o) x
---           | operator x = pushOperator x (s, o)
---           | digit x = pushDigit x (s, o)
---           | x == "(" = ("(" : s, o)
---           | otherwise = (s, o)
 
---         pushDigit d (s, []) = (s, [d])
---         pushDigit d (s, n:o) = (s, (d:n):o)
+
+--dijkstra :: DMA Char Char String
+dijkstra s = foldl f ([],[]) s
+  where f (s, o) x
+          | isOperator x = pushOperator x (s, o)
+          | isDigit x = pushDigit x (s, o)
+          | x == '(' = ('(' : s, o)
+          | x == ')' = pushBracket (s, o)
+          | otherwise = (s, o)
+
+isOperator = (`elem` "+-*/)")
+isDigit = (`elem` ['0'..'9'])
         
---         pushOperator x ([], o) = ([x], o)
---         pushOperator x (y:s, o)
---           | prec x > prec y = (x:y:s, o)
---           | otherwise = pushOperator x (s, y:o)
+pushDigit d (s, []) = (s, [[d]])
+pushDigit d (s, n:o) = (s, (n++[d]):o)
+        
+pushOperator x ([], o) = ([x], o)
+pushOperator x (y:s, o)
+  | prec x > prec y = (x:y:s, o)
+  | otherwise = pushOperator x (s, [y]:o)
 
---         prec x = case x of
---           "+" -> 1
---           "-" -> 1
---           "*" -> 2
---           "/" -> 2
+pushBracket ([], o) = ([], o)
+pushBracket ('(':s, o) = (s, o)
+pushBracket (x:s, o) = pushBracket (s, [x]:o)
+
+prec x = case x of
+          '+' -> 1
+          '-' -> 1
+          '*' -> 2
+          '/' -> 2
+          ')' -> 0
+          '(' -> 10
+
                                        
 data M = M [[Double]] | I deriving Show
 
