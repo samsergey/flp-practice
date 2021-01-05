@@ -99,41 +99,42 @@ calcRPN = DMA [] f id
         f (x:y:s) "/" = (y `div` x):s
         f s n = read n : s
 
+------------------------------------------------------------
 
+dijkstra s =
+  let (_, _, o) = pushOperator '#'
+                  $ pushNumber
+                  $ foldl f ([],[],[]) s
+  in reverse o
+  where f (n, s, o) x
+          | isDigit x = (x:n, s, o)
+          | isOperator x = pushOperator x $ pushNumber (n, s, o)
+          | x == ')' = closeParens (n, s, o)
+          | otherwise = pushNumber (n, s, o)
+  
+isOperator = (`elem` "+-*/(")
+isDigit = (`elem` "0123456789")        
 
---dijkstra :: DMA Char Char String
-dijkstra s = foldl f ([],[]) s
-  where f (s, o) x
-          | isOperator x = pushOperator x (s, o)
-          | isDigit x = pushDigit x (s, o)
-          | x == '(' = ('(' : s, o)
-          | x == ')' = pushBracket (s, o)
-          | otherwise = (s, o)
+pushNumber ([], s, o) = ([], s, o)
+pushNumber (n, s, o) = ([], s, reverse n : o)
 
-isOperator = (`elem` "+-*/)")
-isDigit = (`elem` ['0'..'9'])
-        
-pushDigit d (s, []) = (s, [[d]])
-pushDigit d (s, n:o) = (s, (n++[d]):o)
-        
-pushOperator x ([], o) = ([x], o)
-pushOperator x (y:s, o)
-  | prec x > prec y = (x:y:s, o)
-  | otherwise = pushOperator x (s, [y]:o)
+pushOperator x (n, [], o) = (n, [x], o)
+pushOperator x (n, y:s, o)
+  | prec x > prec y = (n, x:y:s, o)
+  | otherwise = pushOperator x (n, s, [y]:o)
 
-pushBracket ([], o) = ([], o)
-pushBracket ('(':s, o) = (s, o)
-pushBracket (x:s, o) = pushBracket (s, [x]:o)
+closeParens (n, '(':s, o) = (n, s, o)
+closeParens (n, x:s, o) = closeParens (n, s, [x]:o)
 
 prec x = case x of
-          '+' -> 1
-          '-' -> 1
           '*' -> 2
           '/' -> 2
-          ')' -> 0
-          '(' -> 10
+          '+' -> 1
+          '-' -> 1
+          '(' -> 0
+          '#' -> 0
 
-                                       
+------------------------------------------------------------                                       
 data M = M [[Double]] | I deriving Show
 
 outer f l1 l2 = [[f x y | x <- l2 ] | y <- l1]
@@ -147,29 +148,3 @@ instance Semigroup M where
 instance Monoid M where
   mempty = I
 
-game = M $ outer (flip passes) [1..30] [1..30]
-  where
-    passes 3 22 = 1
-    passes 5 8 = 1
-    passes 11 26 = 1
-    passes 17 4 = 1
-    passes 21 9 = 1
-    passes 20 29 = 1
-    passes 19 7 = 1
-    passes 27 1 = 1
-    passes 29 30 = 1
-    passes 28 30 = 5/6
-    passes 26 30 = 3/6
-    passes 25 30 = 2/6
-    passes 30 30 = 1
-    passes r c | r `elem` [3,5,11,17,21,20,19,27] = 0
-               | r - c < 0 && c - r - 6 <= 0 = 1/6
-               | otherwise = 0
-               
---times :: (Num n, Integral i) => i -> n -> n
-0 `times` _ = mempty
-1 `times` a = a
-2 `times` a = a <> a
-n `times` a
-  | even n = (n` div` 2) `times` (a <> a)
-  | odd n  = (n - 1) `times` a <> a
