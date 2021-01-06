@@ -1,8 +1,4 @@
 import Data.List (transpose)
-import Data.Semigroup
-import Data.Monoid
-import Text.Printf
-
   
 data DFA s i o = DFA
   { symbols :: [i]
@@ -107,31 +103,30 @@ calcRPN = DMA [] f id
 --  :: Monoid p => (t -> a -> (t, p)) -> (t -> p) -> t -> [a] -> p
 process step finish = go
   where go s [] = finish s
-        go s (h:t) = res <> go s' t
-          where (s', res) = step s h
+        go s (h:t) = let (s', res) = step s h in res <> go s' t
                 
-data Token = N String | Op Char | Par Char
+data Token = N String | Op String | Par String
   deriving Show
 
 tokenize :: String -> [Token]
 tokenize s = process step pushNum [] s
   where step s x | isDigit x = (x:s, [])
-                 | isOperator x = ([], pushNum s <> [Op x])
-                 | x `elem` "()" = ([], pushNum s <> [Par x])
+                 | isOperator x = ([], pushNum s <> [Op [x]])
+                 | x `elem` "()" = ([], pushNum s <> [Par [x]])
                  | otherwise = (s, [])
         pushNum s = if null s then [] else [N $ reverse s]
 
-isOperator = (`elem` "+-*/")
-isDigit = (`elem` "0123456789")        
+        isOperator = (`elem` "+-*/")
+        isDigit = (`elem` "0123456789")        
 
 ------------------------------------------------------------
 dijkstra :: String -> [String]
 dijkstra = process step id [] . tokenize
   where step s x = case x of
           N n -> (s, [n])
-          Op op -> pushOperator s [op]
-          Par '(' -> ("(":s, [])
-          Par ')' -> closePar s
+          Op op -> pushOperator s op
+          Par "(" -> ("(":s, [])
+          Par ")" -> closePar s
 
         pushOperator s x = (x:s', o)
           where (o, s') = span (\y -> prec x < prec y) s
