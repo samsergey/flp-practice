@@ -1,15 +1,15 @@
 import Data.List (transpose)
+
+data FSM s i = FSM [i] (s -> i -> s) s [s] [s]
   
-data DFA s i o = DFA
-  { symbols :: [i]
-  , func :: s -> i -> s
-  , start :: s
-  , result :: s -> o }
+runFSM :: Eq i => FSM s i -> [i] -> s
+runFSM (FSM is f s0 _ _) = foldl f s0 . filter (`elem` is)
 
-runDFA :: Eq i => DFA s i o -> [i] -> o
-runDFA (DFA is f s0 post) = post . foldl f s0 . filter (`elem` is)
+testFSM :: (Eq s, Eq i) => FSM s i -> [i] -> Bool
+testFSM fsm@(FSM _ _ _ stop _) = (`elem` stop) . runFSM fsm
 
-mod3 = DFA [0,1] f 0 id
+mod3 :: FSM Int Int 
+mod3 = FSM [0,1] f 0 [0,1,2]
   where f 0 0 = 0
         f 0 1 = 1
         f 1 0 = 2
@@ -22,7 +22,7 @@ toBase b = reverse
          . takeWhile (> 0)
          . iterate (`div` b)
 
-abba = DFA "ab" f 0 (== 4)
+abba = FSM "ab" f 0 [4]
   where f s x = case (s, x) of
           (0, 'a') -> 1
           (0, 'b') -> 0
@@ -34,7 +34,7 @@ abba = DFA "ab" f 0 (== 4)
           (3, 'b') -> 0
           (4, _) -> 4
 
-aaa = DFA "ab" f 0 (== 3)
+aaa = FSM "ab" f 0 [3]
   where f s x = case (s, x) of
           (0, 'a') -> 1
           (0, 'b') -> -1
@@ -44,7 +44,7 @@ aaa = DFA "ab" f 0 (== 3)
           (2, 'b') -> -1
           (s, _) -> s
 
-bbb = DFA "ab" f 0 (== 3)
+bbb =  FSM "ab" f 0 [3]
   where f s x = case (s, x) of
           (0, 'a') -> 0
           (0, 'b') -> 1
@@ -56,7 +56,7 @@ bbb = DFA "ab" f 0 (== 3)
           (3, 'b') -> 3
           (-1, _) -> -1
 
-same = DFA "ab" f "start" (`elem` ["a2","b2"])
+same = FSM "ab" f "start" ["a2","b2"]
   where f s x = case (s, x) of
           ("start", 'a') -> "a1"
           ("start", 'b') -> "b1"
@@ -69,29 +69,37 @@ same = DFA "ab" f "start" (`elem` ["a2","b2"])
           ("b2", 'a') -> "b1"
           ("b2", 'b') -> "b2"
 
-evena = DFA "ab" f 0 (== 2)
+
+evena = FSM "ab" f 0 [2]
   where f s x = case (s, x) of
           (0, 'a') -> 1
           (1, 'a') -> 2
           (2, 'a') -> 1
           (s,'b') -> s
 
+prefixFSM (FSM is f s0) xs =
+  span (\(s, x) -> not (s `elem` stop)) $ zip (scanl f s0 xs) xs
+
+digits = FSM ['0'..'3'] f 0
+  where f 0 '0' = 0
+        f 0 '1' = 0
+        f 0 '2' = 0
+        f 0 _ = -1
+        f (-1) _ = -1
+
 ------------------------------------------------------------
 
-data DMA s i o = DMA [i] ([s] -> i -> [s]) ([s] -> o)
+runPA :: ([s] -> i -> [s]) -> [i] -> [s]
+runPA f = foldl f []
 
-runDMA :: Eq i => DMA s i o -> [i] -> o
-runDMA (DMA [] f post) = post . foldl f []
-runDMA (DMA is f post) = post . foldl f [] . filter (`elem` is)
-
-brackets = DMA [] f null
+brackets = null . runPA f 
   where f ('(':s) ')' = s
         f ('[':s) ']' = s
         f ('{':s) ']' = s
         f s x | x `elem` "[]{}()" = x:s
               | otherwise = s
 
-calcRPN = DMA [] f id
+calcRPN = runPA f
   where f (x:y:s) "+" = (x+y):s
         f (x:y:s) "-" = (y-x):s
         f (x:y:s) "*" = (x*y):s
@@ -99,29 +107,37 @@ calcRPN = DMA [] f id
         f s n = read n : s
 
 ------------------------------------------------------------
---process
---  :: Monoid p => (t -> a -> (t, p)) -> (t -> p) -> t -> [a] -> p
-process step finish = go
+
+runPT :: ([s] -> i -> ([s], [o]))
+      -> ([s] -> [o])
+      -> [i] -> [o]
+runPT step finish = go []
   where go s [] = finish s
-        go s (h:t) = let (s', res) = step s h in res <> go s' t
-                
+        go s (h:t) = let (s', res) = step s h
+                     in res ++ go s' t
+
+
+------------------------------------------------------------
+                        
 data Token = N String | Op String | Par String
   deriving Show
 
 tokenize :: String -> [Token]
-tokenize s = process step pushNum [] s
-  where step s x | isDigit x = (x:s, [])
-                 | isOperator x = ([], pushNum s <> [Op [x]])
-                 | x `elem` "()" = ([], pushNum s <> [Par [x]])
-                 | otherwise = (s, [])
-        pushNum s = if null s then [] else [N $ reverse s]
+tokenize = runPT step pushNum 
+  where
+    step s x
+      | isDigit x = (x:s, [])
+      | isOperator x = ([], pushNum s <> [Op [x]])
+      | x `elem` "()" = ([], pushNum s <> [Par [x]])
+      | otherwise = (s, [])
+    pushNum s = if null s then [] else [N $ reverse s]
 
-        isOperator = (`elem` "+-*/")
-        isDigit = (`elem` "0123456789")        
+isOperator = (`elem` "+-*/")
+isDigit = (`elem` "0123456789")        
 
 ------------------------------------------------------------
 dijkstra :: String -> [String]
-dijkstra = process step id [] . tokenize
+dijkstra = runPT step id . tokenize
   where step s x = case x of
           N n -> (s, [n])
           Op op -> pushOperator s op
