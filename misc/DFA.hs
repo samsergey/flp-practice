@@ -1,12 +1,12 @@
-import Data.List (transpose)
+import Data.List (transpose, inits)
 
-data FSM s i = FSM [i] (s -> i -> s) s [s] [s]
+data FSM s i = FSM [i] (s -> i -> s) s [s]
   
 runFSM :: Eq i => FSM s i -> [i] -> s
-runFSM (FSM is f s0 _ _) = foldl f s0 . filter (`elem` is)
+runFSM (FSM is f s0 _) = foldl f s0 . filter (`elem` is)
 
 testFSM :: (Eq s, Eq i) => FSM s i -> [i] -> Bool
-testFSM fsm@(FSM _ _ _ stop _) = (`elem` stop) . runFSM fsm
+testFSM fsm@(FSM _ _ _ stop) = (`elem` stop) . runFSM fsm
 
 mod3 :: FSM Int Int 
 mod3 = FSM [0,1] f 0 [0,1,2]
@@ -77,7 +77,7 @@ evena = FSM "ab" f 0 [2]
           (2, 'a') -> 1
           (s,'b') -> s
 
-prefixFSM (FSM is f s0) xs =
+prefixFSM (FSM is f s0 stop) xs =
   span (\(s, x) -> not (s `elem` stop)) $ zip (scanl f s0 xs) xs
 
 digits = FSM ['0'..'3'] f 0
