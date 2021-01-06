@@ -1,6 +1,7 @@
 import Data.List (transpose)
 import Data.Semigroup
 import Data.Monoid
+import Text.Printf
 
   
 data DFA s i o = DFA
@@ -79,6 +80,8 @@ evena = DFA "ab" f 0 (== 2)
           (2, 'a') -> 1
           (s,'b') -> s
 
+------------------------------------------------------------
+
 data DMA s i o = DMA [i] ([s] -> i -> [s]) ([s] -> o)
 
 runDMA :: Eq i => DMA s i o -> [i] -> o
@@ -100,39 +103,49 @@ calcRPN = DMA [] f id
         f s n = read n : s
 
 ------------------------------------------------------------
+--process
+--  :: Monoid p => (t -> a -> (t, p)) -> (t -> p) -> t -> [a] -> p
+process step finish = go
+  where go s [] = finish s
+        go s (h:t) = res <> go s' t
+          where (s', res) = step s h
+                
+data Token = N String | Op Char | Par Char
+  deriving Show
 
-dijkstra s =
-  let (_, _, o) = pushOperator '#'
-                  $ pushNumber
-                  $ foldl f ([],[],[]) s
-  in reverse o
-  where f (n, s, o) x
-          | isDigit x = (x:n, s, o)
-          | isOperator x = pushOperator x $ pushNumber (n, s, o)
-          | x == ')' = closeParens (n, s, o)
-          | otherwise = pushNumber (n, s, o)
-  
-isOperator = (`elem` "+-*/(")
+tokenize :: String -> [Token]
+tokenize s = process step pushNum [] s
+  where step s x | isDigit x = (x:s, [])
+                 | isOperator x = ([], pushNum s <> [Op x])
+                 | x `elem` "()" = ([], pushNum s <> [Par x])
+                 | otherwise = (s, [])
+        pushNum s = if null s then [] else [N $ reverse s]
+
+isOperator = (`elem` "+-*/")
 isDigit = (`elem` "0123456789")        
 
-pushNumber ([], s, o) = ([], s, o)
-pushNumber (n, s, o) = ([], s, reverse n : o)
+------------------------------------------------------------
+dijkstra :: String -> [String]
+dijkstra = process step id [] . tokenize
+  where step s x = case x of
+          N n -> (s, [n])
+          Op op -> pushOperator s [op]
+          Par '(' -> ("(":s, [])
+          Par ')' -> closePar s
 
-pushOperator x (n, [], o) = (n, [x], o)
-pushOperator x (n, y:s, o)
-  | prec x > prec y = (n, x:y:s, o)
-  | otherwise = pushOperator x (n, s, [y]:o)
+        pushOperator s x = (x:s', o)
+          where (o, s') = span (\y -> prec x < prec y) s
 
-closeParens (n, '(':s, o) = (n, s, o)
-closeParens (n, x:s, o) = closeParens (n, s, [x]:o)
+        closePar s = case span (/= "(") s of
+          (_ ,[]) -> error "Unmatched parenthesis"
+          (o, s') -> (tail s', o)
 
-prec x = case x of
-          '*' -> 2
-          '/' -> 2
-          '+' -> 1
-          '-' -> 1
-          '(' -> 0
-          '#' -> 0
+        prec x = case x of
+          "*" -> 2
+          "/" -> 2
+          "+" -> 1
+          "-" -> 1
+          "(" -> 0
 
 ------------------------------------------------------------                                       
 data M = M [[Double]] | I deriving Show
