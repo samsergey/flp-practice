@@ -1,21 +1,48 @@
-import Data.List (transpose, unfoldr)
+{-#language MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances #-}
+import Data.List (transpose, unfoldr, tails, inits)
 
-data FSM s i = FSM { inpust :: [i]
-                   , delta :: s -> i -> s
-                   , start :: s
-                   , stop :: [s] }
+------------------------------------------------------------
+
+class Machine m s i | m -> i, m -> s where
+  alphabet :: m -> i -> Bool
+  delta :: m -> s -> i -> s
+  start :: m -> s
+  stop :: m -> s -> Bool
+  final :: m -> s -> Bool
   
-runFSM :: Eq i => FSM s i -> [i] -> s
-runFSM (FSM is f s0 _) = foldl f s0 . filter (`elem` is)
+scan :: Machine m s i => m -> [i] -> [(s, i)]
+scan m xs = takeWhile (not . stop m . fst)
+            $ zip states inputs
+  where
+    inputs = takeWhile (alphabet m) xs
+    states = tail $ scanl (delta m) (start m) inputs
+      
+run :: Machine m s i => m -> [i] -> s
+run m xs = case scan m xs of
+               [] -> start m
+               res -> fst (last res)
 
-testFSM :: (Eq s, Eq i) => FSM s i -> [i] -> Bool
-testFSM fsm = (`elem` stop fsm) . runFSM fsm
+test :: Machine m s i => m -> [i] -> Bool
+test m = any (\(s,_) -> final m s) . scan m
 
-scanFSM :: Eq i => FSM s i -> [i] -> [s]
-scanFSM (FSM is f s0 _) = scanl f s0 . filter (`elem` is)
+prefix m xs = case scan m xs of
+  [] -> Nothing
+  res -> Just ((fst (last res), snd <$> res), drop (length res) xs)
 
-mod3 :: FSM Int Int 
-mod3 = FSM [0,1] f 0 [0,1,2]
+------------------------------------------------------------
+
+data FSMachine s i = FSMachine [i] (s -> i -> s) s [s] [s]
+
+instance (Eq s, Eq i) => Machine (FSMachine s i) s i where
+  alphabet (FSMachine i _ _ _ _) = (`elem` i)
+  delta (FSMachine _ d _ _ _) = d
+  start (FSMachine _ _ s0 _ _) = s0
+  stop (FSMachine _ _ _ s _) = (`elem` s)
+  final (FSMachine _ _ _ _ f) = (`elem` f)
+
+
+mod3 :: FSMachine Int Int 
+mod3 = FSMachine [0,1] f 0 [] [0,1,2]
   where f 0 0 = 0
         f 0 1 = 1
         f 1 0 = 2
@@ -28,19 +55,17 @@ toBase b = reverse
          . takeWhile (> 0)
          . iterate (`div` b)
 
-abba = FSM "ab" f 0 [4]
+abba = FSMachine "ab" f 0 [-1] [4]
   where f s x = case (s, x) of
           (0, 'a') -> 1
-          (0, 'b') -> 0
-          (1, 'a') -> 0
+          (0, 'b') -> -1
+          (1, 'a') -> -1
           (1, 'b') -> 2
-          (2, 'a') -> 0
-          (2, 'b') -> 3
-          (3, 'a') -> 4
-          (3, 'b') -> 0
+          (2, 'a') -> 4
+          (2, 'b') -> 2
           (4, _) -> 4
 
-aaa = FSM "ab" f 0 [4]
+aaa = FSMachine "ab" f 0 [-1] [4]
   where f s x = case (s, x) of
           (0, 'a') -> 1
           (0, 'b') -> -1
@@ -49,9 +74,9 @@ aaa = FSM "ab" f 0 [4]
           (2, 'a') -> 3
           (2, 'b') -> -1
           (3, _) -> 4
-          (-1,_) -> -1
+          (s,_) -> s
 
-bbb =  FSM "ab" f 0 [3]
+bbb =  FSMachine "ab" f 0 [-1] [3]
   where f s x = case (s, x) of
           (0, 'a') -> 0
           (0, 'b') -> 1
@@ -59,11 +84,10 @@ bbb =  FSM "ab" f 0 [3]
           (1, 'b') -> 2
           (2, 'a') -> 0
           (2, 'b') -> 3
-          (3, 'a') -> -1
+          (3, 'a') -> 0
           (3, 'b') -> 3
-          (-1, _) -> -1
 
-same = FSM "ab" f "start" ["a2","b2"]
+same = FSMachine "ab" f "start" [] ["a2","b2"]
   where f s x = case (s, x) of
           ("start", 'a') -> "a1"
           ("start", 'b') -> "b1"
@@ -76,116 +100,115 @@ same = FSM "ab" f "start" ["a2","b2"]
           ("b2", 'a') -> "b1"
           ("b2", 'b') -> "b2"
 
-
-evena = FSM "ab" f 0 [2]
+evena = FSMachine "ab" f 0 [] [2]
   where f s x = case (s, x) of
           (0, 'a') -> 1
           (1, 'a') -> 2
           (2, 'a') -> 1
-          (s,'b') -> s
-
-
-lexer = FSM "0123456789+-*/()" f 0 [-1]
-  where f 0 x | isDigit x = 1
-              | isOperator x = 2
-              | isParenthesis x = 3
-              | otherwise = -2
-        f 1 x | isDigit x = 1
-              | otherwise = -1
-        f s _ = -1
-
-prefixFSM (FSM is f s0 stop) = go s0 []
-  where go s xs []
-          | s == s0 = Nothing
-          | otherwise = Just ((s, xs), [])
-        go s xs (h:t)
-          | s' `elem` stop = Just ((s, xs), h:t)
-          | otherwise = go s' (xs++[h]) t
-          where s' = f s h
-
+          (s, 'b') -> s
 
 ------------------------------------------------------------
 
-runPA :: ([s] -> i -> [s]) -> [i] -> [s]
-runPA f = foldl f []
+data PMachine s i = PMachine ([s] -> i -> [s]) ([s] -> Bool)
 
-brackets = null . runPA f 
+instance (Eq s, Eq i) => Machine (PMachine s i) [s] i where
+  alphabet _ = const True
+  delta (PMachine d _) = d
+  start _ = []
+  stop _ = const False
+  final (PMachine _ f) = f
+
+brackets = PMachine f null
   where f ('(':s) ')' = s
         f ('[':s) ']' = s
         f ('{':s) ']' = s
         f s x | x `elem` "[]{}()" = x:s
               | otherwise = s
 
-calcRPN = runPA f
+calcRPN = PMachine f (const True)
   where f (x:y:s) "+" = (x+y):s
         f (x:y:s) "-" = (y-x):s
         f (x:y:s) "*" = (x*y):s
         f (x:y:s) "/" = (y `div` x):s
         f s n = read n : s
 
-------------------------------------------------------------
+-- ------------------------------------------------------------
 
-runPT :: ([s] -> i -> ([s], [o]))
-      -> ([s] -> [o])
-      -> [i] -> [o]
-runPT step finish = go []
-  where go s [] = finish s
-        go s (h:t) = let (s', res) = step s h
-                     in res ++ go s' t
+-- runPT :: ([s] -> i -> ([s], [o]))
+--       -> ([s] -> [o])
+--       -> [i] -> [o]
+-- runPT step finish = go []
+--   where go s [] = finish s
+--         go s (h:t) = let (s', res) = step s h
+--                      in res ++ go s' t
 
-------------------------------------------------------------
-                        
-data Token = N String | Op String | Par String
-  deriving Show
+-- ------------------------------------------------------------
 
-tokenize :: String -> [Token]
-tokenize = runPT step pushNum 
-  where
-    step s x
-      | isDigit x = (x:s, [])
-      | isOperator x = ([], pushNum s <> [Op [x]])
-      | x `elem` "()" = ([], pushNum s <> [Par [x]])
-      | otherwise = (s, [])
-    pushNum s = if null s then [] else [N $ reverse s]
+data Token = S | N | O | P | E deriving (Show, Eq)
+  
+lexer = FSMachine "0123456789+-*/()" f S [E] [O,P]
+  where f S x | x `elem` digits = N
+              | x `elem` "+-*/" = O
+              | x `elem` "()"   = P
+              | otherwise       = E
+        f N x | x `elem` digits = N
+              | otherwise       = E
+        f s _                   = E
+        
+        digits = "0123456789"
 
-isOperator = (`elem` "+-*/")
-isParenthesis = (`elem` "()")
-isDigit = (`elem` "0123456789")        
+-- ------------------------------------------------------------
+-- dijkstra :: String -> [String]
+-- dijkstra = runPT step id . tokenize
+--   where
+--     tokenize = unfoldr (prefixFSM lexer)
+    
+--     step s x = case x of
+--       (N, n)  -> (s, [n])
+--       (O, op)  -> pushOperator s op
+--       (P, "(") -> ("(":s, [])
+--       (P, ")") -> closePar s
 
-------------------------------------------------------------
-dijkstra :: String -> [String]
-dijkstra = runPT step id . tokenize
-  where step s x = case x of
-          N n -> (s, [n])
-          Op op -> pushOperator s op
-          Par "(" -> ("(":s, [])
-          Par ")" -> closePar s
+--     pushOperator s x = (x:s', o)
+--       where (o, s') = span (\y -> prec x < prec y) s
 
-        pushOperator s x = (x:s', o)
-          where (o, s') = span (\y -> prec x < prec y) s
+--     closePar s = case span (/= "(") s of
+--       (_ ,[]) -> error "Unmatched parenthesis"
+--       (o, s') -> (tail s', o)
 
-        closePar s = case span (/= "(") s of
-          (_ ,[]) -> error "Unmatched parenthesis"
-          (o, s') -> (tail s', o)
+--     prec x = case x of
+--       "*" -> 2
+--       "/" -> 2
+--       "+" -> 1
+--       "-" -> 1
+--       "(" -> 0
 
-        prec x = case x of
-          "*" -> 2
-          "/" -> 2
-          "+" -> 1
-          "-" -> 1
-          "(" -> 0
+-- -----------------------------------------------------------                                       
+-- data M = M [[Double]] | I deriving Show
 
-------------------------------------------------------------                                       
-data M = M [[Double]] | I deriving Show
+-- outer f l1 l2 = [[f x y | x <- l2 ] | y <- l1]
+-- dot v1 v2 = sum $ zipWith (*) v1 v2
 
-outer f l1 l2 = [[f x y | x <- l2 ] | y <- l1]
-dot v1 v2 = sum $ zipWith (*) v1 v2
+-- instance Semigroup M where
+--   m <> I = m
+--   I <> m = m
+--   M m1 <> M m2 = M $ outer dot m1 (transpose m2)
 
-instance Semigroup M where
-  m <> I = m
-  I <> m = m
-  M m1 <> M m2 = M $ outer dot m1 (transpose m2)
+-- instance Monoid M where
+--   mempty = I
 
-instance Monoid M where
-  mempty = I
+-- toBase2  = unfoldr f
+--   where f 0 = Nothing
+--         f n = let (n', r) = divMod n 2 in Just (r, n')
 
+-- iterate1 f x = x : iterate1 f (f x)
+
+-- iterate2 f = unfoldr (\x -> Just (x, f x))
+
+-- replicate1 n x = unfoldr (\n -> if n > 0 then Just (x, n-1) else Nothing) n
+
+-- cycle1 c = c ++ cycle1 c
+
+-- cycle2 c = unfoldr g c
+--   where g [x] = Just (x, c)
+--         g (h:t) = Just (h, t)
