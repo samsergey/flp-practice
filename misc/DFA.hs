@@ -1,12 +1,18 @@
-import Data.List (transpose, inits)
+import Data.List (transpose, unfoldr)
 
-data FSM s i = FSM [i] (s -> i -> s) s [s]
+data FSM s i = FSM { inpust :: [i]
+                   , delta :: s -> i -> s
+                   , start :: s
+                   , stop :: [s] }
   
 runFSM :: Eq i => FSM s i -> [i] -> s
 runFSM (FSM is f s0 _) = foldl f s0 . filter (`elem` is)
 
 testFSM :: (Eq s, Eq i) => FSM s i -> [i] -> Bool
-testFSM fsm@(FSM _ _ _ stop) = (`elem` stop) . runFSM fsm
+testFSM fsm = (`elem` stop fsm) . runFSM fsm
+
+scanFSM :: Eq i => FSM s i -> [i] -> [s]
+scanFSM (FSM is f s0 _) = scanl f s0 . filter (`elem` is)
 
 mod3 :: FSM Int Int 
 mod3 = FSM [0,1] f 0 [0,1,2]
@@ -34,7 +40,7 @@ abba = FSM "ab" f 0 [4]
           (3, 'b') -> 0
           (4, _) -> 4
 
-aaa = FSM "ab" f 0 [3]
+aaa = FSM "ab" f 0 [4]
   where f s x = case (s, x) of
           (0, 'a') -> 1
           (0, 'b') -> -1
@@ -42,7 +48,8 @@ aaa = FSM "ab" f 0 [3]
           (1, 'b') -> -1
           (2, 'a') -> 3
           (2, 'b') -> -1
-          (s, _) -> s
+          (3, _) -> 4
+          (-1,_) -> -1
 
 bbb =  FSM "ab" f 0 [3]
   where f s x = case (s, x) of
@@ -77,15 +84,25 @@ evena = FSM "ab" f 0 [2]
           (2, 'a') -> 1
           (s,'b') -> s
 
-prefixFSM (FSM is f s0 stop) xs =
-  span (\(s, x) -> not (s `elem` stop)) $ zip (scanl f s0 xs) xs
 
-digits = FSM ['0'..'3'] f 0
-  where f 0 '0' = 0
-        f 0 '1' = 0
-        f 0 '2' = 0
-        f 0 _ = -1
-        f (-1) _ = -1
+lexer = FSM "0123456789+-*/()" f 0 [-1]
+  where f 0 x | isDigit x = 1
+              | isOperator x = 2
+              | isParenthesis x = 3
+              | otherwise = -2
+        f 1 x | isDigit x = 1
+              | otherwise = -1
+        f s _ = -1
+
+prefixFSM (FSM is f s0 stop) = go s0 []
+  where go s xs []
+          | s == s0 = Nothing
+          | otherwise = Just ((s, xs), [])
+        go s xs (h:t)
+          | s' `elem` stop = Just ((s, xs), h:t)
+          | otherwise = go s' (xs++[h]) t
+          where s' = f s h
+
 
 ------------------------------------------------------------
 
@@ -116,7 +133,6 @@ runPT step finish = go []
         go s (h:t) = let (s', res) = step s h
                      in res ++ go s' t
 
-
 ------------------------------------------------------------
                         
 data Token = N String | Op String | Par String
@@ -133,6 +149,7 @@ tokenize = runPT step pushNum
     pushNum s = if null s then [] else [N $ reverse s]
 
 isOperator = (`elem` "+-*/")
+isParenthesis = (`elem` "()")
 isDigit = (`elem` "0123456789")        
 
 ------------------------------------------------------------
