@@ -1,10 +1,8 @@
-data Automat s i =
-  Automat { alphabet :: [i] -- допустимые символы
-          , delta :: s -> i -> s -- функция перехода
-          , start :: s -- начальное состояние
-          , stop :: [s] -- останавливающие состояния
-          , final :: [s] -- конечные состояния
-          }
+:rdata Automat s i = r Automat { alphabet :: [i] -- допустимые символы
+4 , delta :: s -> i -> s -- функция перехода , start :: s -- начальное 
+          состояние , stop :: [s] -- останавливающие состояния , final 
+          :: [s] -- конечные состояния
+5 }
 
 mod3 :: Automat Int Int 
 mod3 = Automat [0,1] f 0 [] [0,1,2]
@@ -46,8 +44,7 @@ runA m xs = case scanA m xs of
 testA :: (Eq s, Eq i) => Automat s i -> [i] -> Bool
 testA m = (`elem` final m) . runA m
 
-printA m = mapM_g f . scanA m
-  where f (x, s) = putStrLn $ show x ++ "\t" ++ show s 
+printA m = mapM_ print . scanA m
 
 brackets = Automat "()[]{}" f [] [] [[]]
   where f ('(' : s) ')' = s
