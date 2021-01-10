@@ -74,6 +74,12 @@ rectangle (x, y) a b = line [ Pt x y, Pt (x+a) y
                             , Pt (x+a) (y+b), Pt x (y+b)
                             , Pt x y]
 
+polygon :: (Float, Float) -> Int -> Float -> Picture
+polygon (x, y) n a = line [Pt (x+a*cos t) (x+a*sin t)
+                          | t <- [0,2*pi/fromIntegral n..2*pi]] 
+
+------------------------------------------------------------
+
 class SVG a where
   toSVG :: a -> String
 
@@ -94,7 +100,7 @@ instance SVG Picture where
 writeSVG :: SVG a => String -> a -> IO ()
 writeSVG fname = writeFile fname . toSVG
 
-polygon :: (Float, Float) -> Int -> Float -> Picture
-polygon (x, y) n a = line [Pt (x+a*cos t) (x+a*sin t)
-                          | t <- [0,2*pi/fromIntegral n..2*pi]] 
+------------------------------------------------------------
 
+class Trans p where
+  transform :: 

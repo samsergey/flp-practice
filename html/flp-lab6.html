@@ -38,7 +38,6 @@
       <p>Определим тип <code>Primitive</code> для представления двух (для начала) графических примитивов: точек и ломаных линий. Изображение будет представлено типом <code>Picture</code>, объединяющим множество примитивов:</p>
       <pre><hs>data Pt = Pt Float Float
   deriving Show
-
   
 data Primitive = Point Pt
                | Line [Pt]
@@ -115,12 +114,8 @@ triangle :: (Float, Float) -> Float -> Float -> Picture</hs></pre>
 
 instance SVG Primitive where
   toSVG p = case p of
-    Point (x,y) -> _
+    Point pt -> _
     Line pts -> _</hs></pre>
-
-	Для определения экземпляра <code>SVG</code> потребуется в самом начале файла добавить две директивы компилятору
-	<pre><hs>{-# language TypeSynonymInstances #-}
-{-# language FlexibleInstances #-}</hs></pre>
       </task>
       
       <p>Сами примитивы ещё не образуют полноценного изображения. Для того, чтобы можно было увидеть картинку, нужно объединить примитивы в такую структуру:
@@ -154,27 +149,25 @@ instance Bounded Float where
       <p>В типе <code>Box</code> первая пара задаёт левый нижний угол изображения, а вторая – правый верхний. Для того, чтобы использовать полугруппы <code>Min</code> и <code>Max</code>, экпортируем их (и только их) из библиотеки <code>Data.Semigroup</code>. <pre><hs>import Data.Semigroup (Min(..), Max(..))</hs></pre> Для того, чтобы тип <code>Box</code> стал моноидом, мы определили минимальную и максимальную границы значений координат.</p>
 
       <p>
-	В свою очередь, размеры изображения складываются из размеров примитивов, его составляющих. Значит, имеет смысл определить класс для типов, имеющих размер. Создадим такой класс, а в нём опишем несколько универсально полезных функций, имеющих для всех экземпляров класса определение по умолчанию
+	В свою очередь, размеры изображения складываются из размеров примитивов, его составляющих. Значит, имеет смысл определить класс для типов, имеющих размер. Создадим такой класс, и определим пару универсально полезных функций, имеющих смысл для всех экземпляров класса:
 	<pre><hs>class Boxed a where
   box :: a -> Box
 
-  width :: a -> Float
-  width p = x2 - x1
-    where ((Min x1,_),(Max x2,_)) = box p
+width :: Boxed a => a -> Float
+width p = x2 - x1
+  where ((Min x1,_),(Max x2,_)) = box p
 
-  height :: a -> Float
-  height p = y2 - y1
-    where ((_,Min y1),(_,Max y2)) = box p</hs></pre>
+height :: Boxed a => a -> Float
+height p = y2 - y1
+  where ((_,Min y1),(_,Max y2)) = box p</hs></pre>
 	  Для экзепляров класса <code>Boxed</code> достаточно определить функцию <code>box</code>, все остальные выводятся через неё. Так, например определяется экземпляр <code>Boxed</code> для типа <code>Picture</code>:
 	  <pre><hs>instance Boxed Picture where
   box Empty = ((Min 0, Min 0), (Max 0, Max 0))
   box (Picture (b,_)) = b</hs></pre>
 
-	  А так можно опредлить размеры для точки:
+	  А так можно определить размеры для точки:
 	  <pre><hs>instance Boxed Pt where
-  box (x,y)= ((Min x, Min y), (Max x, Max y))
-  width _ = 0
-  height _ = 0</hs></pre> 
+  box (Pt x y)= ((Min x, Min y), (Max x, Max y))</hs></pre> 
       </p>   
 
       <task>Определите экземпляр <code>Boxed Primitive</code>. Используйте моноидальные свойства типа <code>Box</code> при вычислении рамки для примитива <code>Line</code>.</task>
