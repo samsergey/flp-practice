@@ -49,10 +49,9 @@ testA m = (`elem` final m) . runA m
 printA m = mapM_ f . scanA m
   where f (x, s) = putStrLn $ show x ++ "\t" ++ show s 
 
-prefixA m xs = case scanA m xs of
-  [] -> Nothing
-  res -> Just ((snd (last res), fst <$> res), drop (length res) xs)
-
+unfold f x = case f x of
+  Nothing -> []
+  Just (a, y) -> a : unfold f y
 
 brackets = Automat "()[]{}" f [] [] [[]]
   where f ('(' : s) ')' = s
@@ -67,14 +66,19 @@ calcRPN = Automat [] f [] [] []
 
 data Token = S | N | O | P | E deriving (Show, Eq)
   
-lexer = Automat "0123456789+-*/()" f S [E] [O,P]
+lexer = Automat "01234567890+-*/()" f S [E] [O,P]
   where f S x | x `elem` digits = N
               | x `elem` "+-*/" = O
               | x `elem` "()"   = P
               | otherwise       = E
         f N x | x `elem` digits = N
               | otherwise       = E
-        f s _                   = E
+        f _     _               = E
         
         digits = "0123456789"
 
+prefixA m xs = case scanA m xs of
+  [] -> Nothing
+  r -> Just ((fst <$> r, snd (last r)), drop (length r) xs)
+
+tokenize = unfold (prefixA lexer) . filter (`elem` alphabet lexer)

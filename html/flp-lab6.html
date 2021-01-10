@@ -66,18 +66,21 @@ data Picture = Empty
 
 	
       <p>
-	Более того, изображения образуют моноид с операцией наложения (убедитесь мысленно, что наложение ассоциативно). Определим экземпляр класса <code>Monoid</code> для типа <code>Picture</code>:</p>
-      <pre><hs>instance Monoid Picture where
+	Более того, изображения образуют моноид с операцией наложения (убедитесь мысленно, что наложение ассоциативно). Определим экземпляр классов  <code>Semigroup</code> и <code>Monoid</code> для типа <code>Picture</code>:</p>
+      <pre><hs>instance Semigroup Picture where
+  Empty <> p = p
+  p <> Empty = p
+  Picture p1 <> Picture p2 = Picture (p1 <> p2)
+
+instance Monoid Picture where
   mempty = Empty
-  Empty `mappend` p = p
-  p `mappend` Empty = p
-  Picture p1 `mappend` Picture p2 = Picture (p1 &lt;&gt; p2)</hs></pre>
+</hs></pre>
 
       <task>Напишите функции-конструкторы для элементарных фигур:
 	<pre><hs>point :: Pt -> Picture
 line :: [Pt] -> Picture
-square :: Pt -> Float -> Picture
 rectangle :: Pt -> Float -> Float -> Picture
+square :: Pt -> Float -> Picture
 triangle :: Pt -> Float -> Float -> Picture</hs></pre>
 	У всех этих функций первый аргумент — это координата нижнего левого угла фигуры, другие агрументы задают ширину и высоту фигуры.
       </task>
@@ -93,21 +96,29 @@ triangle :: Pt -> Float -> Float -> Picture</hs></pre>
 	</ul>
       </p>
 
-      <task>SVG — это текстовый формат. Для того, чтобы упростить генерацию SVG напишите функцию <code>format</code> для форматирования строк по шаблону, последовательно заменяя символ <tt>'_'</tt> строками из списка. Например:
-	<pre><ghci><l></l> format "_ said: '_'" ["John", "Hello!"]
-<o>"John said: 'Hello!'"</o></ghci></pre>
-	<em>Подсказка: воспользуйтесь функцией <code>splitOn</code> из модуля <code>Data.List.Split</code> для того, чтобы разбить форматируемую строку на части, а потом с помощью функции <code>zipWith</code> перемешайте эти части со строками из списка.</em>
-      </task>
+      <p>SVG — это текстовый формат. Для того, чтобы упростить генерацию SVG используем  функцию <code>printf</code> из библиотеки <code>Text.Printf</code> для форматирования строк по шаблону. Вот как она работает:
+	<pre><ghci><l></l> printf "%v said: '%v'" "John" "Hello!" :: String
+<o>"John said: 'Hello!'" </o>
+<l></l> printf "x=%v, y=%v" 4.0 5.0 :: String
+<o>"x=4.0, y=5.0"</o></ghci></pre>
+      </p>
 
       <p>Определим собственный класс для того, что может быть экспортировано в SVG:
 	<pre><hs>class SVG a where
   toSVG :: a -> String</hs></pre></p>
 
-      <task>Определите экземпляр этого класса для типа <code>Primitive</code>:
-	<pre><hs>instance SVG Primitive where
+      <task>Определите экземпляры этого класса для типов <code>Pt</code> и <code>Primitive</code>:
+	<pre><hs>instance SVG Pt where
+  toSVG (x, y) = printf "%v,%v " x y
+
+instance SVG Primitive where
   toSVG p = case p of
     Point (x,y) -> _
     Line pts -> _</hs></pre>
+
+	Для определения экземпляра <code>SVG</code> потребуется в самом начале файла добавить две директивы компилятору
+	<pre><hs>{-# language TypeSynonymInstances #-}
+{-# language FlexibleInstances #-}</hs></pre>
       </task>
       
       <p>Сами примитивы ещё не образуют полноценного изображения. Для того, чтобы можно было увидеть картинку, нужно объединить примитивы в такую структуру:
