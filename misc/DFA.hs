@@ -46,8 +46,13 @@ runA m xs = case scanA m xs of
 testA :: (Eq s, Eq i) => Automat s i -> [i] -> Bool
 testA m = (`elem` final m) . runA m
 
-printA m = mapM_g f . scanA m
+printA m = mapM_ f . scanA m
   where f (x, s) = putStrLn $ show x ++ "\t" ++ show s 
+
+prefixA m xs = case scanA m xs of
+  [] -> Nothing
+  res -> Just ((snd (last res), fst <$> res), drop (length res) xs)
+
 
 brackets = Automat "()[]{}" f [] [] [[]]
   where f ('(' : s) ')' = s
@@ -59,4 +64,17 @@ calcRPN = Automat [] f [] [] []
         f (x:y:s) "*" = (x*y):s
         f (x:y:s) "/" = (y `div` x):s
         f s n = read n : s
+
+data Token = S | N | O | P | E deriving (Show, Eq)
+  
+lexer = Automat "0123456789+-*/()" f S [E] [O,P]
+  where f S x | x `elem` digits = N
+              | x `elem` "+-*/" = O
+              | x `elem` "()"   = P
+              | otherwise       = E
+        f N x | x `elem` digits = N
+              | otherwise       = E
+        f s _                   = E
+        
+        digits = "0123456789"
 
