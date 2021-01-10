@@ -36,7 +36,9 @@
       <h3>Типы для графических примитивов и изображений</h3>
       
       <p>Определим тип <code>Primitive</code> для представления двух (для начала) графических примитивов: точек и ломаных линий. Изображение будет представлено типом <code>Picture</code>, объединяющим множество примитивов:</p>
-      <pre><hs>type Pt = (Float, Float)
+      <pre><hs>data Pt = Pt Float Float
+  deriving Show
+
   
 data Primitive = Point Pt
                | Line [Pt]
@@ -79,9 +81,9 @@ instance Monoid Picture where
       <task>Напишите функции-конструкторы для элементарных фигур:
 	<pre><hs>point :: Pt -> Picture
 line :: [Pt] -> Picture
-rectangle :: Pt -> Float -> Float -> Picture
-square :: Pt -> Float -> Picture
-triangle :: Pt -> Float -> Float -> Picture</hs></pre>
+rectangle :: (Float, Float) -> Float -> Float -> Picture
+square :: (Float, Float) -> Float -> Picture
+triangle :: (Float, Float) -> Float -> Float -> Picture</hs></pre>
 	У всех этих функций первый аргумент — это координата нижнего левого угла фигуры, другие агрументы задают ширину и высоту фигуры.
       </task>
 
@@ -109,7 +111,7 @@ triangle :: Pt -> Float -> Float -> Picture</hs></pre>
 
       <task>Определите экземпляры этого класса для типов <code>Pt</code> и <code>Primitive</code>:
 	<pre><hs>instance SVG Pt where
-  toSVG (x, y) = printf "%v,%v " x y
+  toSVG (Pt x y) = printf "%v,%v " x y
 
 instance SVG Primitive where
   toSVG p = case p of

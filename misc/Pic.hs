@@ -66,13 +66,13 @@ point = primitive . Point
 line :: [Pt] -> Picture
 line = primitive . Line
 
-square :: Pt -> Float -> Picture
+square :: (Float, Float) -> Float -> Picture
 square pt a = rectangle pt a a
 
-rectangle :: Pt -> Float -> Float -> Picture
-rectangle (Pt x y) a b = line [Pt x y, Pt (x+a) y
-                              , Pt (x+a) (y+b), Pt x (y+b)
-                              , Pt x y]
+rectangle :: (Float, Float) -> Float -> Float -> Picture
+rectangle (x, y) a b = line [ Pt x y, Pt (x+a) y
+                            , Pt (x+a) (y+b), Pt x (y+b)
+                            , Pt x y]
 
 class SVG a where
   toSVG :: a -> String
