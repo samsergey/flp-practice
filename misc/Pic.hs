@@ -1,28 +1,26 @@
 import Text.Printf
 import Data.Monoid
 import Data.Semigroup (Min(..), Max(..))
+import Data.List (transpose)
 
 data Pt = Pt Float Float
   deriving Show
   
 data Primitive = Point Pt
                | Line [Pt]
+               | Group [Attribute] [Primitive]
                deriving Show
 
-data Picture = Empty
-             | Picture (Box, [Primitive])
-             deriving Show
+data Picture = Picture (Box, [Primitive])
+  deriving Show
 
 contents (Picture (_,c)) = c
-contents Empty = []
 
 instance Semigroup Picture where
-  Empty <> p = p
-  p <> Empty = p
   Picture p1 <> Picture p2 = Picture (p1 <> p2)
   
 instance Monoid Picture where
-  mempty = Empty
+  mempty = Picture mempty
 
 ------------------------------------------------------------
 
@@ -44,16 +42,28 @@ height :: Boxed a => a -> Float
 height p = y2 - y1
   where ((_,Min y1),(_,Max y2)) = box p
 
+corner :: Boxed a => a -> ((Pt, Pt),(Pt, Pt))
+corner p = ((Pt x1 y1, Pt x2 y1),(Pt x1 y2, Pt x2 y2))
+  where ((Min x1, Min y1),(Max x2, Max y2)) = box p
+
+lower = fst
+left = fst
+upper = snd
+right = snd
+
+instance Boxed a => Boxed [a] where
+  box = foldMap box
+
 instance Boxed Pt where
   box (Pt x y) = ((Min x, Min y), (Max x, Max y))
 
 instance Boxed Picture where
-  box Empty = ((Min 0, Min 0), (Max 0, Max 0))
   box (Picture (b,_)) = b
 
 instance Boxed Primitive where
   box (Point pt) = box pt
-  box (Line pts) = foldMap box pts
+  box (Line pts) = box pts
+  box (Group _ ps) = box ps
 
 ------------------------------------------------------------
 
@@ -66,22 +76,27 @@ point = primitive . Point
 line :: [Pt] -> Picture
 line = primitive . Line
 
-square :: (Float, Float) -> Float -> Picture
-square pt a = rectangle pt a a
+square :: Float -> Picture
+square a = rectangle a a
 
-rectangle :: (Float, Float) -> Float -> Float -> Picture
-rectangle (x, y) a b = line [ Pt x y, Pt (x+a) y
-                            , Pt (x+a) (y+b), Pt x (y+b)
-                            , Pt x y]
+rectangle :: Float -> Float -> Picture
+rectangle a b = line [ Pt 0 0, Pt a 0
+                     , Pt a b, Pt 0 b
+                     , Pt 0 0]
 
-polygon :: (Float, Float) -> Int -> Float -> Picture
-polygon (x, y) n a = line [Pt (x+a*cos t) (x+a*sin t)
-                          | t <- [0,2*pi/fromIntegral n..2*pi]] 
+polygon :: Int -> Float -> Picture
+polygon n a = line [Pt (a*cos t) (a*sin t)
+                   | t <- [0,2*pi/fromIntegral n..2*pi]] 
+
+circle = polygon 100
 
 ------------------------------------------------------------
 
 class SVG a where
   toSVG :: a -> String
+
+instance SVG a => SVG [a]  where
+  toSVG = foldMap toSVG
 
 instance SVG Pt where
   toSVG (Pt x y) = printf "%v,%v " x y
@@ -89,18 +104,139 @@ instance SVG Pt where
 instance SVG Primitive where
   toSVG p = case p of
     Point (Pt x y) -> printf "<circle rx='%v' ry='%v' r='1'/>" x y
-    Line pts -> printf "<polyline points='%s'/>" $ foldMap toSVG pts
+    Line pts -> printf "<polyline points='%s'/>" $ toSVG pts
+    Group attr ps -> printf "<g %s>%s</g>" (toSVG attr) (toSVG ps)
 
 instance SVG Picture where
-  toSVG p = printf fmt (width p) (height p) prims
-    where
-      fmt = "<svg width='%v' height='%v' fill='none' stroke='blue'>%s</svg>"
-      prims = foldMap toSVG (contents p)
+  toSVG = toSVG . contents
 
-writeSVG :: SVG a => String -> a -> IO ()
-writeSVG fname = writeFile fname . toSVG
+writeSVG :: String -> Picture -> IO ()
+writeSVG fname p = writeFile fname res
+  where res = printf fmt (width p) (height p) prims
+        fmt = "<svg width='%v' height='%v' fill='none' stroke='blue'>%s</svg>"
+        prims = toSVG (contents p')
+        p' = p `at` Pt 0 0
 
 ------------------------------------------------------------
 
-class Trans p where
-  transform :: 
+data M = M [[Float]] | I deriving Show
+
+outer f l1 l2 = [[f x y | x <- l2 ] | y <- l1]
+dot v1 v2 = sum $ zipWith (*) v1 v2
+
+instance Semigroup M where
+  m <> I = m
+  I <> m = m
+  M m1 <> M m2 = M $ outer dot m1 (transpose m2)
+
+instance Monoid M where
+  mempty = I
+
+class Affine p where
+  affine :: M -> p -> p
+  
+instance Affine a => Affine [a] where
+  affine t ps = affine t <$> ps
+
+rotateM :: Float -> M
+rotateM a = M [[cos x, - sin x, 0]
+              ,[sin x, cos x, 0]
+              ,[0, 0, 1]]
+  where x = a / 180 * pi
+  
+translateM :: Float -> Float -> M
+translateM x y = M [[1, 0, x]
+                   ,[0, 1, y]
+                   ,[0, 0, 1]]
+
+scaleM :: Float -> Float -> M
+scaleM a b = M [[a, 0, 0]
+               ,[0, b, 0]
+               ,[0, 0, 1]]
+
+-- масштабирует координату x
+scaleX :: Affine a => Float -> a -> a 
+scaleX s = affine $ scaleM s 1
+
+ -- масштабирует координату y
+scaleY :: Affine a => Float -> a -> a 
+scaleY s = affine $ scaleM 1 s
+
+ -- одинаково масштабирует обе координаты
+scale :: Affine a => Float -> a -> a 
+scale s = affine $ scaleM s s
+
+ -- приводит изображение к указанным размерам 
+rescaleTo :: (Boxed a, Affine a) => Float -> Float -> a -> a
+rescaleTo a b p = affine (scaleM (a / width p) (b/height p)) p
+
+ -- параллельный перенос изображения
+shift :: Affine a => Float -> Float -> a -> a
+shift a b = affine $ translateM a b
+
+ -- поворот на угол, задаваемый в градусах вокруг центра координат
+rotate :: Affine a => Float -> a -> a
+rotate = affine . rotateM
+
+ -- поворот вокруг указанной точки
+rotateAt :: Affine a => Pt -> Float -> a -> a
+rotateAt (Pt x y) a = affine m
+  where m = translateM x y <> rotateM a <> translateM (-x) (-y)
+
+at p (Pt x y) = shift (x-x') (y-y') p
+  where Pt x' y' = left . lower . corner $ p
+
+
+instance Affine Pt where
+  affine m (Pt x y) = Pt x' y'
+    where M [[x'], [y'], [1]] = m <> M [[x], [y], [1]]
+
+ 
+instance Affine Primitive where
+  affine t (Point p) = Point $ affine t p
+  affine t (Line pts) = Line $ affine t pts
+  affine t (Group attr p) = Group attr $ affine t p
+
+instance Affine Picture where
+  affine t p = Picture (box p', p')
+    where p' = affine t (contents p)
+
+------------------------------------------------------------
+
+data Attribute = LineColor String
+               | Fill String
+               | LineWidth Float
+               | Opacity Float
+               deriving (Show, Eq)
+
+instance SVG Attribute where
+  toSVG attr = case attr of
+    LineColor c -> printf "stroke='%s' " c
+    Fill c -> printf "fill='%s' " c
+    LineWidth w -> printf "stroke-width='%f' " w
+    Opacity o -> printf "fill-opacity='%f' stroke-opacity='%f' " o o
+
+setAttr attr c p = case p of
+  Picture (b, [Group a p]) -> Picture (b, [Group (a <> [attr c]) p])
+  p -> primitive $ Group [attr c] (contents p)
+
+lineColor = setAttr LineColor
+fill = setAttr Fill
+color c = setAttr Fill c . setAttr LineColor c
+lineWidth = setAttr LineWidth
+opacity = setAttr Opacity
+
+mrepeat n f = mconcat . take n . iterate f
+
+tree = mrepeat 7 (mconcat model) stem
+  where
+    stem = line [Pt 0 0, Pt 0 1]
+    model = [ shift 0 1 . scale 0.6 . rotate (-30)
+            , shift 0 1 . scale 0.7 . rotate 5
+            , shift 0 1 . scale 0.5 . rotate 45 ]
+
+pentaflake = (!! 5) $ iterate model $ polygon 5 1
+  where
+    model = foldMap copy [0,72..288]
+    copy a = scale (1/(1+x)) . rotate a . shift 0 x
+    x = 2*cos(pi/5)
