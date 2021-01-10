@@ -1,4 +1,3 @@
-import Safe
 import Control.Applicative
 import Control.Monad
 
@@ -11,62 +10,79 @@ data Token = N Double
            | Var String
            deriving Show
 
-
+readMay :: Read a => String -> Maybe a
+readMay s = case [x | (x,t) <- reads s, ("","") <- lex t] of
+                [x] -> Just x
+                _ -> Nothing
 
 interprete s op = case op of
   "+" -> binop (+)
   "*" -> binop (*)
   "-" -> binop (-)
   "/" -> binop (/)
-  "dup" -> case s of
-      x:s -> Right $ x:x:s
+  "sqrt" -> case s of
+      x:s | x > 0 -> pure $ sqrt x:s
+          | x == 0 -> pure $ 0:s
+          | x < 0 -> Left "negative argument of sqrt"
       []    -> Left "got no arguments"
   n   -> case readMay n of
-           Just x  -> Right $ x : s
+           Just x  -> pure $ x : s
            Nothing -> Left ("unknown command " ++ n)
   where
     binop f = case s of
-      x:y:s -> Right $ f x y : s
+      x:y:s -> pure $ f x y : s
       [_]   -> Left "got only one argument"
       []    -> Left "got no arguments"
+
+interpreteA :: (Applicative m, Alternative m, Monad m)
+            => [Double] -> [Char] -> m [Double]
+interpreteA s op = case op of
+  "+" -> binop (+)
+  "*" -> binop (*)
+  "-" -> binop (-)
+  "/" -> binop (/)
+  "sqrt" -> case s of
+      x:s | x > 0 -> pure (sqrt x:s) <|> pure ((- sqrt x):s)
+          | x == 0 -> pure (0:s)
+          | x < 0 -> empty
+      []    -> empty
+  "pm" -> case s of
+            x:y:s -> pure (x+y:s) <|> pure (y-x:s)
+            _ -> empty
+  "dup" -> case s of
+      x:s -> pure $ x:x:s
+      []  -> empty
+  n   -> case readMay n of
+           Just x  -> pure $ x : s
+           Nothing -> empty
+  where
+    binop f = case s of
+      x:y:s -> pure $ f y x : s
+      [_]   -> empty
+      []    -> empty
 
 --foldM f x = foldl (\res el -> res >>= (`f` el)) (pure x)
       
 --calculate :: String -> Either String State
---calculate = foldM interprete [] . words
+calculate = foldM interprete [] . words
 
--- calculateD input dict = (foldM interpreteD [] $ words input) dict
+calculateA :: (Applicative m, Alternative m, Monad m)
+            => String -> m [Double]
+calculateA = foldM interpreteA [] . words
 
--- interpreteD s op = case op of
---   "+" -> binop (+)
---   "*" -> binop (*)
---   "-" -> binop (-)
---   "/" -> binop (/)
---   n   -> \d -> case readMay n <|> lookup n d of
---            Just x  -> x : s
---            Nothing -> error ("unknown command " ++ n)
---   where
---     binop f = case s of
---       x:y:s -> pure $ f x y : s
---       [_]   -> error "got only one argument"
---       []    -> error "got no arguments"
+calculateD input dict = (foldM interpreteD [] $ words input) dict
 
--- calculateW input = foldM interpreteW mempty $ words input
+interpreteD s op = case op of
+  "+" -> binop (+)
+  "*" -> binop (*)
+  "-" -> binop (-)
+  "/" -> binop (/)
+  n   -> \d -> case readMay n <|> lookup n d of
+           Just x  -> x : s
+           Nothing -> error ("unknown command " ++ n)
+  where
+    binop f = case s of
+      x:y:s -> pure $ f x y : s
+      [_]   -> error "got only one argument"
+      []    -> error "got no arguments"
 
--- interpreteW s op = case op of
---   "+" -> binop (+)
---   "*" -> binop (*)
---   "-" -> binop (-)
---   "/" -> binop (/)
---   n   -> case readMay n of
---            Just x  -> push x s
---            Nothing -> err ("unknown command" ++ n)
---   where
---     binop f = tell ("perform " ++ op) >> case s of
---       x:y:s -> tell "pushed result" >> push (f x y) s
---       [_]   -> err "got only one argument"
---       []    -> err "got no arguments"
-
---     tell m = ([m],())
---     push x s = tell ("pushed " ++ show x) >> pure (x:s)
---     err m = tell ("error! " ++ m) >> pure s

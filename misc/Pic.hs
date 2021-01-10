@@ -5,7 +5,10 @@ import Data.List (transpose)
 
 data Pt = Pt Float Float
   deriving Show
-  
+
+getX (Pt x _) = x
+getY (Pt _ y) = y
+
 data Primitive = Point Pt
                | Line [Pt]
                | Group [Attribute] [Primitive]
@@ -14,6 +17,7 @@ data Primitive = Point Pt
 data Picture = Picture (Box, [Primitive])
   deriving Show
 
+contents :: Picture -> [Primitive]
 contents (Picture (_,c)) = c
 
 instance Semigroup Picture where
@@ -70,22 +74,20 @@ instance Boxed Primitive where
 primitive :: Primitive -> Picture
 primitive p =  Picture (box p, [p])
 
-point :: Pt -> Picture
-point = primitive . Point
+point :: (Float, Float) -> Picture
+point (x,y) = primitive . Point $ Pt x y
 
-line :: [Pt] -> Picture
-line = primitive . Line
+line :: [(Float, Float)] -> Picture
+line pts = primitive $ Line [Pt x y | (x,y) <- pts]
 
 square :: Float -> Picture
 square a = rectangle a a
 
 rectangle :: Float -> Float -> Picture
-rectangle a b = line [ Pt 0 0, Pt a 0
-                     , Pt a b, Pt 0 b
-                     , Pt 0 0]
+rectangle a b = line [ (0,0), (a,0), (a, b), (0,b), (0,0)]
 
 polygon :: Int -> Float -> Picture
-polygon n a = line [Pt (a*cos t) (a*sin t)
+polygon n a = line [(a*cos t, a*sin t)
                    | t <- [0,2*pi/fromIntegral n..2*pi]] 
 
 circle = polygon 100
@@ -108,14 +110,14 @@ instance SVG Primitive where
     Group attr ps -> printf "<g %s>%s</g>" (toSVG attr) (toSVG ps)
 
 instance SVG Picture where
-  toSVG = toSVG . contents
+  toSVG p = printf fmt (width p) (height p) prims
+    where
+      fmt = "<svg width='%f' height='%f' fill='none' stroke='blue'>%s</svg>"
+      prims = toSVG (contents p')
+      p' = reflect 0 p `at` (0, 0)
 
 writeSVG :: String -> Picture -> IO ()
-writeSVG fname p = writeFile fname res
-  where res = printf fmt (width p) (height p) prims
-        fmt = "<svg width='%v' height='%v' fill='none' stroke='blue'>%s</svg>"
-        prims = toSVG (contents p')
-        p' = p `at` Pt 0 0
+writeSVG fname = writeFile fname . toSVG
 
 ------------------------------------------------------------
 
@@ -141,6 +143,12 @@ instance Affine a => Affine [a] where
 rotateM :: Float -> M
 rotateM a = M [[cos x, - sin x, 0]
               ,[sin x, cos x, 0]
+              ,[0, 0, 1]]
+  where x = a / 180 * pi
+
+reflectM :: Float -> M
+reflectM a = M [[cos (2*x), sin (2*x), 0]
+              ,[sin (2*x), - cos (2*x), 0]
               ,[0, 0, 1]]
   where x = a / 180 * pi
   
@@ -179,11 +187,15 @@ rotate :: Affine a => Float -> a -> a
 rotate = affine . rotateM
 
  -- поворот вокруг указанной точки
-rotateAt :: Affine a => Pt -> Float -> a -> a
-rotateAt (Pt x y) a = affine m
+rotateAt :: Affine a => (Float,Float) -> Float -> a -> a
+rotateAt (x, y) a = affine m
   where m = translateM x y <> rotateM a <> translateM (-x) (-y)
 
-at p (Pt x y) = shift (x-x') (y-y') p
+reflect :: Affine a => Float -> a -> a
+reflect = affine . reflectM
+
+
+at p (x, y) = shift (x-x') (y-y') p
   where Pt x' y' = left . lower . corner $ p
 
 
@@ -228,9 +240,11 @@ opacity = setAttr Opacity
 
 mrepeat n f = mconcat . take n . iterate f
 
+------------------------------------------------------------
+
 tree = mrepeat 7 (mconcat model) stem
   where
-    stem = line [Pt 0 0, Pt 0 1]
+    stem = line [(0, 0), (0, 1)]
     model = [ shift 0 1 . scale 0.6 . rotate (-30)
             , shift 0 1 . scale 0.7 . rotate 5
             , shift 0 1 . scale 0.5 . rotate 45 ]
@@ -240,3 +254,12 @@ pentaflake = (!! 5) $ iterate model $ polygon 5 1
     model = foldMap copy [0,72..288]
     copy a = scale (1/(1+x)) . rotate a . shift 0 x
     x = 2*cos(pi/5)
+
+lineChart :: [Float] -> Picture
+lineChart = line . trim . zip [0..]
+  where trim l = (0, 0) : l ++ [(fst (last l), 0)]
+
+colorizeWith colors ps = zipWith fill (cycle colors) ps
+
+overlayCharts colors tbl = opacity 0.5 $ mconcat charts
+  where charts = colorizeWith colors $ lineChart <$> tbl
