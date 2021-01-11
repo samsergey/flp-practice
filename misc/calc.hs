@@ -1,91 +1,162 @@
+{-# language FlexibleInstances, KindSignatures #-}
+
 import Control.Applicative
 import Control.Monad
 
-type Command = Token
-type Stack = [Token]
+type Stack = [Double]
 
-data Token = N Double
-           | Op String
-           | Block [Token]
-           | Var String
-           deriving Show
-
-readMay :: Read a => String -> Maybe a
-readMay s = case [x | (x,t) <- reads s, ("","") <- lex t] of
-                [x] -> Just x
-                _ -> Nothing
-
-calculate :: String -> [Double]
+calculate :: String -> Stack
 calculate = foldl interprete [] . words
   where
     interprete s op = case op of
-      "+" -> binop (+)
-      "*" -> binop (*)
-      "-" -> binop (-)
-      "/" -> binop (/)
+      "+" -> binary (+)
+      "*" -> binary (*)
+      "-" -> binary (-)
+      "/" -> binary (/)
       "sqrt" -> case s of
-        x:s | x > 0 -> sqrt x:s
-            | x == 0 -> 0:s
-            | x < 0 -> error "negative argument of sqrt"
-        []    -> error "got no arguments"
-      n   -> case readMay n of
-               Just x  -> x : s
-               Nothing -> error ("unknown command " ++ n)
+        x:s | x >= 0  -> sqrt x : s
+            | otherwise  -> err "negative argument!"
+        [] -> err "got no arguments!"
+      n -> read n : s
       where
-        binop f = case s of
-          x:y:s -> f x y : s
-          [_]   -> error "got only one argument"
-          []    -> error "got no arguments"
+        binary f = case s of
+          x:y:s -> f y x : s
+          [_]   -> err "got only one argument!"
+          []    -> err "got no arguments!"
 
-interpreteA :: (Applicative m, Alternative m, Monad m)
-            => [Double] -> [Char] -> m [Double]
-interpreteA s op = case op of
-  "+" -> binop (+)
-  "*" -> binop (*)
-  "-" -> binop (-)
-  "/" -> binop (/)
-  "sqrt" -> case s of
-      x:s | x > 0 -> pure (sqrt x:s) <|> pure ((- sqrt x):s)
-          | x == 0 -> pure (0:s)
-          | x < 0 -> empty
-      []    -> empty
-  "pm" -> case s of
-            x:y:s -> pure (x+y:s) <|> pure (y-x:s)
-            _ -> empty
-  "dup" -> case s of
-      x:s -> pure $ x:x:s
-      []  -> empty
-  n   -> case readMay n of
-           Just x  -> pure $ x : s
-           Nothing -> empty
+        err m = error $ op ++": " ++ m
+        
+------------------------------------------------------------
+
+readE :: Read a => String -> Either String a
+readE s = case [x | (x,t) <- reads s, ("","") <- lex t] of
+            [x] -> Right x
+            _ -> Left $ "could not parse " ++ s
+
+calculateE :: String -> Either String Stack
+calculateE = foldM interprete [] . words
   where
-    binop f = case s of
-      x:y:s -> pure $ f y x : s
-      [_]   -> empty
-      []    -> empty
+    interprete s op = case op of
+      "+" -> binary (+)
+      "*" -> binary (*)
+      "-" -> binary (-)
+      "/" -> binary (/)
+      "sqrt" -> case s of
+        x:s | x >= 0  -> Right $ sqrt x : s
+            | otherwise  -> err "negative argument!"
+        [] -> err "got no arguments!"
+      n -> Right $ read n : s
+      where
+        binary f = case s of
+          x:y:s -> Right $ f y x : s
+          [_]   -> err "got only one argument!"
+          []    -> err "got no arguments!"
 
+        err m = Left $ op ++": " ++ m
+        
+
+------------------------------------------------------------
+class (Alternative m, Monad m) => Exception (m :: * -> *) where
+  exception :: String -> m a
+
+instance Exception Maybe where
+  exception = const Nothing
+
+instance Exception [] where
+  exception = const []
+
+instance Exception IO where
+  exception = error
+
+type Err = Either String
+
+instance Exception Err where
+  exception = Left
+
+instance Alternative Err where
+  empty = exception ""
+  Right r <|> _ = Right r
+  Left _  <|> Right r = Right r
+  Left l  <|> Left _ = Left l
+
+readS :: (Exception ex, Read a) => String -> ex a
+readS s = case [x | (x,t) <- reads s, ("","") <- lex t] of
+            [x] -> pure x
+            _ -> exception $ "could not parse " ++ s
+
+
+calculateA :: Exception ex => String -> ex Stack
+calculateA = foldM interprete [] . words
+  where
+    interprete s op = case op of
+      "+" -> binary (+)
+      "*" -> binary (*)
+      "-" -> binary (-)
+      "/" -> binary (/)
+      "sqrt" -> case s of
+        x:s | x > 0  -> pure (sqrt x:s) <|> pure ((- sqrt x):s)
+            | x == 0 -> pure (0:s)
+            | x < 0  -> err "negative argument!"
+        []           -> err "got no arguments!"
+      "pm" -> case s of
+        x:y:s -> pure (x+y : s) <|> pure (y-x : s)
+        _ -> empty
+      n -> case readS n of
+        Just x  -> pure $ x : s
+        Nothing -> err "unknown symbol!"
+      where
+        binary f = case s of
+          x:y:s -> pure $ f y x : s
+          [_]   -> err "got only one argument!"
+          []    -> err "got no arguments!"
+
+        err m = exception $ op ++": " ++ m ++ "  Stack: " ++ show s
+        
 --foldM f x = foldl (\res el -> res >>= (`f` el)) (pure x)
+
+------------------------------------------------------------
       
---calculate :: String -> Either String State
+data Env ex e a = Env {runEnv :: e -> ex a}
+
+instance Functor ex => Functor (Env ex e) where
+  fmap f (Env st) = Env $ fmap (fmap f) st
+
+instance Exception ex => Applicative (Env ex e) where
+  pure x = Env $ \e -> pure x
+  (<*>)= ap
+
+instance Exception ex => Alternative (Env ex e) where
+  empty = exception ""
+  m1 <|> m2 = Env $ \e -> runEnv m1 e <|> runEnv m2 e
+
+instance Exception ex => Monad (Env ex e) where
+  x >>= f = Env $ \e -> do y <- runEnv x e
+                           runEnv (f y) e
+
+instance Exception ex => Exception (Env ex e) where
+  exception m = Env $ \e -> exception m
 
 
-calculateA :: (Applicative m, Alternative m, Monad m)
-            => String -> m [Double]
-calculateA = foldM interpreteA [] . words
+env :: Exception ex => Env ex e e
+env = Env $ \e -> pure e
 
-calculateD input dict = (foldM interpreteD [] $ words input) dict
+type Dict = [(String, Double)]
 
-interpreteD s op = case op of
-  "+" -> binop (+)
-  "*" -> binop (*)
-  "-" -> binop (-)
-  "/" -> binop (/)
-  n   -> \d -> case readMay n <|> lookup n d of
-           Just x  -> x : s
-           Nothing -> error ("unknown command " ++ n)
+calculateD :: Exception ex => String -> Env ex Dict Stack
+calculateD = foldM interprete [] . words
   where
-    binop f = case s of
-      x:y:s -> pure $ f x y : s
-      [_]   -> error "got only one argument"
-      []    -> error "got no arguments"
+    interprete s op = case op of
+      "+" -> binary (+)
+      "*" -> binary (*)
+      "-" -> binary (-)
+      "/" -> binary (/)
+      n   -> env >>= \d -> case readS n <|> lookup n d of
+        Just x -> pure $ x : s
+        Nothing -> err "unknown command!"
+      where
+        binary f = case s of
+          x:y:s -> pure $ f y x : s
+          [_]   -> err "got only one argument"
+          []    -> err "got no arguments"
 
+        err m = exception $ op ++": " ++ m ++ "  Stack: " ++ show s

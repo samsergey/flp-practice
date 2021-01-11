@@ -203,16 +203,178 @@ Right 16 &gt;&gt;= sqrtA
 Right (-16) &gt;&gt;= sqrtA
 (read &lt;$&gt; getLine) &gt;&gt;= sqrtA &gt;&gt;= print</hs></pre></task>
 
+      <task>Изучите типы универсальных функций для работы с функторами и монадами
+	<pre><hs>ap
+ mapM
+ join
+ (>=>)
+ ($>)	    
+ foldM
+ sequence
+ traverse
+ replicateM</hs></pre>
+	C помощью интерпретатора познакомьтесь с их поведением для типов <code>[a]</code>, <code>Maybe a</code>, <code>(,) a</code>. </task>
+      
 
-      <h2>Семантика вычислений</h2>
+      <h2>Управление семантикой вычислений</h2>
 <p>Вернёмся к задаче интерпретации арифметических выражений, записанных в обратной польской нотации. Наше решение, использующее простой стековый автомат было лаконичным и эффективным, но очень ограниченным по возможностям. В нём даже нет элементарных обработок ошибочных выражений и в исключительной ситуации он просто прерывает свою работу, не сообщая о характере ошибки. Используя аппликативные функторы и монады, как абстракцию семантики вычислений мы можем существенно расширить его функционал.</p>
 
 <p>Для начала перепишем код калькулятора, добавив в него обработку ошибок:</p>
 
-<pre><hs></hs></pre>g
-      
-      <hr/>
+<pre><hs>type Stack = [Double]
 
+calculate :: String -> Stack
+calculate = foldl interprete [] . words
+  where
+    interprete s op = case op of
+      "+" -> binop (+)
+      "*" -> binop (*)
+      "-" -> binop (-)
+      "/" -> binop (/)
+      "sqrt" -> case s of
+        x:s | x >= 0  -> sqrt x : s
+            | otherwise  -> err "negative argument!"
+        [] -> err "got no arguments!"
+      n -> read n : s
+      where
+        binop f = case s of
+          x:y:s -> f y x : s
+          [_]   -> err "got only one argument!"
+          []    -> err "got no arguments!"
+
+        err m = error $ op ++": " ++ m </hs></pre>
+
+<task>Составьте список примеров для калькулятора и проверьте на них не только правильность его работы, но и адекватность сообщений об шибках.</task>
+
+<p>Получился уже совсем неплохой калькулятор, надёжный, расширяемый и вполне дружелюбный. Однако у него есть существенный недостаток -- в случае ошибки он прерывает выполнение не только своей работы, но и любой системы, в которую он мог бы быть включён. Это вовсе не в духе функционального программирования, где ценится тотальность и надёжность программ.</p>
+
+<p>Стандартным решением в процедурном программировании является "поимка исключений" с помощью конструкции <code>try/catch</code>. Это добавляет программе надёжности, но позволяет потоку выполнения прерываться и перескакивать из одного блока в другой. В функциональном программирований поток вычислений непрерывен и больше похож на течение тока в электрической цепи. Здесь одним из самых типичных способов управления потоком -- использование функторов и монад.</p>
+
+<p>Мы можем воспользоваться монадой <code>Either</code> для того, чтобы ошибочные состояния превратить в данные и прерывая вычисления, не останавливать работу всей программы. </p>
+  <pre><hs>calculateE :: String -> Either String Stack
+calculateE = foldM interprete [] . words
+  where
+    interprete s op = case op of
+      "+" -> binop (+)
+      "*" -> binop (*)
+      "-" -> binop (-)
+      "/" -> binop (/)
+      "sqrt" -> case s of
+        x:s | x >= 0  -> Right $ sqrt x : s
+            | otherwise  -> err "negative argument!"
+        [] -> err "got no arguments!"
+      n -> readE n : s
+      where
+        binop f = case s of
+          x:y:s -> Right $ f y x : s
+          [_]   -> err "got only one argument!"
+          []    -> err "got no arguments!"
+
+        err m = Left $ op ++": " ++ m
+
+readE :: Read a => String -> Either String a
+readE s = case [x | (x,t) <- reads s, ("","") <- lex t] of
+            [x] -> Right x
+            _ -> Left $ "could not parse " ++ s</hs></pre>
+
+<p>Здесь мы добавили собственный безопасный вариант функции <code>read</code>. Обратите внимание на то, что код программы изменился незначительно: функция свёртки оказалась заменена на монадический вариант <code>foldM</code>, и "хорошие" результаты вычислений оказались упакованы в конструктор <code>Right</code>.</p>
+
+<task>Теперь появилась возможность прогнать все тесты сразу, поскольку ошибки не прерывают работы программы. Проверьте правильность работы калькулятора на ваших примерах. </task>
+
+<p>Мощность монадических вычислений позволяют переключаться с отдной семантики вычисления прогаммы на другую, не меняя кода программы. Мы видели это на примере функции <code>bisection</code>. Нельзя ли и наш калькулятор сделать столь же универсальным?</p>
+
+<p>Давайте создадим класс для монад, способных создавать сообщения об ошибках.</p>
+<pre><hs>class Monad m => Exception (m :: * -> *) where
+  exception :: String -> m a</hs></pre>
+<p>Выражение <code>m :: * -> *</code> говорит о том, что <code>m</code> является не простым типом, а типом-контенером. Для того, чтобы использовать эту конструкцию нужно подключить две директивы компилятору в самом начале программы.</p>
+
+<pre><hs>{-# language FlexibleInstances, KindSignatures #-}</hs></pre>
+
+<p>Экземплярами этого класса могут быть монады <code>IO</code> и <code>Either</code></p>
+
+<pre><hs>instance Exception IO where
+  exception = error
+
+type Err = Either String
+
+instance Exception Err where
+  exception = Left</hs></pre>
+  <hr/>
+
+<p>Теперь можно написать обобщённый калькулятор:</p>
+  <pre><hs>calculateE :: Exception m => String -> m Stack
+calculateE = foldM interprete [] . words
+  where
+    interprete s op = case op of
+      "+" -> binop (+)
+      "*" -> binop (*)
+      "-" -> binop (-)
+      "/" -> binop (/)
+      "sqrt" -> case s of
+        x:s | x >= 0  -> pure $ sqrt x : s
+            | otherwise  -> err "negative argument!"
+        [] -> err "got no arguments!"
+      n -> readE n : s
+      where
+        binop f = case s of
+          x:y:s -> pure $ f y x : s
+          [_]   -> err "got only one argument!"
+          []    -> err "got no arguments!"
+
+        err m = exception $ op ++": " ++ m
+
+readE :: (Exception m, Read a) => String -> m a
+readE s = case [x | (x,t) <- reads s, ("","") <- lex t] of
+            [x] -> pure x
+            _ -> exception $ "could not parse " ++ s</hs></pre>
+
+<p>Конкретную монаду, в которой он работает теперь способна выбирать программа, вызывающая этот калькулятор:</p>
+<pre><hs><l></l> calculateE "2 3 + 4 *" :: IO Stack
+<o>[20.0]</o>
+<l></l> calculateE "2 3 + 4 *" :: Err Stack
+<o>Right [20.0]</o>
+<l></l> calculateE "2 3 + *" :: IO Stack
+*** Exception: *: got only one argument!  Stack: [5.0]
+<l></l> calculateE "2 3 + *" :: Err Stack
+<o>Left "*: got only one argument!  Stack: [5.0]"</o></hs></pre>
+
+<task>Добавьте определения экземпляров класса <code>Exception</code> для монад <code>[]</code> и <code>Maybe</code>. Эти монады игнорируют сообщения, но, тем не менее способны создавать альтернативные ветви вычислений. Проверьте, что наш калькулятор способен работать и в этих монадах.<task>
+
+    <p>Мы видели, что альтернативные функторы, позволяют производить неоднозначные вычисления со множеством вариантов ответов. Мы можем создать неоднозначный калькулятор:</p>
+
+<pre><hs>calculateA :: (Alternative m, Exception m) => String -> m Stack
+calculateA = foldM interprete [] . words
+  where
+    interprete s op = case op of
+      "+" -> binary (+)
+      "*" -> binary (*)
+      "-" -> binary (-)
+      "/" -> binary (/)
+      "sqrt" -> case s of
+        x:s | x > 0  -> pure (sqrt x:s) <|> pure ((- sqrt x):s)
+            | x == 0 -> pure (0:s)
+            | x < 0  -> err "negative argument!"
+        []           -> err "got no arguments!"
+      "+-" -> case s of
+        x:y:s -> pure (x+y : s) <|> pure (y-x : s)
+        _ -> empty
+      n -> readE n : s
+      where
+        binary f = case s of
+          x:y:s -> pure $ f y x : s
+          [_]   -> err "got only one argument!"
+          []    -> err "got no arguments!"
+
+        err m = exception $ op ++": " ++ m ++ "  Stack: " ++ show s</hs></pre>
+
+    <p>Однако его нельзя применить в монаде <code>Either</code>, поскольку она не альтернативна. Исправим это:</p>
+    <pre><hs>instance Alternative Err where
+  empty = exception ""
+  Right r <|> _ = Right r
+  Left _  <|> Right r = Right r
+  Left l  <|> Left _ = Left l</hs></pre>
+
+    
       <p>Подведём итоги. </p>
 
       <p><strong>Функтор</strong> — это тип для которого определена операция <code>fmap</code> (<code>&lt;$&gt;</code>).</p>
