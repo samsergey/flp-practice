@@ -15,6 +15,7 @@ readMay s = case [x | (x,t) <- reads s, ("","") <- lex t] of
                 [x] -> Just x
                 _ -> Nothing
 
+calculate :: String -> [Double]
 calculate = foldl interprete [] . words
   where
     interprete s op = case op of
@@ -23,18 +24,18 @@ calculate = foldl interprete [] . words
       "-" -> binop (-)
       "/" -> binop (/)
       "sqrt" -> case s of
-        x:s | x > 0 -> pure $ sqrt x:s
-            | x == 0 -> pure $ 0:s
+        x:s | x > 0 -> sqrt x:s
+            | x == 0 -> 0:s
             | x < 0 -> error "negative argument of sqrt"
         []    -> error "got no arguments"
       n   -> case readMay n of
-               Just x  -> pure $ x : s
+               Just x  -> x : s
                Nothing -> error ("unknown command " ++ n)
-
-    binop f s = case s of
-      x:y:s -> pure $ f x y : s
-      [_]   -> error "got only one argument"
-      []    -> error "got no arguments"
+      where
+        binop f = case s of
+          x:y:s -> f x y : s
+          [_]   -> error "got only one argument"
+          []    -> error "got no arguments"
 
 interpreteA :: (Applicative m, Alternative m, Monad m)
             => [Double] -> [Char] -> m [Double]
