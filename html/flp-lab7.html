@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ru">
   <title></title>
@@ -205,14 +206,14 @@ Right (-16) &gt;&gt;= sqrtA
 
       <task>Изучите типы универсальных функций для работы с функторами и монадами
 	<pre><hs>ap
- mapM
- join
- (>=>)
- ($>)	    
- foldM
- sequence
- traverse
- replicateM</hs></pre>
+mapM
+join
+(>=>)
+($>)	    
+foldM
+sequence
+traverse
+replicateM</hs></pre>
 	C помощью интерпретатора познакомьтесь с их поведением для типов <code>[a]</code>, <code>Maybe a</code>, <code>(,) a</code>. </task>
       
 
@@ -338,42 +339,13 @@ readE s = case [x | (x,t) <- reads s, ("","") <- lex t] of
 <l></l> calculateE "2 3 + *" :: Err Stack
 <o>Left "*: got only one argument!  Stack: [5.0]"</o></hs></pre>
 
-<task>Добавьте определения экземпляров класса <code>Exception</code> для монад <code>[]</code> и <code>Maybe</code>. Эти монады игнорируют сообщения, но, тем не менее способны создавать альтернативные ветви вычислений. Проверьте, что наш калькулятор способен работать и в этих монадах.<task>
+<task>Добавьте определения экземпляров класса <code>Exception</code> для монад <code>[]</code> и <code>Maybe</code>. Эти монады игнорируют сообщения, но, тем не менее способны создавать альтернативные ветви вычислений. Проверьте, что наш калькулятор способен работать и в этих монадах.</task>
 
-    <p>Мы видели, что альтернативные функторы, позволяют производить неоднозначные вычисления со множеством вариантов ответов. Мы можем создать неоднозначный калькулятор:</p>
+    <task>Мы видели, что альтернативные функторы, позволяют производить неоднозначные вычисления со множеством вариантов ответов. Мы можем создать неоднозначным и наш калькулятор, введя операцию <eq>\pm</eq> и позволив операции <code>sqrt</code> возвращать несколько значений. Для этого нужно сделать функтор <code>Err</code> альтернативным.</task>
 
-<pre><hs>calculateA :: (Alternative m, Exception m) => String -> m Stack
-calculateA = foldM interprete [] . words
-  where
-    interprete s op = case op of
-      "+" -> binary (+)
-      "*" -> binary (*)
-      "-" -> binary (-)
-      "/" -> binary (/)
-      "sqrt" -> case s of
-        x:s | x > 0  -> pure (sqrt x:s) <|> pure ((- sqrt x):s)
-            | x == 0 -> pure (0:s)
-            | x < 0  -> err "negative argument!"
-        []           -> err "got no arguments!"
-      "+-" -> case s of
-        x:y:s -> pure (x+y : s) <|> pure (y-x : s)
-        _ -> empty
-      n -> readE n : s
-      where
-        binary f = case s of
-          x:y:s -> pure $ f y x : s
-          [_]   -> err "got only one argument!"
-          []    -> err "got no arguments!"
+    <h2></h2>
 
-        err m = exception $ op ++": " ++ m ++ "  Stack: " ++ show s</hs></pre>
-
-    <p>Однако его нельзя применить в монаде <code>Either</code>, поскольку она не альтернативна. Исправим это:</p>
-    <pre><hs>instance Alternative Err where
-  empty = exception ""
-  Right r <|> _ = Right r
-  Left _  <|> Right r = Right r
-  Left l  <|> Left _ = Left l</hs></pre>
-
+<p>Рассмотрим несложную задачу генерации бинарного дерева. Она решается очент несложно рекурсивной функцией:</p>
     
       <p>Подведём итоги. </p>
 

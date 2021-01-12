@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveFunctor #-}
 {-# language FlexibleInstances, KindSignatures #-}
 
 import Control.Applicative
@@ -160,3 +161,45 @@ calculateD = foldM interprete [] . words
           []    -> err "got no arguments"
 
         err m = exception $ op ++": " ++ m ++ "  Stack: " ++ show s
+
+------------------------------------------------------------
+
+data State s a = State { runState :: s -> (s, a) }
+  deriving Functor
+
+evalState st = snd . runState st
+
+instance Applicative (State s) where
+  pure x = State $ \s -> (s, x)
+  (<*>) = ap
+
+instance Monad (State s) where
+  x >>= f = State $ \s -> let (s', y) = runState x s
+                          in runState (f y) s'
+
+get = State $ \s -> (s, s)
+set x = State $ \s -> (x, ())
+
+random k = do x <- get
+              set $ (x * a + c) `mod` m
+              return $ x `mod` k
+  where (a, c, m) = (141, 28411, 134456)
+
+randomIn (a, b) = (a +) <$> random (b-a+1)
+
+isPrime n | even n = False
+          | otherwise = runState (whitnessLoop 10) n
+  where
+    (s, d) = let (h, t) = span even $ iterate (`div` 2) (n-1)
+             in (length h, head t)        
+    whitnessLoop k =
+      do a <- randomIn (2, n-1)
+         case (a^d) `mod` n of
+           1 -> whitnessLoop (k - 1)
+           x -> iterate \x -> (x62  if return True
+                            
+
+          
+  
+
+
