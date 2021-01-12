@@ -187,16 +187,16 @@ random k = do x <- get
 
 randomIn (a, b) = (a +) <$> random (b-a+1)
 
-isPrime n | even n = False
-          | otherwise = runState (whitnessLoop 10) n
-  where
-    (s, d) = let (h, t) = span even $ iterate (`div` 2) (n-1)
-             in (length h, head t)        
-    whitnessLoop k =
-      do a <- randomIn (2, n-1)
-         case (a^d) `mod` n of
-           1 -> whitnessLoop (k - 1)
-           x -> iterate \x -> (x62  if return True
+data BTree a = Leaf a | Node (BTree a) (BTree a)
+  deriving Show
+
+bernoulli p = (< round (100 * p)) <$> randomIn (0,100)
+
+randomTree = randomIn (0,100) >>= \x -> if x < 50
+                                        then Leaf <$> random 100
+                                        else Node <$> randomTree <*> randomTree
+
+
                             
 
           
