@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveFunctor #-}
-{-# language FlexibleInstances, KindSignatures #-}
+{-# language FlexibleInstances #-}
 
 import Control.Applicative
 import Control.Monad
@@ -58,7 +58,7 @@ calculateE = foldM interprete [] . words
         
 
 ------------------------------------------------------------
-class (Alternative m, Monad m) => Exception (m :: * -> *) where
+class (Alternative m, Monad m) => Exception m where
   exception :: String -> m a
 
 instance Exception Maybe where
@@ -191,7 +191,8 @@ data BTree a = Leaf a
              | Node a (BTree a) (BTree a)
   deriving Show
 
-enumTree 0 = Leaf <$> modify (+ 1)
+mkTree :: Int -> State Int (BTree Int)
+mkTree 0 = Leaf <$> modify (+ 1)
 -- enumTree n = Node <$> modify (+ 1)
 --              <*> enumTree (n-1)
 --              <*> enumTree (n-1)
@@ -201,13 +202,16 @@ enumTree 0 = Leaf <$> modify (+ 1)
 --               -> enumTree (n-1) >>= \r
 --               -> pure (Node i l r)
 
-enumTree n = do l <- enumTree (n-1)
-                i <- modify (+ 1)
-                r <- enumTree (n-1)
-                return $ Node i l r
+mkTree n = do l <- mkTree (n-1)
+              i <- modify (+ 1)
+              r <- mkTree (n-1)
+              return $ Node i l r
+
+enumTree :: Int -> BTree Int
+enumTree n = snd $ runState (mkTree n) 0
 
 random k = (`mod` k) <$> modify (\x -> mod (x * a + c) m) 
-  where (a, c, m) = (141, 28411, 134456)
+  where (a, c, m) = (1103515245, 12345, 2^31)
 
 randomTree 0 = Leaf <$> random 100
 randomTree n = Node <$> random 100
@@ -216,9 +220,13 @@ randomTree n = Node <$> random 100
 
 randomTreeIO n = evalState (randomTree n) <$> getCPUTime
 
-                            
+heart :: Double -> Double -> Bool
+heart x y = (x**2+y**2-1)**3 < x**2 * y**3
 
-          
+randomDouble :: State Integer Double
+randomDouble = (\r -> 1e-10 * fromIntegral r) <$> random (10^10)
+
+--area f a = replicateM 100 (random 10000)
   
 
 
