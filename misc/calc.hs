@@ -3,6 +3,7 @@
 
 import Control.Applicative
 import Control.Monad
+import System.CPUTime
 
 type Stack = [Double]
 
@@ -178,24 +179,24 @@ instance Monad (State s) where
                           in runState (f y) s'
 
 get = State $ \s -> (s, s)
-set x = State $ \s -> (x, ())
-
-random k = do x <- get
-              set $ (x * a + c) `mod` m
-              return $ x `mod` k
-  where (a, c, m) = (141, 28411, 134456)
-
-randomIn (a, b) = (a +) <$> random (b-a+1)
-
+set x = State $ \_ -> (x, x)
+modify f = get >>= set . f
+  
 data BTree a = Leaf a | Node (BTree a) (BTree a)
   deriving Show
 
-bernoulli p = (< round (100 * p)) <$> randomIn (0,100)
+enumTree 0 = Leaf <$> modify (+ 1)
+enumTree n = Node <$> enumTree (n-1) <*> enumTree (n-1)
 
-randomTree = randomIn (0,100) >>= \x -> if x < 50
-                                        then Leaf <$> random 100
-                                        else Node <$> randomTree <*> randomTree
+random k = (`mod` k) <$> modify (\x -> mod (x * a + c) m) 
+  where (a, c, m) = (141, 28411, 134456)
 
+randomTree 0 = Leaf <$> random 100
+randomTree n = Node
+               <$> (random n >>= randomTree)
+               <*> (random n >>= randomTree)
+
+randomTreeIO n = evalState (randomTree n) <$> getCPUTime
 
                             
 
