@@ -166,13 +166,18 @@ calculateD = foldM interprete [] . words
 ------------------------------------------------------------
 
 data State s a = State { runState :: s -> (s, a) }
-  deriving Functor
 
 evalState st = snd . runState st
 
+instance Functor (State s) where
+  fmap f x = State $
+             \s -> let (s', y) = runState x s
+                   in (s', f y)
+
 instance Applicative (State s) where
-  pure x = State $ \s -> (s, x)
-  (<*>) = ap
+  pure x  = State $ \s -> (s, x)
+  x <*> y = State $ \s -> let (s', f) = runState x s
+                          in f <$> runState y s'
 
 instance Monad (State s) where
   x >>= f = State $ \s -> let (s', y) = runState x s
@@ -182,18 +187,31 @@ get = State $ \s -> (s, s)
 set x = State $ \_ -> (x, x)
 modify f = get >>= set . f
   
-data BTree a = Leaf a | Node (BTree a) (BTree a)
+data BTree a = Leaf a
+             | Node a (BTree a) (BTree a)
   deriving Show
 
 enumTree 0 = Leaf <$> modify (+ 1)
-enumTree n = Node <$> enumTree (n-1) <*> enumTree (n-1)
+-- enumTree n = Node <$> modify (+ 1)
+--              <*> enumTree (n-1)
+--              <*> enumTree (n-1)
+
+-- enumTree n =  modify (+ 1) >>= \i
+--               -> enumTree (n-1) >>= \l
+--               -> enumTree (n-1) >>= \r
+--               -> pure (Node i l r)
+
+enumTree n = do l <- enumTree (n-1)
+                i <- modify (+ 1)
+                r <- enumTree (n-1)
+                return $ Node i l r
 
 random k = (`mod` k) <$> modify (\x -> mod (x * a + c) m) 
   where (a, c, m) = (141, 28411, 134456)
 
 randomTree 0 = Leaf <$> random 100
-randomTree n = Node
-               <$> (random n >>= randomTree)
+randomTree n = Node <$> random 100
+               <*> (random n >>= randomTree)
                <*> (random n >>= randomTree)
 
 randomTreeIO n = evalState (randomTree n) <$> getCPUTime
