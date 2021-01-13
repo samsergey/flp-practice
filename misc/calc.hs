@@ -210,7 +210,10 @@ mkTree n = do l <- mkTree (n-1)
 enumTree :: Int -> BTree Int
 enumTree n = snd $ runState (mkTree n) 0
 
-random k = (`mod` k) <$> modify (\x -> mod (x * a + c) m) 
+type Random a = State Integer a
+
+random :: Integral a => a -> Random a
+random k = fromIntegral . (`mod` fromIntegral k) <$> modify (\x -> mod (x * a + c) m) 
   where (a, c, m) = (1103515245, 12345, 2^31)
 
 randomTree 0 = Leaf <$> random 100
@@ -223,10 +226,23 @@ randomTreeIO n = evalState (randomTree n) <$> getCPUTime
 heart :: Double -> Double -> Bool
 heart x y = (x**2+y**2-1)**3 < x**2 * y**3
 
-randomDouble :: State Integer Double
-randomDouble = (\r -> 1e-10 * fromIntegral r) <$> random (10^10)
+randomDouble :: Random Double
+randomDouble = (\r -> 1e-8 * fromIntegral r) <$> random (10^8)
 
---area f a = replicateM 100 (random 10000)
+rndIn (a,b) = (\r -> a+r*(b-a)) <$> randomDouble 
+
+area :: (Double -> Double -> Bool)
+   -> (Double, Double)
+   -> (Double, Double)
+   -> Random Double
+area f (x1,x2) (y1,y2) = do
+  let fn = f <$> rndIn (x1,x2) <*> rndIn (y1,y2)
+  pts <- replicateM ntrials fn
+  let n = fromIntegral . length $ filter id pts
+  return $ (n / fromIntegral ntrials)*(x2-x1)*(y2-y1)
+  where
+    ntrials = 100000
+    
   
 
 
