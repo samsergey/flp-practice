@@ -212,10 +212,14 @@ enumTree n = snd $ runState (mkTree n) 0
 
 type Random a = State Integer a
 
-random :: Integral a => a -> Random a
-random k = fromIntegral . (`mod` fromIntegral k) <$> modify (\x -> mod (x * a + c) m) 
-  where (a, c, m) = (1103515245, 12345, 2^31)
+random :: Num a => a -> Random a
+random k = rescale <$> modify iter 
+  where
+    iter x = (x * a + c) `mod` m
+    (a, c, m) = (1103515245, 12345, 2^31)
+    rescale x = k * fromIntegral (x `div` m)
 
+    
 randomTree 0 = Leaf <$> random 100
 randomTree n = Node <$> random 100
                <*> (random n >>= randomTree)
@@ -242,7 +246,41 @@ area f (x1,x2) (y1,y2) = do
   return $ (n / fromIntegral ntrials)*(x2-x1)*(y2-y1)
   where
     ntrials = 100000
-    
+
+------------------------------------------------------------
+
+-- push :: a -> State [a] []
+-- push x = modify (x:) >> return []
+
+-- peek :: State [a] [a]
+-- peek = do s <- get
+--           case s of
+--             [] -> []
+--             x:s -> return [x]
+
+-- pop :: State [a] [a]
+-- pop = do x <- peek
+--          modify tail
+--          return [x]
+
+-- popWhile p = peek >>= \x -> if p x then pop else popWhile p
+
+
+-- dijkstra s = go -- evalState (mapM go s) []
+--   where
+--     go x | isOperator x = popWhile (\y -> prec x < prec y) 
+--          | x == "("     = push '('
+--          | x == ")"     = popWhile (/= '(')
+--          | otherwise    = return x
+
+--     isOperator = (`elem` ["+","-","*","/"])
+
+--     prec x = case x of
+--       "+" -> 1
+--       "-" -> 1
+--       "*" -> 2
+--       "/" -> 2
+--       "(" -> 0
   
 
 
