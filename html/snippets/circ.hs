@@ -7,6 +7,7 @@ data Element = R Double
              | C Double
              | L Double
              | Key Bool
+  deriving Show
 
 data P a = P [S a] | Pv a deriving Show
 data S a = S [P a] | Sv a deriving Show

@@ -4,7 +4,7 @@
   <head>
     <meta charset = "UTF-8"/>
     <link rel="stylesheet" href="../css/TPLBook.css">
-    <link rel="stylesheet" href="../css/obsidian.css">
+    <link rel="stylesheet" href="../css/idea.css">
     <link rel="stylesheet" href="../lib/katex/katex.min.css">    
 
     <script src="../lib/highlight.pack.js"></script>
@@ -89,9 +89,9 @@
 
       <p>
 	Убедимся в том, что три данные нами определения в полной мере задают алгебру для типа <code>Bool</code>:
-	<pre><ghci><l></l> True <|> False
+	<pre><ghci><lm></lm> True <|> False
 <o>True</o>
-<l></l> one :: Bool
+<lm></lm> one :: Bool
 <o>True</o></ghci></pre>
       </p>
 
@@ -102,11 +102,11 @@
   (<|>) = (++)
   inv = transpose</hs></pre>
       Вот как эта алгебра работает:
-	<pre><ghci><l></l> inv [[1,2],[3,4]]
+	<pre><ghci><lm></lm> inv [[1,2],[3,4]]
 <o>[[1,3],[2,4]]</o>
-<l></l> [[1,2],[3,4]] <-> [[5],[6]]
+<lm></lm> [[1,2],[3,4]] <-> [[5],[6]]
 <o>[[1,2,5],[3,4,6]]</o>
-<l></l> [[1,2],[3,4]] <|> [[5,6]]
+<lm></lm> [[1,2],[3,4]] <|> [[5,6]]
 <o>[[1,2],[3,4],[5,6]]</o></ghci></pre>
 
 <p>Так можно построить табулирующую функцию <code>table</code>
@@ -117,7 +117,7 @@
 
 showTable tbl = putStrLn . unlines $ concat <$> tbl</hs></pre>
 
-   <pre><ghci><l></l> showTable $ table mod [1..6]
+   <pre><ghci><lm></lm> showTable $ table mod [1..6]
 <o>  1 2 3 4 5 6</o>
 <o>1 0 0 0 0 0 0</o>
 <o>2 1 0 1 0 1 0</o>
@@ -143,16 +143,16 @@ instance Fractional a => DeMorgan (Frac a) where
       </p>
       <p>Очень удобно, что  тип <code>Frac</code> наделён числовыми совйствами. Для него автоматически определены арифметические операции и представление в виде чисел. Последнее особенно удобно для записи небольших выражений:</p>
 
-      <pre><ghci><l></l> getFrac $ 2 <|> 6
+      <pre><ghci><lm></lm> getFrac $ 2 <|> 6
 <o>1.5</o>
-<l></l> getFrac $ 2 <-> 6 :: Frac Float
+<lm></lm> getFrac $ 2 <-> 6 :: Frac Float
 <o>8.0</o></ghci></pre>      
 
       <p>Таким образом складываются электрические и термические сопротивления. Например, выразим эффективное сопротивление цепи, показанной на рисунке 
       <p align='center'><img src="img/circ1.png" alt="" width='40%'/><br/><code>(3 <-> 7) <|> (11 <-> (12 <|> (1 <-> 5)))</code></p>
       
       <p>А вычислить силу тока при напряжении <eq>12\,V</eq> можно так:</p>
-<pre><ghci><l></l> getFrac $ 12 / (3 <-> 7) <|> (11 <-> (12 <|> (1 <-> 5)))
+<pre><ghci><lm></lm> getFrac $ 12 / (3 <-> 7) <|> (11 <-> (12 <|> (1 <-> 5)))
 <o>2.0</o></ghci></pre>		
       </p>
 
@@ -173,7 +173,7 @@ instance DeMorgan a => DeMorgan (Dual a) where
 </hs></pre>
 
 Теперь можно рассчитать эффективную жёсткость системы из трёх пружин, одна из которых последовательно соединяется с парой пружин, соединёных параллельно:
-<pre><ghci><l></l> getFrac . getDual $ 600 <-> (200 <|> 300)
+<pre><ghci><lm></lm> getFrac . getDual $ 600 <-> (200 <|> 300)
 <o>450.0</o></ghci></pre>
 
  <p>Вывод типов позволяет указывать какую именно алгебру мы используем только "на выходе" из вычислений. Так мы можем явно и, в то же время, просто можем изменять способ вычисления выражения.</p>
@@ -234,11 +234,11 @@ reduce circ = case circ of
   Par a b -> reduce a <|> reduce b
   Seq a b -> reduce a <-> reduce b</hs></pre>
 			 Функция <code>reduce</code> подобна функции <code>fold</code>, которая сворачивает свободный моноид (список моноидов) в произвольный моноид:
- <pre><hs><def>fold :: (Foldable t, Monoid m) => t m -> m</def></hs></pre>
+ <pre><hs>fold :: (Foldable t, Monoid m) => t m -> m</hs></pre>
  От функции <code>fold</code> для функуторов  можно произвести полезнейшую функцию <code>foldMap</code>:
- <pre><hs><def>foldMap :: (Foldable t, Monoid m) => (a -> m) -> t a -> m</def>
+ <pre><hs>foldMap :: (Foldable t, Monoid m) => (a -> m) -> t a -> m
 foldMap = fold . fmap f </hs></pre></pre> Таким же образом можно образоватть функцию <code>reduceMap</code>:
- <pre><hs><def>reduceMap :: DeMorgan b => (a -> b) -> Circuit a -> b</def>
+ <pre><hs>reduceMap :: DeMorgan b => (a -> b) -> Circuit a -> b
 reduceMap = reduce . fmap f </hs></pre></pre> Эта функция позволяет явно указать какую именно алгебру де Моргана следует использовать при интерпретации цепи.</p>
 
       <p>Для построения собственно, цепей введём тип для элементов: сопротивления, ёмкости и интуктивности:
@@ -253,14 +253,14 @@ key True = Zero
 key False = One</hs></pre></p>
       
       <p>Определим простенькую цепь, показанную на рисунке:
-	<pre><hs><def>s :: Bool -> Circuit Element</def>
+	<pre><hs>s :: Bool -> Circuit Element
 s k = res 10 <-> ((res 2 <-> coil 5e-3 <-> key k) <|> cap 10e-9)</hs></pre>
       </p>
       
       <p>Теперь построим различные примеры интерпретации. Для этого нужно описать интерпретацию отдельных элементов и указать используемую алгебру.</p>
 
  <p>Функция <code>connect</code> определяет является ли цепь замкнутой, используя булеву алгебру:
- <pre><hs><def>connected :: Circuit Element -> Bool</def>
+ <pre><hs>connected :: Circuit Element -> Bool
 connected = reduceMap f
   where
     f el = case el of
@@ -268,13 +268,13 @@ connected = reduceMap f
       C _ -> False
       L _ -> True</hs></pre></p>
 
-<pre><ghci><l></l> connected (s True)
+<pre><ghci><lm></lm> connected (s True)
 <o>True</o>
-<l></l> connected (s False)
+<lm></lm> connected (s False)
 <o>False</o></ghci></pre>
 
 <p>Функция <code>resistance</code> определяет эффективное сопротивление цепи для постоянного тока, используя алгебру для дробных чисел:
- <pre><hs><def>resistance :: Circuit Element -> Lumped Double
+ <pre><hs>resistance :: Circuit Element -> Lumped Double
 resistance = fmap getFrac . reduceMap (fmap Frac . f)
   where
     f el = case el of
@@ -282,12 +282,12 @@ resistance = fmap getFrac . reduceMap (fmap Frac . f)
       C _ -> Break
       L _ -> Short</hs></pre> Здесь вычислительная работа производится внутри типа <code>Lumped</code>, Который мы объявили функтором.</p>
 
-<pre><ghci><l></l> resistance (s True)
+<pre><ghci><lm></lm> resistance (s True)
 <o>Value 12</o>
-<l></l> resistance (s False)
+<lm></lm> resistance (s False)
 <o>Break</o></ghci></pre>
 
- <p>Вот расчёт импеданса цепи:<pre><hs><def>impedance :: Double -> Circuit Element -> Lumped (Complex Double)</def>
+ <p>Вот расчёт импеданса цепи:<pre><hs>impedance :: Double -> Circuit Element -> Lumped (Complex Double)
 impedance w = fmap getFrac . reduceMap (fmap Frac . f)
   where
     f el = Value $ case el of
@@ -295,16 +295,16 @@ impedance w = fmap getFrac . reduceMap (fmap Frac . f)
       C c -> 1 / (0 :+ w*c)
       L l -> 0 :+ w*l</hs></pre>
 
-<pre><ghci><l></l> impedance 1e3 (s False)
+<pre><ghci><lm></lm> impedance 1e3 (s False)
 <o>Value (10.0 :+ (-99999.99999999997))</o>
-<l></l>  impedance 1e3 (s True)
+<lm></lm>  impedance 1e3 (s True)
 <o>Value (12.00020001420084 :+ 5.0002100065000405)</o>
-<l></l>  impedance 1e6 (s False)
+<lm></lm>  impedance 1e6 (s False)
 <o>Value (10.0 :+ (-100.0))</o>
-<l></l>  impedance 1e6 (s True)
+<lm></lm>  impedance 1e6 (s True)
 <o>Value (10.000832986116954 :+ (-102.04081598653629))</o></ghci></pre>
 
- <p>Если речь идёт о расчёте батареи конденсаторов, то нужно поменять агебру на дуальную:<pre><hs><def>capacity :: Circuit Element -> Lumped Double</def>
+ <p>Если речь идёт о расчёте батареи конденсаторов, то нужно поменять агебру на дуальную:<pre><hs>capacity :: Circuit Element -> Lumped Double
 capacity = fmap (getFrac . getDual) . reduceMap (fmap (Dual . Frac) . f)
   where
     f el = case el of
@@ -323,17 +323,17 @@ capacity = fmap (getFrac . getDual) . reduceMap (fmap (Dual . Frac) . f)
 
  и способ вычисления термического сопротивления для этих слоёв:
 
- <pre><hs><def>layerRes :: Layer -> Double</def>
+ <pre><hs>layerRes :: Layer -> Double
 layerRes el = case el of
   Insulation h l s -> l/(s*h)
   Surface a s -> 1/(s*a)
 </hs></pre>
  
 Для простоты описания теплотехничекой системы определим два "умных" конструктора, которые подготавливают типы для соединения слоёв в цепь:
- <pre><hs><def>insulation :: Double -> Double -> Double -> Circuit Layer</def>
+ <pre><hs>insulation :: Double -> Double -> Double -> Circuit Layer
 insulation h = fmap Elem . Insulation h
 
-<def>surface :: Double -> Double -> Circuit Layer</def>
+surface :: Double -> Double -> Circuit Layer
 surface = fmap Elem . Surface</hs></pre>
 
  Наконец, перечислим некоторые материалы, задавая для них коэффициент теплопроводности:
@@ -346,7 +346,7 @@ stf      = insulation 0.07  -- пенопласт
 Все эти конструкторы представляют собой функции от толщины слоя и его площади.
 
  Теперь можно описывать теплотехническую систему:
- <pre><hs><def>system :: Circuit Layer</def>
+ <pre><hs>system :: Circuit Layer
 system = surface 1.5 3 <-> (wall 2 <|> window 1) <-> surface 6 3
   where
     wall s = concrete 0.5 s <-> stf 0.1 s
@@ -354,15 +354,15 @@ system = surface 1.5 3 <-> (wall 2 <|> window 1) <-> surface 6 3
 
  и вычислить её термическое сопротивление:
 						
- <pre><hs><def>thermalResistance :: Circuit Layer -> Double</def>
+ <pre><hs>thermalResistance :: Circuit Layer -> Double
 thermalResistance = getFrac . reduceMap (Frac . layerRes)</hs></pre>
 
-<pre><ghci><l></l> thermalResistance system
+<pre><ghci><lm></lm> thermalResistance system
 <o>0.5932453290943858</o></ghci></pre>
 
 Термическое сопротивление позволяет выяснить потери тепла (в ваттах) при заданной разности температур по разные стороны стены.
 
-<pre><ghci><l></l> 40 / thermalResistance system
+<pre><ghci><lm></lm> 40 / thermalResistance system
 <o>67.42573103957128</o></ghci></pre>
 
 У моноидов есть одно чрезвычайно полезное свойство: функции, возвращающие моноид, сами образуют моноид. С этим связан ряд любопытных и изящных приёмов функционального программирования. Подобное свойство можно доказать и для аглебр де Моргана:
@@ -374,7 +374,7 @@ thermalResistance = getFrac . reduceMap (Frac . layerRes)</hs></pre>
   f <-> g = \x -> f x <-> g x</hs></pre> Здесь мы моглм бы использовать аппликативные свойства типа <code>(->)</code>, но для наглядности "доказательства" определили всё явно. 
 
 Это свойство алгебры даёт нам возможность упростить описание теплотехничекой схемы, "вынеся за скобки" общий аргумент -- площадь слоя:
- <pre><hs><def>system :: Circuit Layer</def>
+ <pre><hs>system :: Circuit Layer
 system = surface 1.5 3 <-> (wall 2 <|> window 1) <-> surface 6 3
   where
     wall = concrete 0.5 <-> stf 0.1

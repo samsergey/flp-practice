@@ -4,7 +4,7 @@
   <head>
     <meta charset = "UTF-8"/>
     <link rel="stylesheet" href="../css/TPLBook.css">
-    <link rel="stylesheet" href="../css/obsidian.css">
+    <link rel="stylesheet" href="../css/idea.css">
     <link rel="stylesheet" href="../lib/katex/katex.min.css">    
 
     <script src="../lib/highlight.pack.js"></script>
@@ -77,11 +77,11 @@ instance Monoid Picture where
 </hs></pre>
 
       <task>Напишите функции-конструкторы для элементарных фигур:
-	<pre><hs><def>point :: (Float, Float) -> Picture
+	<pre><hs>point :: (Float, Float) -> Picture
 line :: [(Float, Float)] -> Picture
 rectangle :: (Float, Float) -> Float -> Float -> Picture
 square :: (Float, Float) -> Float -> Picture
-triangle :: (Float, Float) -> Float -> Float -> Picture</def></hs></pre>
+triangle :: (Float, Float) -> Float -> Float -> Picture</hs></pre>
 	У всех этих функций первый аргумент — это координата нижнего левого угла фигуры, другие агрументы задают ширину и высоту фигуры.
       </task>
 
@@ -116,10 +116,10 @@ triangle :: (Float, Float) -> Float -> Float -> Picture</def></hs></pre>
       <pre><hs>instance SVG a => SVG [a] where
   toSVG = foldMap toSVG</hs></pre>
       В этом определении мы используем то обстоятельство, что элементы SVG (строки) образуют моноид. Теперь можно единообразно транслировать как отдельныне координаты, так и их списки:
-      <pre><hs><l></l> toSVG (Pt 1 2)
+      <pre><ghci><l></l> toSVG (Pt 1 2)
 <o>"1.0,2.0 "</o>
 <l></l> toSVG [Pt 1 2, Pt 3 4, Pt 2 6]
-<o>"1.0,2.0 3.0,4.0 2.0,6.0 "</o></hs></pre></p>
+<o>"1.0,2.0 3.0,4.0 2.0,6.0 "</o></ghci></pre></p>
 
       <task> Определите экземпляр класса <code>SVG</code> для типа <code>Primitive</code>:
 	<pre><hs>instance SVG Primitive where
@@ -134,9 +134,9 @@ triangle :: (Float, Float) -> Float -> Float -> Picture</def></hs></pre>
 
       <task>Определите экземпляр класса <code>SVG</code> для типа <code>Picture</code>, задав фиксированные размеры изображения, скажем, 400×300.</task>
 
-      <task>Запишите SVG-выражение, описывающее домик в файл <tt>test.html</tt> с помощью функции <code>writeFile</code> и убедитесь в том, что  изображение открывается в веб-браузере. Создайте вспомогательную функцию <code>writeSVG</code> для удобного экспорта изображений в файл. <pre><hs><def>writeSVG :: String -> Picture -> IO ()</def></hs></pre></task>
+      <task>Запишите SVG-выражение, описывающее домик в файл <tt>test.html</tt> с помощью функции <code>writeFile</code> и убедитесь в том, что  изображение открывается в веб-браузере. Создайте вспомогательную функцию <code>writeSVG</code> для удобного экспорта изображений в файл. <pre><hs>writeSVG :: String -> Picture -> IO ()</hs></pre></task>
 
-      <task>Напишите конструктор <pre><hs><def>polygon :: (Float, Float) -> Int -> Float -> Picture</def></hs></pre> для правильных многоугольников заданного размера (размер задаётся радиусом описанной окружности). Первый аргумент определяет центр пногоугольника.</task>
+      <task>Напишите конструктор <pre><hs>polygon :: (Float, Float) -> Int -> Float -> Picture</hs></pre> для правильных многоугольников заданного размера (размер задаётся радиусом описанной окружности). Первый аргумент определяет центр пногоугольника.</task>
       <task>Создайте изображение, показанное на рисунке:
 	<p align='center'><svg width='185.0' height='185.0' fill='none' stroke='blue'><circle cx='100.0' cy='100.0' r='80.0'/><circle fill='blue' cx='100.0' cy='100.0' r='1'/><polyline points=' 180.0,100.0 124.72136,176.08453 35.278633,147.02281 35.27864,52.977173 124.721375,23.915482 180.0,100.000015'/></svg></p></task>
 
@@ -159,11 +159,11 @@ triangle :: (Float, Float) -> Float -> Float -> Picture</def></hs></pre>
 instance Boxed a => Boxed [a] where
   box = foldMap box
 	    
-<def>width :: Boxed a => a -> Float</def>
+width :: Boxed a => a -> Float
 width p = x2 - x1
   where ((Min x1,_),(Max x2,_)) = box p
 
-<def>height :: Boxed a => a -> Float</def>
+height :: Boxed a => a -> Float
 height p = y2 - y1
   where ((_,Min y1),(_,Max y2)) = box p</hs></pre></p>
 
@@ -175,7 +175,7 @@ height p = y2 - y1
 	<pre><hs>data Picture = Picture (Box, [Primitive])
              deriving Show
 
-<def>contents :: Picture -> Primitive</def>
+contents :: Picture -> Primitive
 contents (Picture (_, c)) = c
 	    
 instance Boxed Picture where
@@ -187,14 +187,14 @@ instance Boxed Picture where
       
       <task>Переопределите конструкторы <code>point, line, square, ...</code>
 	Для этого имеет смысл определить вспомогательную функцию <code>primitive</code>, которая выполняла бы необходимые вычисления обрамляющей рамки для формируемого изображения:
-	<pre><hs><def>primitive :: Primitive -> Picture</def>
+	<pre><hs>primitive :: Primitive -> Picture
 primitive p = Picture (box p, [p])</hs></pre>
       </task>
 
       <task>Наконец, используйте информацию об обрамляющей рамке изображения для вычисления размеров, указываемых в заголовке SVG-файла.</task>
 
-      <task>Определите в классе <code>Boxed</code> универсальную функцию <code>corner</code>, возвращающую углы обрамляющей рамки изображения, или примитива
-      <pre><hs><def>corner :: a -> ((Pt, Pt), (Pt, Pt))</def></hs></pre> и четыре селектора <code>left, right, upper, lower</code>
+      <task>Определите для экземпляров класса <code>Boxed</code> универсальную функцию <code>corner</code>, возвращающую углы обрамляющей рамки изображения, или примитива
+      <pre><hs>corner :: a -> ((Pt, Pt), (Pt, Pt))</hs></pre> и четыре селектора <code>left, right, upper, lower</code>
       так, чтобы можно было бы получить, например, правый нижний угол изображения с помощью выражения:
       <pre><hs> right . lower . corner $ p</hs></pre></task>
       
@@ -248,10 +248,10 @@ primitive p = Picture (box p, [p])</hs></pre>
 
 
       <task>Напишите базовые преобразователи, используя тип для матриц <code>M a</code>, созданный на прошлом занятии:
-	<pre><hs><def>rotateM :: Float -> M Float
+	<pre><hs>rotateM :: Float -> M Float
 translateM :: Float -> Float -> M Float
 scaleM :: Float -> Float -> M Float
-reflectM :: Double -> M Float</def></hs></pre></task>
+reflectM :: Double -> M Float</hs></pre></task>
       
       <p>Применять афинные преобразования можно к разным объектам: точкам, примитивам и целым изображениям. Это наводит на мысль о классе типов <code>Affine</code>, который абстрагирует это свойство и определяет оператор афинных преобразований <code>affine</code>:
 	<pre><hs>class Affine p where
@@ -264,26 +264,26 @@ reflectM :: Double -> M Float</def></hs></pre></task>
 
    
       <task>Основываясь на матрицах базовых преобразований, напишите следующие преобразователи афинных типов:
-	<pre><hs><def>-- масштабирует координату x
-<def>scaleX :: Affine a => Float -> a -> a <def>
+	<pre><hs>-- масштабирует координату x
+scaleX :: Affine a => Float -> a -> a 
 -- масштабирует координату y
-<def>scaleY :: Affine a => Float -> a -> a </def>
+scaleY :: Affine a => Float -> a -> a </def>
 -- одинаково масштабирует обе координаты
-<def>scale :: Affine a => Float -> a -> a </def>
+scale :: Affine a => Float -> a -> a </def>
 -- приводит изображение к указанным размерам 
-<def>rescaleTo :: (Boxed a, Affine a) => Float -> Float -> a -> a</def>
+rescaleTo :: (Boxed a, Affine a) => Float -> Float -> a -> a</def>
 -- параллельный перенос изображения
-<def>shift :: Affine a => Float -> Float -> a -> a</def>
+shift :: Affine a => Float -> Float -> a -> a</def>
 -- поворот на угол, задаваемый в градусах вокруг центра координат
-<def>rotate :: Affine a => Float -> a -> a</def>
+rotate :: Affine a => Float -> a -> a</def>
 -- поворот вокруг указанной точки
-<def>rotateAt :: Affine a => (Float, Float) -> Float -> a -> a</def>
+rotateAt :: Affine a => (Float, Float) -> Float -> a -> a</def>
 -- отражение относительно линии,
 -- проходящей через начало координат под указанным углом
-<def>reflect :: Affine a => Float -> a -> a</def>
+reflect :: Affine a => Float -> a -> a</def>
 -- отражение относительно линии,
 -- проходящей через указанную точку под указанным углом
-<def>reflectAt :: Affine a => (Float, Float) -> Float -> a -> a</def></hs></pre>
+reflectAt :: Affine a => (Float, Float) -> Float -> a -> a</def></hs></pre>
       </task>
 
       <task>Проверьте на примере квадрата как работают преобразователи и их композиция:
@@ -382,16 +382,16 @@ rotate 30 &lt;&gt; (`at` (40, 40)) $ square 10</hs></pre>
       </task>
 
       <task>С помощью вспомогательной функции 
-	<pre><hs><def>setAttr :: (t -> Attribute) -> t -> Picture -> Picture</def>
+	<pre><hs>setAttr :: (t -> Attribute) -> t -> Picture -> Picture</def>
 setAttr attr c p = case p of
   Picture (b, [Group a p]) -> Picture (b, [Group (a <> [attr c]) p])
   p -> primitive $ Group [attr c] (contents p)</hs></pre>
 	введите преобразователи стиля
-	<pre><hs><def>lineColor :: String -> Picture -> Picture</def> -- цвет линии
-<def>fill :: String -> Picture -> Picture</def> -- цвет заливки
-<def>color :: String -> Picture -> Picture </def> -- одинаковый цвет линии и заливки
-<def>lineWidth :: Float -> Picture -> Picture</def> -- толщина линии
-<def>opacity :: Float -> Picture -> Picture</def> -- прозрачность фигуры</hs></pre>
+	<pre><hs>lineColor :: String -> Picture -> Picture</def> -- цвет линии
+fill :: String -> Picture -> Picture</def> -- цвет заливки
+color :: String -> Picture -> Picture </def> -- одинаковый цвет линии и заливки
+lineWidth :: Float -> Picture -> Picture</def> -- толщина линии
+opacity :: Float -> Picture -> Picture</def> -- прозрачность фигуры</hs></pre>
       </task>
 
       <task> Проверьте корректность работы стилей на примере:
@@ -421,7 +421,7 @@ setAttr attr c p = case p of
 	<pre><hs>colorizeWith colors ps = zipWith fill (cycle colors) ps</hs></pre>
 
       <p align='center'><svg width='176.0' height='50.0' fill='none' stroke='blue'><g  fill="green"><circle cx='7' cy='43' r='3'/></g><g  fill="gray"><circle cx='16' cy='40' r='6'/></g><g  fill="green"><circle cx='31' cy='37' r='9'/></g><g  fill="gray"><circle cx='52' cy='34' r='12'/></g><g  fill="green"><circle cx='79' cy='31' r='15'/></g><g  fill="gray"><circle cx='112' cy='28' r='18'/></g><g  fill="green"><circle cx='151' cy='25' r='21'/></g></svg></br>
-  <code>row.colorizeWith ["green","gray"] $ circle <$> [3,6..20]</code>
+  <code>row . colorizeWith ["green","gray"] $ circle <$> [3,6..20]</code>
       </p>
       
       <p>Пусть нам дана таблица данных:
@@ -474,7 +474,7 @@ setAttr attr c p = case p of
 </task>
       
       <task>Напишите функцию <code>plot</code>
-	<pre><hs><def>plot :: (Float -> Float) -> Float -> Float</def></hs></pre>
+	<pre><hs>plot :: (Float -> Float) -> Float -> Float</hs></pre>
 	которая строит график произвольной числовой функции в указанных пределах по оси <eq>x</eq>. Пример использования:
 	<pre><hs>rescaleTo 400 300 $ lineColor "blue" (plot sinc (-15) 15)</hs></pre>
 

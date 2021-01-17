@@ -113,6 +113,13 @@ calculateA = foldM interprete [] . words
           []    -> err "got no arguments!"
 
         err m = exception $ op ++": " ++ m ++ "  Stack: " ++ show s
+
+headE [] = exception "List is empty!"
+headE (x:_) = pure x
+
+tailE [] = exception "List is empty!"
+tailE (_:s) = pure s
+
         
 --foldM f x = foldl (\res el -> res >>= (`f` el)) (pure x)
 
@@ -210,16 +217,17 @@ mkTree n = do l <- mkTree (n-1)
 enumTree :: Int -> BTree Int
 enumTree n = snd $ runState (mkTree n) 0
 
+
 type Random a = State Integer a
 
-random :: Num a => a -> Random a
+random :: Integer -> Random Integer
 random k = rescale <$> modify iter 
   where
     iter x = (x * a + c) `mod` m
     (a, c, m) = (1103515245, 12345, 2^31)
-    rescale x = k * fromIntegral (x `div` m)
+    rescale x = x `mod` k
 
-    
+randomTree :: Integer -> Random (BTree Integer)
 randomTree 0 = Leaf <$> random 100
 randomTree n = Node <$> random 100
                <*> (random n >>= randomTree)
@@ -248,39 +256,84 @@ area f (x1,x2) (y1,y2) = do
     ntrials = 100000
 
 ------------------------------------------------------------
+type StackFn a = State [a] [a]
 
--- push :: a -> State [a] []
--- push x = modify (x:) >> return []
+evalStackFn :: StackFn a -> [a]
+evalStackFn fn = evalState fn []
 
--- peek :: State [a] [a]
--- peek = do s <- get
---           case s of
---             [] -> []
---             x:s -> return [x]
+-- поместить значение на вершину стека
+push :: a -> StackFn a
+push x = modify (x:) >> return []
 
--- pop :: State [a] [a]
--- pop = do x <- peek
---          modify tail
---          return [x]
+-- получить значение на вершине стека
+peek :: StackFn a
+peek = headE <$> get
 
--- popWhile p = peek >>= \x -> if p x then pop else popWhile p
+-- снять значение с вершины стека
+pop :: StackFn a
+pop = get >>= split
+  where split [] = return []
+        split (x:s) = set s >> return [x]
 
+-- снимать с вершины стека все значения
+-- до тех пор, пока выполняется указанное условие
+popWhile :: (a -> Bool) -> StackFn a
+popWhile p = do (r, s') <- span p <$> get
+                set s'
+                return r
 
--- dijkstra s = go -- evalState (mapM go s) []
---   where
---     go x | isOperator x = popWhile (\y -> prec x < prec y) 
---          | x == "("     = push '('
---          | x == ")"     = popWhile (/= '(')
---          | otherwise    = return x
+foldMapM f xs = mconcat <$> mapM f xs 
 
---     isOperator = (`elem` ["+","-","*","/"])
+step :: String -> StackFn String
+step x
+  | isOperator x =
+      do r <- popWhile (\y -> prec x < prec y)
+         push x
+         return r
+  | x == "(" = push "("
+  | x == ")" =
+      do r <- popWhile (/= "(")
+         pop
+         return r
+  | otherwise = return [x]
 
---     prec x = case x of
---       "+" -> 1
---       "-" -> 1
---       "*" -> 2
---       "/" -> 2
---       "(" -> 0
+isOperator = (`elem` ["+","-","*","/"])
+
+prec x = case x of
+  "*" -> 2
+  "/" -> 2
+  "+" -> 1
+  "-" -> 1
+  "(" -> 0
+
+toRPN = unwords . dijkstra . lexer
+
+dijkstra :: [String] -> [String]
+dijkstra s = evalStackFn $ (<>) <$> foldMapM step s <*> get
   
+lexer :: String -> [String]
+lexer = words . foldMap separate
+  where separate x
+          | x `elem` "+-*/()" = " " <> [x] <> " "
+          | otherwise = [x]
 
+randomIO n = evalState (random n) <$> getCPUTime
 
+ugadaika :: Integer -> IO ()
+ugadaika n = randomIO n >>= dialog
+
+dialog :: Integer -> IO ()
+dialog x = do
+  y <- read <$> getLine
+  case compare x y of
+    LT -> print "less" >> dialog x
+    GT -> print "greater" >> dialog x
+    EQ -> print "yes!"
+
+calcIO :: IO ()
+calcIO = do s <- getLine
+            case calculateA $ toRPN s of
+              Right [] -> calcIO
+              Right r -> putStr "> " >> print (head r)
+              Left e -> print $ "Error in operation " <> e
+            calcIO
