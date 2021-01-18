@@ -4,7 +4,7 @@ import Data.Char
 import Data.Foldable hiding (elem)
 import Control.Monad
 import Control.Applicative
---import Safe
+import Pic
 
 data Parser i a = Parser { run :: i -> Result i a}
 
@@ -35,8 +35,10 @@ instance Alternative (Parser i) where
     Ok x r' -> Ok x r'
     Error m -> Error m
 
+instance Semigroup b => Semigroup (Parser i b) where
+  a <> b = (<>) <$> a <*> b
+
 instance Monoid b => Monoid (Parser i b) where
-  a `mappend` b = mappend <$> a <*> b
   mempty = pure mempty
 
 err m = Parser $ const (Error m)
@@ -242,3 +244,29 @@ params = search (regexp "[a-z]+=[^&]+")
 
 replace :: Parser [b] a -> (a -> [b]) -> Parser [b] [b]
 replace p f = collect (f <$> p <|> only next)
+
+------------------------------------------------------------
+--svg = tag "svg" $ many (point_ <|> line_)
+
+
+float :: Parser String Float
+float = read <$> regexp "-?[0-9]+[.][0-9]+"
+
+spaces = many (term ' ')
+
+attr' a p = spaces >> string a >> string "='" *> p <* string "'" 
+
+tag t p = term '<' >> string t *> p <* string "/>"
+
+tag' t attrs = term '<' >> string t *> sequenceA attrs <* string "/>"
+
+point_ = tag' "circle" [ attr' "rx" float
+                       , attr' "ry" float
+                       , attr' "r" float ] >>=
+         \[x,y,_] -> return $ Point (Pt x y)
+
+line_ = tag' "polyline" [attr' "points" points_] >>=
+        \[x] ->  return $ Line x
+  
+points_ = pt `sepBy` spaces <* spaces
+  where pt = Pt <$> float <* term ',' <*> float

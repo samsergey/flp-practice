@@ -1,3 +1,5 @@
+module Pic where
+
 import Text.Printf
 import Data.Monoid
 import Data.Semigroup (Min(..), Max(..))
