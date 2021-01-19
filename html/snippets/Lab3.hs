@@ -1,4 +1,8 @@
+{-# LANGUAGE TupleSections #-}
 module Lab3 where
+
+import Data.List
+import Data.Monoid
 
 pascalStep r = zipWith (+) (0:r) (r++[0])
 
@@ -14,4 +18,6 @@ floyd = go 1 [1..]
   where go i xs = let (a, b) = splitAt i xs
                   in a : go (i+1) b
 
+
+floyd' = unfoldr (\(i,xs) -> Just $ (i+1,) <$> splitAt i xs) (1,[1..])
 
