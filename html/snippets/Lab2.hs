@@ -51,3 +51,6 @@ bisection' p =
 
 listToMaybe [] = Nothing
 listToMaybe (x:_) = Just x
+
+floyd = (\i -> [tr i + 1 .. tr (i+1)]) <$> [1..]
+  where tr n = n*(n-1) `div` 2
