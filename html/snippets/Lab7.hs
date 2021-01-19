@@ -4,6 +4,7 @@ module Lab7 where
 
 import Control.Applicative
 import Control.Monad
+import qualified Control.Monad.State.Lazy as S
 import System.CPUTime
 
 type Stack = [Double]
@@ -73,14 +74,14 @@ instance Exception IO where
 
 type Err = Either String
 
-instance Exception Err where
-  exception = Left
+-- instance Exception Err where
+--   exception = Left
 
-instance Alternative Err where
-  empty = exception ""
-  Right r <|> _ = Right r
-  Left _  <|> Right r = Right r
-  Left l  <|> Left _ = Left l
+-- instance Alternative Err where
+--   empty = exception ""
+--   Right r <|> _ = Right r
+--   Left _  <|> Right r = Right r
+--   Left l  <|> Left _ = Left l
 
 readS :: (Exception ex, Read a) => String -> ex a
 readS s = case [x | (x,t) <- reads s, ("","") <- lex t] of
@@ -88,32 +89,32 @@ readS s = case [x | (x,t) <- reads s, ("","") <- lex t] of
             _ -> exception $ "could not parse " ++ s
 
 
-calculateA :: Exception ex => String -> ex Stack
-calculateA = foldM interprete [] . words
-  where
-    interprete s op = case op of
-      "+" -> binary (+)
-      "*" -> binary (*)
-      "-" -> binary (-)
-      "/" -> binary (/)
-      "sqrt" -> case s of
-        x:s | x > 0  -> pure (sqrt x:s) <|> pure ((- sqrt x):s)
-            | x == 0 -> pure (0:s)
-            | x < 0  -> err "negative argument!"
-        []           -> err "got no arguments!"
-      "pm" -> case s of
-        x:y:s -> pure (x+y : s) <|> pure (y-x : s)
-        _ -> empty
-      n -> case readS n of
-        Just x  -> pure $ x : s
-        Nothing -> err "unknown symbol!"
-      where
-        binary f = case s of
-          x:y:s -> pure $ f y x : s
-          [_]   -> err "got only one argument!"
-          []    -> err "got no arguments!"
+-- calculateA :: Exception ex => String -> ex Stack
+-- calculateA = foldM interprete [] . words
+--   where
+--     interprete s op = case op of
+--       "+" -> binary (+)
+--       "*" -> binary (*)
+--       "-" -> binary (-)
+--       "/" -> binary (/)
+--       "sqrt" -> case s of
+--         x:s | x > 0  -> pure (sqrt x:s) <|> pure ((- sqrt x):s)
+--             | x == 0 -> pure (0:s)
+--             | x < 0  -> err "negative argument!"
+--         []           -> err "got no arguments!"
+--       "pm" -> case s of
+--         x:y:s -> pure (x+y : s) <|> pure (y-x : s)
+--         _ -> empty
+--       n -> case readS n of
+--         Just x  -> pure $ x : s
+--         Nothing -> err "unknown symbol!"
+--       where
+--         binary f = case s of
+--           x:y:s -> pure $ f y x : s
+--           [_]   -> err "got only one argument!"
+--           []    -> err "got no arguments!"
 
-        err m = exception $ op ++": " ++ m ++ "  Stack: " ++ show s
+--         err m = exception $ op ++": " ++ m ++ "  Stack: " ++ show s
 
 headE [] = exception "List is empty!"
 headE (x:_) = pure x
@@ -179,20 +180,20 @@ evalState st = snd . runState st
 
 instance Functor (State s) where
   fmap f x = State $
-             \s -> let (s', y) = runState x s
+             \s -> let ~(s', y) = runState x s
                    in (s', f y)
 
 instance Applicative (State s) where
   pure x  = State $ \s -> (s, x)
-  x <*> y = State $ \s -> let (s', f) = runState x s
+  x <*> y = State $ \s -> let ~(s', f) = runState x s
                           in f <$> runState y s'
 
 instance Monad (State s) where
-  x >>= f = State $ \s -> let (s', y) = runState x s
+  x >>= f = State $ \s -> let ~(s', y) = runState x s
                           in runState (f y) s'
 
 get = State $ \s -> (s, s)
-set x = State $ \_ -> (x, x)
+set x = State $ const (x, x)
 modify f = get >>= set . f
   
 data BTree a = Leaf a
@@ -331,12 +332,15 @@ dialog x = do
     GT -> print "greater" >> dialog x
     EQ -> print "yes!"
 
-calcIO :: IO ()
-calcIO = do s <- getLine
-            case calculateA $ toRPN s of
-              Right [] -> calcIO
-              Right r -> putStr "> " >> print (head r)
-              Left e -> print $ "Error in operation " <> e
-            calcIO
+-- calcIO :: IO ()
+-- calcIO = do s <- getLine
+--             case calculateA $ toRPN s of
+--               Right [] -> calcIO
+--               Right r -> putStr "> " >> print (head r)
+--               Left e -> print $ "Error in operation " <> e
+--             calcIO
+
+floyd :: S.State Int [[Int]]
+floyd = mapM (`replicateM` (S.modify (+1) >> S.get)) [1..]
 
 

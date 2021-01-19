@@ -21,3 +21,5 @@ floyd = go 1 [1..]
 
 floyd' = unfoldr (\(i,xs) -> Just $ (i+1,) <$> splitAt i xs) (1,[1..])
 
+floyd'' :: Int -> [[Int]]
+floyd'' x = [x] : ((x:) <$> floyd'' (x+1))
