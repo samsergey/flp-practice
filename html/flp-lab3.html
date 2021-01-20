@@ -75,7 +75,7 @@ replicate1 n x = x : replicate1 (n - 1) x
 
 -- определение, использующее концепцию потоков
 replicate2 n x = const x <$> [1..n]</hs></pre>
-	Выясните тип этих функций и удостоверьтесь, что они работает верно. Объясните смысл функции <code>const</code> и её тип.</task>
+	Выясните тип этих функций и удостоверьтесь, что они работают верно. Объясните смысл функции <code>const</code> и её тип.</task>
 
       <task>Выясните и объясните тип функций <code>take</code>, <code>map</code>, <code>takeWhile</code>, <code>dropWhile</code>, <code>filter</code>. Вычислите следующие примеры в интерпретаторе и объясните своими словами, что делают эти функции.</task>
       <pre><hs> take 5 [1..10]
@@ -116,11 +116,11 @@ replicate2 n x = const x <$> [1..n]</hs></pre>
       </p>
 
       <task>Определите какие схемы реализуют следующие фукции Haskell:
-	<pre><hs> [1 .. 13]
+	<pre><hs> [1..13]
  sum      
  map
  takeWhile
- [1 ..]
+ [1..]
  length
  iterate
  product
@@ -171,7 +171,7 @@ replicate2 n x = const x <$> [1..n]</hs></pre>
 	Решите эту задачу на Haskell доступными вам способами (рекурсия, генераторы списков и т. п.).
 	
       <details><summary>Вариант решения</summary>
-	<pre><hs>floyd = (\i -> [arsum i + 1 .. arsum (i + 1)]) <$> [1 ..]
+	<pre><hs>floyd = (\i -> [arsum i + 1 .. arsum (i + 1)]) <$> [1..]
   where tr n = n*(n - 1) `div` 2</hs></pre>
 	<p>Здесь <code>arsum n</code> — сумма арифметической прогрессии <eq>1,2,..,n</eq></p>
       </details>
@@ -238,10 +238,10 @@ path p (Node a t1 t2) =
   :: Eq a2 =>
      (Double -> a2) -> (Double, Double) -> Maybe Double
 bisection' p =
-  (uncurry mean <$>) .
-  find (\(a, b) -> abs (b - a) < 1e-11) .
-  path (\(a, b) -> p a == p b) .
-  tree (\(a, b) -> let c = mean a b in ((a,c),(c,b)))
+  (uncurry mean <$>)
+  . find (\(a, b) -> abs (b - a) < 1e-11)
+  . path (\(a, b) -> p a == p b)
+  . tree (\(a, b) -> let c = mean a b in ((a,c),(c,b)))
 </hs></pre>
       Здесь мы используем функцию <code>find</code> из библиотеки <code>Data.List</code> и функцию <code>uncurry</code>, которая функцию двух аргументов превращает в функцию от пары.</p>
 

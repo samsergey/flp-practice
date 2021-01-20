@@ -72,8 +72,8 @@ minCount (x:xs) = foldl count _ xs
 <task>Напишите генератор <a href="flp-lab3.html#Floyd">треугольника Флойда</a>, используя инструментарий для работы со списками.
   <details><summary>Вариант решения</summary>
     <pre><hs>floyd = zipWith (\s i -> [s .. s+i])
-        (tail (scanl (+) 1 [0 ..]))
-        [0 ..]</hs></pre>
+        (tail (scanl (+) 1 [0..]))
+        [0..]</hs></pre>
   </details>
 </task>
 
