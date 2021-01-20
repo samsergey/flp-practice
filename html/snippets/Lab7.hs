@@ -322,12 +322,13 @@ ugadaika :: Integer -> IO ()
 ugadaika n = randomIO n >>= dialog
 
 dialog :: Integer -> IO ()
-dialog x = do
-  y <- read <$> getLine
-  case compare x y of
-    LT -> print "less" >> dialog x
-    GT -> print "greater" >> dialog x
-    EQ -> print "yes!"
+dialog x = next
+  where next = do
+          y <- read <$> getLine
+          case compare x y of
+            LT -> print "less" >> next
+            GT -> print "greater" >> next
+            EQ -> print "yes!"
 
 -- calcIO :: IO ()
 -- calcIO = do s <- getLine
