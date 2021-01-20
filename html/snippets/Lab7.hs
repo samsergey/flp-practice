@@ -179,18 +179,15 @@ data State s a = State { runState :: s -> (s, a) }
 evalState st = snd . runState st
 
 instance Functor (State s) where
-  fmap f x = State $
-             \s -> let ~(s', y) = runState x s
-                   in (s', f y)
+  fmap f (State sf) = State $ fmap f <$> sf
 
 instance Applicative (State s) where
   pure x  = State $ \s -> (s, x)
-  x <*> y = State $ \s -> let ~(s', f) = runState x s
-                          in f <$> runState y s'
-
+  (<*>) = ap
+  
 instance Monad (State s) where
-  x >>= f = State $ \s -> let ~(s', y) = runState x s
-                          in runState (f y) s'
+  x >>= f = State $ \s -> case  runState x s of
+    ~(s', y) -> runState (f y) s'
 
 get = State $ \s -> (s, s)
 set x = State $ const (x, x)
@@ -340,7 +337,7 @@ dialog x = do
 --               Left e -> print $ "Error in operation " <> e
 --             calcIO
 
-floyd :: S.State Int [[Int]]
-floyd = mapM (`replicateM` (S.modify (+1) >> S.get)) [1..]
+floyd :: [[Int]]
+floyd = mapM (`replicateM` (modify succ)) [1..] `evalState` 0
 
 
