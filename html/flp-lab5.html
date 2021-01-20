@@ -73,7 +73,7 @@
       <task>Определите тип <code>Person</code> для записи информации о клиенте, содержащий имя, возраст и семейное положение:
 	<pre><hs>data Person = Person { name :: String
                      , age :: Int
-                     , married :: Bool } deriving Show</hs></pre> Создайте небольшую "клиентскую базу" из 6 записей. Напишите функцию <code>comparing</code>, которая позволит сравнивать записи по отдельным полям <pre><hs>comparing :: Ord b => (a -> b) -> a -> a -> Ordering</hs></pre> Выясните тип для композиции <pre><hs> comparing name <> comparing age</hs></pre> </task>
+                     , married :: Bool } deriving Show</hs></pre> Создайте небольшую "клиентскую базу" из 6–8 записей. Напишите функцию <code>comparing</code>, которая позволит сравнивать записи по отдельным полям <pre><hs>comparing :: Ord b => (a -> b) -> a -> a -> Ordering</hs></pre> Выясните тип для композиции <pre><hs> comparing name <> comparing age</hs></pre> </task>
 
       <task>С помощью функции <code>sortBy</code> из модуля <code>Data.List</code>, отсортируйте вашу базу, используя следующие приоритеты ключей:
 	<ul>
@@ -118,7 +118,7 @@ times n a
 
       <task>Сравните производительность быстрого умножения и простого многократного сложения на двух примерах:
 	<pre><hs> sum $ replicate 10000 3
- 10000 `times` Sum 3</hs></pre> несколько раз увеличивая множитель на 10.</task>
+ 10000 `times` Sum 3</hs></pre> несколько раз увеличивая множитель на порядок.</task>
       
       <p>Важным приложением быстрого умножениия является возведение в&nbsp;степени матриц. Определим тип для матрицы, представляемой в виде списка списков, следующим образом:
 	<pre><hs>data M a = M [[a]] | I deriving Show</hs></pre>

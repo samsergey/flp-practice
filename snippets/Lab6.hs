@@ -1,4 +1,4 @@
-module Pic where
+module Lab6 where
 
 import Text.Printf
 import Data.Monoid

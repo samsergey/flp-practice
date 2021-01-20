@@ -15,7 +15,6 @@ resistance c = case c of
   Par c1 c2 -> resistance c1 + resistance c2
 
 
-
 bisection :: Eq a
           => (Double -> a)
           -> Double -> Double
@@ -49,8 +48,6 @@ bisection' p =
   path (\(a, b) -> p a == p b) .
   tree (\(a, b) -> let c = mean a b in ((a,c),(c,b)))
 
-listToMaybe [] = Nothing
-listToMaybe (x:_) = Just x
 
-floyd = (\i -> [tr i + 1 .. tr (i+1)]) <$> [1..]
-  where tr n = n*(n-1) `div` 2
+floyd = (\i -> [arsum i + 1 .. arsum (i+1)]) <$> [1..]
+  where arsum n = n*(n-1) `div` 2

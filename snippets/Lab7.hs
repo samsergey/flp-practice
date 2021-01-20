@@ -43,16 +43,16 @@ calculate = foldl interprete [] . words
         
 ------------------------------------------------------------
 
-readE :: Read a => String -> Either String a
+readE :: (Exception ex, Read a) => String -> ex a
 readE s = case [x | (x,t) <- reads s, ("","") <- lex t] of
-            [x] -> Right x
-            _ -> Left $ "could not parse " ++ s
+            [x] -> pure x
+            _ -> exception $ "could not parse " ++ s
 
 calculateE :: String -> Either String Stack
 calculateE = foldM interprete [] . words
   where
     interprete s op = case op of
-      "+" -> binary (+)
+      "+" -> binary (+)g
       "*" -> binary (*)
       "-" -> binary (-)
       "/" -> binary (/)
