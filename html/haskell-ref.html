@@ -4,7 +4,7 @@
     <title>Haskell. Краткая справка</title>
     <meta charset = "UTF-8"/>
     <link rel="stylesheet" href="../css/HRef.css">
-    <link rel="stylesheet" href="../css/obsidian.css">
+    <link rel="stylesheet" href="../css/idea.css">
     <link rel="stylesheet" href="../lib/katex/katex.min.css">
     
     <script src="../lib/highlight.pack.js"></script>
@@ -324,7 +324,7 @@ count _ = "many"</hs></pre>
 <h3>Декларация типов</h3>
 Определяя функцию, можно указать типы аргументов и тип возвращаемого значения явно. Но делается это в отдельной строчке, а не в теле определения. Например, так выглядит определение типа для простой числовой функции:
 
-<pre><hs><def>f :: Int -> Int</def>
+<pre><hs>f :: Int -> Int
 f x = x^2 + 3*x `mod` 5</hs></pre>
 
 Система типов языка позволяет компилятору автоматически выводить большинсво типов для данных и функций в программе. Однако явное указание типа определяемой функции бывает полезным.
@@ -429,11 +429,8 @@ data Polygon = [Point Float]
 <p>Полиморфные функции, определены с точностью до типа. При этом произвольный тип записывается маленькой буквой.</p>
 
 <pre><hs>length :: [a] -> Int</hs>
-
 <hs>map :: (a -> b) -> [a] -> [b]</hs>
-
 <hs>filter :: (a -> Bool) -> [a] -> [a]</hs>
-
 <hs>lookup :: a -> [(a,b)] -> Maybe b</hs></pre>
 
 <h3>Сопоставление с образцом и типы данных</h3>

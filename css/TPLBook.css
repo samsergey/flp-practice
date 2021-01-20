@@ -21,8 +21,8 @@ h2 {
     font-weight: normal;
     font-variant: small-caps;
     font-size: 120%;
-    margin-top: 20px;
-    margin-bottom: 20px;
+    margin-top: 40px;
+    margin-bottom: 30px;
     padding-top: 10px;
     padding-bottom: 10px;
     text-align: center;
@@ -310,7 +310,7 @@ disclaim {
 
 details {
   background: #FFF;
-  color: #008;
+  color: #000;
   # border: dotted 1px gray;
   padding: 1ex;
 }
@@ -376,7 +376,7 @@ keystroke {
 }
 
 code {
-    color: #226;
+    color: #003;
     font-size: 110%;
 }
 
@@ -386,4 +386,8 @@ code {
     margin-left: 5%;
     background: #ffe4b5;
     border: 1px solid gray
+}
+
+ul {
+    text-align: left;   
 }

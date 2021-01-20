@@ -38,8 +38,7 @@
       <pre><hs>data Pt = Pt Float Float deriving Show
   
 data Primitive = Point Pt
-               | Line [Pt]
-               deriving Show
+               | Line [Pt] deriving Show
 
 data Picture = Picture [Primitive] deriving Show
 
@@ -171,8 +170,7 @@ height p = y2 - y1
   box (Pt x y)= ((Min x, Min y), (Max x, Max y))</hs></pre> </p>
 
       <p>Обрамляющую рамку изображения можно вычислить по его примитивам, но делать это всякий раз, как она потребуется не эффективно. Вместо этого, мы включим рамку в определение типа <code>Picture</code>:
-	<pre><hs>data Picture = Picture (Box, [Primitive])
-             deriving Show
+	<pre><hs>data Picture = Picture (Box, [Primitive]) deriving Show
 
 contents :: Picture -> Primitive
 contents (Picture (_, c)) = c
@@ -286,15 +284,15 @@ reflectAt :: Affine a => (Float, Float) -> Float -> a -> a</def></hs></pre>
       </task>
 
       <task>Проверьте на примере квадрата как работают преобразователи и их композиция:
-	<pre><hs>let s = square (0,0) 50
-s &lt;&gt; rotate 45 s
-s &lt;&gt; shift 10 30 s
-s &lt;&gt; (scaleX 2 . scaleY 3) s
-s &lt;&gt; rotate 60 s
-s &lt;&gt; (shift 30 0 . rotate 60) s
-s &lt;&gt; (rotate 60 . shift 30 0) s
-s &lt;&gt; reflect 30 s
-s &lt;&gt; reflectAt (50,0) 30 s      </hs></pre></task>      
+	<pre><hs> let s = square (0,0) 50
+ s &lt;&gt; rotate 45 s
+ s &lt;&gt; shift 10 30 s
+ s &lt;&gt; (scaleX 2 . scaleY 3) s
+ s &lt;&gt; rotate 60 s
+ s &lt;&gt; (shift 30 0 . rotate 60) s
+ s &lt;&gt; (rotate 60 . shift 30 0) s
+ s &lt;&gt; reflect 30 s
+ s &lt;&gt; reflectAt (50,0) 30 s      </hs></pre></task>      
 
       <task>Добавьте к типу <code>Primitive</code> конструктор <code>Circle Pt Float</code> для окружности. Окружность, которую можно транcформировать произвольной матрицей (увеличивать, превращать в эллипс и т.д.) можно построить с помощью функции <code>polygon</code> с большим числом углов.</task>
 
@@ -353,8 +351,7 @@ rotate 30 &lt;&gt; (`at` (40, 40)) $ square 10</hs></pre>
   <pre><hs>data Attribute = LineColor String
                | Fill String
                | LineWidth Float
-               | Opacity Float
-      deriving (Show, Eq)</hs></pre></p>
+               | Opacity Float deriving (Show, Eq)</hs></pre></p>
 
       
      <p>В формате SVG для атрибутов принято единообразное обозначение: <tt>attribute='value'</tt>. Перечисленным в типе <code>Attribute</code> конструкторам соответствуют следующие параметры элементов SVG:

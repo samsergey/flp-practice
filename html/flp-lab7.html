@@ -89,10 +89,10 @@ let vars = [("a",45),("x",7),("z",32)]
       </task>
 
       <task>Посмотрите на определение типа <code>IO</code> и объясните как он действует, в&nbsp;качестве функтора:
-	<pre><hs>("Hello, " ++) &lt;$&gt; getLine
-let readNum = read &lt;$&gt; getLine 
-(+) &lt;$&gt; readNum &lt;*&gt; readNum
-print 6 &lt;|&gt; error "!!"	</hs></pre>
+	<pre><hs> ("Hello, " ++) &lt;$&gt; getLine
+ let readNum = read &lt;$&gt; getLine 
+ (+) &lt;$&gt; readNum &lt;*&gt; readNum
+ print 6 &lt;|&gt; error "!!"	</hs></pre>
       </task>			  
           
       <task>Посмотрите информацию о классах <code>Applicative</code> и <code>Alternative</code>. В&nbsp;определении класса <code>Applicative</code> присутствует полиморфная функция <code>pure</code>, которая позволяет ввести любое значение в функтор. Для экземпляров класса <code>Alternative</code> определено универсальное значение <code>empty</code>, соответствующее нейтральному значению по отношению к оператору <code>(&lt;|&gt;)</code> (они образуют моноид). </task>
@@ -100,9 +100,16 @@ print 6 &lt;|&gt; error "!!"	</hs></pre>
       <task>Напишите универсальную функцию <code>sqrtA</code>, обобщающую функции <code>sqrtM</code> и <code>sqrtL</code> так, чтобы она работала c любыми альтернативными функторами: <code>Maybe</code>, <code>[]</code>, <code>IO</code>, причём, для списков, возвращала несколько корней.</task>
 
       <task>Напишите, используя альтернативные функторы, функцию <code>bisectionA</code>, отыскивающую точку смены заданного условия методом бисекции: <pre><hs>bisectionA :: (Alternative f, Eq a)
-  => (Double -> a) -> Double -> Double -> f Double
-</hs></pre></task>
-
+  => (Double -> a) -> (Double, Double) -> f Double</hs></pre></task>
+      <details><summary>Схема решения</summary>
+	<pre><hs>bisection test (a, b)
+  -- тестовая функция не меняется на границах
+  | ... = empty
+  -- достигнута абсолютная или относительная погрешность
+  | ... = pure c
+  -- шаг бисекции
+  | otherwise = bisection test (a, c) <|> bisection test (c, b)
+  where c = mean a b</hs></pre></details>
       
 <!--       <h2>Управление сообщениями об ошибках</h2> -->
       

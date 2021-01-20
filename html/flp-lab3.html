@@ -71,28 +71,28 @@ toBase n b = go n []
       <task>Выясните с помощью интерпретатора что делает функция <code>replicate</code>. Разберитесь как работают рекурсивное и потоковое определения этой функции:
 	<pre><hs>-- рекурсивное определение
 replicate1 0 _ = []
-replicate1 n x = x : replicate1 (n-1) x
+replicate1 n x = x : replicate1 (n - 1) x
 
 -- определение, использующее концепцию потоков
 replicate2 n x = const x <$> [1..n]</hs></pre>
 	Выясните тип этих функций и удостоверьтесь, что они работает верно. Объясните смысл функции <code>const</code> и её тип.</task>
 
       <task>Выясните и объясните тип функций <code>take</code>, <code>map</code>, <code>takeWhile</code>, <code>dropWhile</code>, <code>filter</code>. Вычислите следующие примеры в интерпретаторе и объясните своими словами, что делают эти функции.</task>
-      <pre><ghci>take 5 [1..10]
-take 5 [1..3]
-take 5 [1..]
-map (+1) [1..5]
-takeWhile (&lt; 5) [1..20]
-dropWhile (&lt; 5) [1..20]
-take 3 $ dropWhile (&lt; 5) [1..]
-filter (\i -> i^2 &lt; 5) [1..20]</ghci></pre>
+      <pre><hs> take 5 [1..10]
+ take 5 [1..3]
+ take 5 [1..]
+ map (+1) [1..5]
+ takeWhile (&lt; 5) [1..20]
+ dropWhile (&lt; 5) [1..20]
+ take 3 $ dropWhile (&lt; 5) [1..]
+ filter (\i -> i^2 &lt; 5) [1..20]</hs></pre>
       
       <task>Вычислите в GHCi следующие выражения и объясните что делают функции <code>zip</code>, <code>zipWith</code>, <code>tail</code> и <code>sum</code></task>
-      <pre><ghci>zip [1..4] [5..8]
-zipWith (+) [1..4] [5..8]
-tail [2,3,5,78]
-zip lst (tail lst) where lst = [1..5]
-sum [2,4,6]</ghci></pre>
+      <pre><hs> zip [1..4] [5..8]
+ zipWith (+) [1..4] [5..8]
+ tail [2,3,5,78]
+ zip lst (tail lst) where lst = [1..5]
+ sum [2,4,6]</hs></pre>
       
       <task>Выясните экспериментально и с помощью типов что делают функции <code>any</code>, <code>each</code>, <code>and</code>, <code>or</code>. </task>
       
@@ -116,20 +116,20 @@ sum [2,4,6]</ghci></pre>
       </p>
 
       <task>Определите какие схемы реализуют следующие фукции Haskell:
-	<pre><ghci>[1..13]
-sum      
-map
-takeWhile
-[1..]
-length
-iterate
-product
-zipWith
-dropWhile
-filter
-zip
-or
-any</ghci></pre></task>
+	<pre><hs> [1 .. 13]
+ sum      
+ map
+ takeWhile
+ [1 ..]
+ length
+ iterate
+ product
+ zipWith
+ dropWhile
+ filter
+ zip
+ or
+ any</hs></pre></task>
 
       <task>Даны два целых числа <eq>a</eq> и <eq>b</eq>. Найти сумму квадратов всех целых чисел от <eq>a</eq> до <eq>b</eq> включительно. Задачу можно разбить на три части:
 	<ul>
@@ -162,7 +162,7 @@ any</ghci></pre></task>
 
       <task>Решите в одну строчку. Начав тренировки, лыжник в первый день пробежал 10 км. Каждый следующий день он увеличивал пробeг на 10% от пробега предыдущего дня. Определите, в какой день лыжник должен будет пробежать 100 км. Найдите в какой день суммарный пробег за все дни превысит 100 км. </task>
 
-      <task>Наряду с задачей FizzBuzz для обучения программированию и для собеседований часто используется ещё одна несложная задача: треугольник Флойда. Она состоит в выводе на печать такой последовательности строк:<pre>1
+      <task><a name="Floyd"></a>Наряду с задачей FizzBuzz для обучения программированию и для собеседований часто используется ещё одна несложная задача: треугольник Флойда. Она состоит в выводе на печать такой последовательности строк:<pre>1
 2 3
 4 5 6
 7 8 9 10
@@ -171,9 +171,9 @@ any</ghci></pre></task>
 	Решите эту задачу на Haskell доступными вам способами (рекурсия, генераторы списков и т. п.).
 	
       <details><summary>Вариант решения</summary>
-	<pre><hs>floyd = (\i -> [tr i + 1 .. tr (i + 1)]) <$> [1..]
-  where tr n = n*(n-1) `div` 2</hs></pre>
-	<p>Здесь tr n -- так называемое n-ное треугольное число.</p>
+	<pre><hs>floyd = (\i -> [arsum i + 1 .. arsum (i + 1)]) <$> [1 ..]
+  where tr n = n*(n - 1) `div` 2</hs></pre>
+	<p>Здесь <code>arsum n</code> — сумма арифметической прогрессии <eq>1,2,..,n</eq></p>
       </details>
 
       </task>
@@ -227,7 +227,7 @@ any</ghci></pre></task>
 tree f x = let (a, b) = f x
            in Node x (tree f a) (tree f b)</hs></pre>
 
-      А выделять в нём путь с помощью какого-то условия так:
+      А выделять в нём путь — с помощью какого-то условия так:
       
       <pre><hs>path :: (a -> Bool) -> Tree a -> [a]
 path p (Node a t1 t2) =

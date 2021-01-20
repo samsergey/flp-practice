@@ -20,7 +20,7 @@
       <task>Загрузите модуль <code>Data.Monoid</code>. Изучите информацию о классе <code>Monoid</code>, используя команду <tt>:i</tt> в <sl>GHCi</sl>.</task>
 
       <task>Для функции <code>mappend</code> определено обозначение в виде оператора: <code>&lt;&gt;</code>. Поэкспериментируйте со следующими моноидами:
-	<pre><ghci> [1,2,3] <> [5,6]
+	<pre><hs> [1,2,3] <> [5,6]
  "Hello" <> " world" <> "!"
  mempty :: String
  Sum 5 <> Sum 10
@@ -28,7 +28,7 @@
  Product 3 <> Product 5
  mempty :: Product Int
  Any True <> Any False
- All True <> All False</ghci></pre>
+ All True <> All False</hs></pre>
       </task>
 
       <task>С помощью функции <code>foldMap</code> найдите для списка <code>[2,4,-3,10,6]</code>
@@ -60,7 +60,7 @@
 
       <task>Найдите для заданного списка чисел за один проход сумму и произведение элементов, а также минимальный и максимальный элементы.</task>
      
-      <task>Определите оператор <code>&&&</code> имеющий тип:<pre><hs>(&&&) :: (a -> b) -> (a -> c) -> (a -> (b,c))</hs></pre> Решите с его помощью предыдущую задачу.</task>
+      <task>Определите оператор <code>&&&</code> имеющий тип:<pre><hs> (&&&) :: (a -> b) -> (a -> c) -> (a -> (b,c))</hs></pre> Решите с его помощью предыдущую задачу.</task>
 
       <task>Исключите нейтральные элементы из определения типов <code>Min a</code> и <code>Max a</code>, и определите экземпляр класса <code>Monoid</code> для типов <code>Maybe (Min a)</code> и <code>Maybe (Max a)</code>. Удостоверьтесь, что минимальное и максимальное значения в списках находятся правильно.</task>
       
@@ -73,8 +73,7 @@
       <task>Определите тип <code>Person</code> для записи информации о клиенте, содержащий имя, возраст и семейное положение:
 	<pre><hs>data Person = Person { name :: String
                      , age :: Int
-                     , married :: Bool }
-            deriving Show</hs></pre> Создайте небольшую "клиентскую базу" из 6 записей. Напишите функцию <code>comparing</code>, которая позволит сравнивать записи по отдельным полям <pre><hs>comparing :: Ord b => (a -> b) -> a -> a -> Ordering</hs></pre> Выясните тип для композиции <pre><hs> comparing name <> comparing age</hs></pre> </task>
+                     , married :: Bool } deriving Show</hs></pre> Создайте небольшую "клиентскую базу" из 6 записей. Напишите функцию <code>comparing</code>, которая позволит сравнивать записи по отдельным полям <pre><hs>comparing :: Ord b => (a -> b) -> a -> a -> Ordering</hs></pre> Выясните тип для композиции <pre><hs> comparing name <> comparing age</hs></pre> </task>
 
       <task>С помощью функции <code>sortBy</code> из модуля <code>Data.List</code>, отсортируйте вашу базу, используя следующие приоритеты ключей:
 	<ul>
@@ -103,11 +102,11 @@
       <p>
 	Ниже приводится классический вариант быстрого умножения для чисел.
 	<pre><hs>times :: (Num n, Integral i) => i -> n -> n
-0 `times` _ = 0
-1 `times` a = a
-2 `times` a = a + a
-n `times` a
-  | even n = (n` div` 2) `times` (a + a)
+times 0 _ = 0
+times 1 a = a
+times 2 a = a + a
+times n a
+  | even n = (n `div` 2) `times` (a + a)
   | odd n  = (n - 1) `times` a + a</hs></pre></p>
 
       <task> Обобщите определение <code>times</code> для произвольного моноида.

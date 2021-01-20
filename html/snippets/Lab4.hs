@@ -37,3 +37,7 @@ nums = concat $ show <$> [1..]
 
 subs :: String -> String -> [Int]
 subs sub s = elemIndices sub $ take (length sub) <$> tails s
+
+floyd = zipWith (\s i -> [s .. s+i])
+        (tail (scanl (+) 1 [0 ..]))
+        [0 ..]
