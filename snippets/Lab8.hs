@@ -5,6 +5,7 @@ import Lab7 (headE, calculateA)
 import Control.Applicative
 import Control.Monad
 import System.CPUTime
+import Text.Printf
 
 data State s a = State { runState :: s -> (s, a) }
 
@@ -55,20 +56,18 @@ enumTree n = snd $ runState (mkTree n) 0
 
 type Random a = State Integer a
 
-random :: Integer -> Random Integer
+random :: Integral a => a -> Random a
 random k = rescale <$> modify iter 
   where
     iter x = (x * a + c) `mod` m
-    (a, c, m) = (1103515245, 12345, 2^31)
-    rescale x = x `mod` k
+    (a, c, m) = (1103515245, 12345, 2^31-1)
+    rescale x = fromIntegral x `mod` k
 
-randomTree :: Integer -> Random (BTree Integer)
+randomTree :: Int -> Random (BTree Int)
 randomTree 0 = Leaf <$> random 100
 randomTree n = Node <$> random 100
                <*> (random n >>= randomTree)
                <*> (random n >>= randomTree)
-
-randomTreeIO n = evalState (randomTree n) <$> getCPUTime
 
 heart :: Double -> Double -> Bool
 heart x y = (x**2+y**2-1)**3 < x**2 * y**3
@@ -152,12 +151,13 @@ lexer = words . foldMap separate
           | x `elem` "+-*/()" = " " <> [x] <> " "
           | otherwise = [x]
 
+randomIO :: Integral a => a -> IO a
 randomIO n = evalState (random n) <$> getCPUTime
 
-ugadaika :: Integer -> IO ()
+ugadaika :: Int -> IO ()
 ugadaika n = randomIO n >>= dialog
 
-dialog :: Integer -> IO ()
+dialog :: Int -> IO ()
 dialog x = next
   where next = do
           y <- read <$> getLine
@@ -177,4 +177,31 @@ calcIO = do s <- getLine
 floyd :: [[Int]]
 floyd = mapM (`replicateM` (modify succ)) [1..] `evalState` 0
 
+traditional (Leaf a) = a
+traditional (Node a t1 t2) = printf "(%s %s %s)" (traditional t1) a (traditional t2)
 
+lisp (Leaf a) = a
+lisp (Node a t1 t2) = printf "(%s %s %s)"  a (lisp t1) (lisp t2)
+
+rpn (Leaf a) = a
+rpn (Node a t1 t2) = printf "%s %s %s"  (rpn t1) (rpn t2) a
+
+calc (Leaf a) = read a
+calc (Node a t1 t2) = case a of
+  "+" -> calc t1 + calc t2
+  "-" -> calc t1 - calc t2
+  "*" -> calc t1 * calc t2
+  "/" -> calc t1 / calc t2
+
+randomAST :: Int -> Random (BTree String)
+randomAST 0 = Leaf . show <$> random 10
+randomAST n = Node <$> randomSample ["+","-","*","/"]
+               <*> (random n >>= randomAST)
+               <*> (random n >>= randomAST)
+
+randomSample lst = (lst !!) <$> random (length lst)
+
+mkTree n = modify (+ 1)
+           >>= \i -> mkTree (n - 1)
+                     >>= \l -> mkTree (n - 1)
+                               >>= \r -> pure (Node i l r)

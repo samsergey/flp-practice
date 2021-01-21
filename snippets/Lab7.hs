@@ -52,7 +52,7 @@ calculateE :: String -> Either String Stack
 calculateE = foldM interprete [] . words
   where
     interprete s op = case op of
-      "+" -> binary (+)g
+      "+" -> binary (+)
       "*" -> binary (*)
       "-" -> binary (-)
       "/" -> binary (/)
