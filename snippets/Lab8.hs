@@ -1,9 +1,13 @@
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
 module Lab8 where
 
 import Lab7 (headE, calculateA)
 
 import Control.Applicative
 import Control.Monad
+import Control.Monad.Logic
+
 import System.CPUTime
 import Text.Printf
 
@@ -201,7 +205,4 @@ randomAST n = Node <$> randomSample ["+","-","*","/"]
 
 randomSample lst = (lst !!) <$> random (length lst)
 
-mkTree n = modify (+ 1)
-           >>= \i -> mkTree (n - 1)
-                     >>= \l -> mkTree (n - 1)
-                               >>= \r -> pure (Node i l r)
+
