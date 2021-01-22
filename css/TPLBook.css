@@ -51,9 +51,9 @@ tab {
 }
 
 tt {
-    font-size: 110%
-    font-weight: bold;
-    color: #423;
+    font-size: 112%;
+    font-weight: 600;
+    color: #425;
 }
 
 file {
@@ -378,6 +378,7 @@ keystroke {
 code {
     color: #003;
     font-size: 110%;
+    font-weight: 500;
 }
 
 .disclaimer {

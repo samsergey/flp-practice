@@ -320,3 +320,7 @@ group_ = do
 primitives = many $ point_ <|> line_ <|> group_
 
 picture = foldMap primitive . snd <$> tag "svg" primitives
+
+------------------------------------------------------------
+
+
