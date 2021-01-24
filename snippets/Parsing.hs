@@ -1,23 +1,37 @@
+{-# language DeriveFunctor #-}
 module Parsing where
 
-import Prelude hiding ((>>),(>>=),return, pure)
-import Text.Printf
-import Lab5 (when)
+import Control.Monad
+import Control.Applicative
+import Data.Char
+import Lab7
 
-data Parser i a = Parser { run :: i -> Result i a}
+data Parser a = Parser { run :: String -> Result a }
 
-data Result i a = Ok a i | Fail i
-  deriving (Show, Eq)
+data Result a = Ok a String
+              | Fail String
+  deriving (Show, Eq, Functor)
+
 
 epsilon = Parser $ Ok ()
 
-p1 >> p2 = Parser $ \r -> case run p1 r of
-  Ok _ r' -> run p2 r'
-  Fail r' -> Fail r'
+instance Functor Parser where
+  fmap f p = Parser $ \s -> f <$> run p s
 
-p1 <|> p2 = Parser $ \r -> case run p1 r of
-  Fail _ -> run p2 r
-  Ok x r' -> Ok x r'
+instance Alternative Parser where
+  empty = Parser Fail
+  p1 <|> p2 = Parser $ \s -> case run p1 s of
+                               Ok x s' -> Ok x s'
+                               Fail _ -> run p2 s
+
+instance Applicative Parser where
+  pure x = Parser $ Ok x
+  (<*>) = ap 
+
+instance Monad Parser where
+  p >>= f = Parser $ \s -> case run p s of
+                             Ok x s' -> run (f x) s'
+                             Fail s' -> Fail s'
 
 next = Parser $ \r -> case r of
   x:xs -> Ok x xs
@@ -29,7 +43,7 @@ check p = Parser $ \r -> case r of
 
 term c = check (== c) >> next
 
-digit = check (`elem` "0123456789") >> next
+digit = check isDigit >> next
 
 end = Parser $ \r -> case r of
   [] -> Ok () []
@@ -38,14 +52,15 @@ end = Parser $ \r -> case r of
 neg p = Parser $ \r -> case run p r of
   Ok a i -> Fail r
   Fail i  -> Ok () r
-  
+
 ------------------------------------------------------------
 
-runTests name ts = when (fails /= []) $
-                   print name *> putStr fails
+runTests name ts = if fails /= []
+                   then print name >> putStr fails
+                   else mempty
   where
     fails = mconcat $ zipWith test [1..] ts
-    test i (p, inp, outp) = when (res /= outp) msg
+    test i (p, inp, outp) = if res /= outp then msg else mempty
       where
         res = run p inp 
         msg = unlines $ [ "Fail in test: " <> show i
@@ -70,12 +85,12 @@ tests = do
     , (digit >> digit, "23x", Ok '3' "x") ]
 
   runTests "neg" 
-    [ (neg end, "abc", Ok () "abc")
-    , (term 'a' >> end, "a", Ok () "")
-    , (neg digit, "abc", Ok () "abc")
-    , (neg digit, "2bc", Fail "2bc") ]
+    [ (neg end,         "abc", Ok () "abc")
+    , (term 'a' >> end, "a",   Ok () "")
+    , (neg digit,       "abc", Ok () "abc")
+    , (neg digit,       "2bc", Fail "2bc") ]
 
-_A = term 'a' >> term 'b' >> _A >> term 'a' 
+_A = (term 'a' >> term 'b' >> _A >> term 'a')
      <|> term 'b'
 
 runTestsFor p name tst = runTests name tst'
@@ -90,9 +105,9 @@ test_A = runTestsFor _A "A"
 
 _E = _T ?> term '+' ?> _E <|> _T
 _T = term '(' ?> _E ?> term ')' <|> _N
-_N = digit ?> (_N <|> epsilon)
+_N = digit ?> (_N <|> epsilon) 
 
-(?>) :: Parser i a -> Parser i b -> Parser i ()
+(?>) :: Parser a -> Parser b -> Parser ()
 p1 ?> p2 = p1 >> epsilon >> p2 >> epsilon
 
 test_E = runTestsFor _E "_E"

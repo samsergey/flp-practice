@@ -1,5 +1,4 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FlexibleInstances #-}
 module Lab8 where
 
 import Lab7 (headE, calculateA)

@@ -1,8 +1,7 @@
 module Lab1 where
 
-import Test.SmallCheck
 
-circArea r = pi*r**2g
+circArea r = pi*r**2
 
 mean a b = (a + b)/2
 
