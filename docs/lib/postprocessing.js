@@ -88,7 +88,10 @@ Array.prototype.forEach.call(code, function(el) {
 
 var code = document.getElementsByTagName('l')
 Array.prototype.forEach.call(code, function(el) {
-    el.innerHTML = "<span class='promt'>*Lab"+labnum+"&gt;</span>"
+    if (!moduleName)
+	el.innerHTML = "<span class='promt'>*Lab"+labnum+"&gt;</span>"
+    else
+	el.innerHTML = "<span class='promt'>*"+moduleName+"&gt;</span>"
 });
 
 var code = document.getElementsByTagName('lm')
