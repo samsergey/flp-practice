@@ -1,8 +1,10 @@
+{-# language OverloadedStrings, FlexibleInstances #-}
 module Parsing where
 
 import Control.Monad
 import Control.Applicative
 import Data.Char
+import Data.String
 import Lab7
 
 data Parser a = Parser { run :: String -> Result a }
@@ -37,7 +39,6 @@ end = Parser $ \r -> case r of
   [] -> Ok () []
   r  -> Fail r
 
-
 instance Applicative Parser where
   pure x = Parser $ Ok x
   p1 <*> p2 = Parser $ \s ->
@@ -47,6 +48,9 @@ instance Applicative Parser where
       Error m -> Error m
 
 string s = sequenceA $ char <$> s
+
+instance IsString (Parser String) where
+  fromString = string
 
 rep n p = sequenceA $ replicate n p
 
@@ -69,6 +73,10 @@ epsilon = pure ()
 neg p = Parser $ \r -> case run p r of
   Ok a i -> Fail r
   Fail i  -> Ok () r
+
+_E = (_T *> char '+' *> _E) <|> _T
+_T = (char '(' *> _E <* char ')') <|> _N
+_N = digit *> (_N <|> epsilon)
 
 -- ------------------------------------------------------------
 
