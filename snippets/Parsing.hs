@@ -4,7 +4,10 @@ import Control.Monad
 import Control.Applicative
 import Data.Char
 import Data.String
+import Data.Monoid
+import Data.Foldable
 import Lab7
+import Lab6
 
 data Parser a = Parser { run :: String -> Result a }
 
@@ -17,7 +20,7 @@ instance Functor Result where
   fmap f r = case r of
     Ok a s -> Ok (f a) s
     Fail s -> Fail s
-    Error m -> Error m
+    Error s -> Error s
 
 instance Functor Parser where
   fmap f p = Parser $ fmap f <$> run p
@@ -34,6 +37,8 @@ char c = check (== c)
 digit = check isDigit
 set s = check (`elem` s)
 
+except p xs = neg (p `oneof` xs) *> next
+
 end = Parser $ \r -> case r of
   [] -> Ok () []
   r  -> Fail r
@@ -44,7 +49,7 @@ instance Applicative Parser where
     case run p1 s of
       Ok f s' -> f <$> run p2 s'
       Fail s' -> Fail s'
-      Error m -> Error m
+      Error s -> Error s
 
 string :: String -> Parser String
 string s = sequenceA $ char <$> s
@@ -57,26 +62,78 @@ instance Alternative Parser where
     case run p1 s of
       Ok x s' -> Ok x s'
       Fail _ -> run p2 s
-      Error m -> Error m
+      Error s -> Error s
 
--- instance Monad Parser where
---   p >>= f = Parser $ \s -> case run p s of
---                              Ok x s' -> run (f x) s'
---                              Fail s' -> Fail s'
+instance Monad Parser where
+  p >>= f = Parser $ \s -> case run p s of
+                             Ok x s' -> run (f x) s'
+                             Fail s' -> Fail s'
+                             Error s -> Error s
 
 epsilon :: Parser ()
 epsilon = pure ()
- 
+
+err :: String -> Parser a
+err m = Parser $ \_ -> Error m
+
+getInput :: Parser String
+getInput = Parser $ \s -> Ok s s
+
+
+p !> m = p <|> (getInput >>= err . msg)
+  where
+    msg s = let r = if null s then "end of line" else s
+            in "Expected " <> m <> ", got " <> r
+
+p @> m = Parser $ \s -> case run p s of
+                          Error e -> Error (e <> " in " <> m)
+                          Fail x -> Fail x
+                          Ok a x -> Ok a x
+  
 neg p = Parser $ \r -> case run p r of
   Ok a i -> Fail r
   Fail i  -> Ok () r
 
-arythmetic = _E
-  where
-    _E = (_T *> char '+' *> _E) <|> _T
-    _T = (char '(' *> _E <* char ')') <|> _N
-    _N = digit *> (_N <|> epsilon)
 
+only p = (:[]) <$> p
+
+p `oneof` lst = asum $ p <$> lst
+
+msome p = mconcat <$> some p
+mmany p = mconcat <$> many p
+mopt p = mconcat <$> opt p
+
+opt p = toList <$> optional p
+
+instance Semigroup a => Semigroup (Parser a) where
+  p1 <> p2 = (<>) <$> p1 <*> p2
+
+instance Monoid a => Monoid (Parser a) where
+  mempty = pure mempty
+
+skip p  = const () <$> p
+
+data XML = Tag String [XML]
+         | Text String
+  deriving Show
+
+try p = p <|> empty
+
+xml = tag <|> text
+  where
+    text = Text <$> some (check (/= '<'))
+    tag = try $ do
+      char '<'
+      t <- some $ check (/= '>')
+      char '>'
+      c <- many xml
+      string "</"
+      string t <|> err ("Unclosed tag " <> t)
+      char '>'
+      return $ Tag t c
+
+
+ 
 -- ------------------------------------------------------------
 
 -- runTests name ts = if fails /= []
@@ -92,11 +149,11 @@ arythmetic = _E
 --                         , "  got:      " <> show res ]
   
 -- tests = do
---   runTests "term"
---     [ (term 'a',             "abab", Ok 'a' "bab")
---     , (term 'a',             "bbab", Fail "bbab")
---     , (term 'a' >> term 'b', "abab", Ok 'b' "ab")
---     , (term 'b' >> term 'b', "abab", Fail "abab") ]
+--   runTests "char"
+--     [ (char 'a',             "abab", Ok 'a' "bab")
+--     , (char 'a',             "bbab", Fail "bbab")
+--     , (char 'a' >> char 'b', "abab", Ok 'b' "ab")
+--     , (char 'b' >> char 'b', "abab", Fail "abab") ]
 
 --   runTests "next"
 --     [ (next,         "abab", Ok 'a' "bab")
@@ -110,12 +167,12 @@ arythmetic = _E
 
 --   runTests "neg" 
 --     [ (neg end,         "abc", Ok () "abc")
---     , (term 'a' >> end, "a",   Ok () "")
+--     , (char 'a' >> end, "a",   Ok () "")
 --     , (neg digit,       "abc", Ok () "abc")
 --     , (neg digit,       "2bc", Fail "2bc") ]
 
--- _A = (term 'a' >> term 'b' >> _A >> term 'a')
---      <|> term 'b'
+-- _A = (char 'a' >> char 'b' >> _A >> char 'a')
+--      <|> char 'b'
 
 -- runTestsFor p name tst = runTests name tst'
 --   where tst' = map (\(i,o) -> (p,i,o)) tst
@@ -127,8 +184,8 @@ arythmetic = _E
 --     , ("aba", Fail "aba")
 --     , ("ababa", Fail "ababa")] 
 
--- _E = _T ?> term '+' ?> _E <|> _T
--- _T = term '(' ?> _E ?> term ')' <|> _N
+-- _E = _T ?> char '+' ?> _E <|> _T
+-- _T = char '(' ?> _E ?> char ')' <|> _N
 -- _N = digit ?> (_N <|> epsilon) 
 
 -- (?>) :: Parser a -> Parser b -> Parser ()
@@ -143,10 +200,155 @@ arythmetic = _E
 --   , ("(13+4)+6345",   Ok () "" )
 --   , ("(13+4)+(6+32)", Ok () "" ) ]
 
-only p = (:[]) <$> p
+chainr p o = appEndo <$> mmany chars <*> p
+  where
+    chars = Endo <$> (p <**> o)
 
-instance Semigroup a => Semigroup (Parser a) where
-  p1 <> p2 = (<>) <$> p1 <*> p2
+chainl p o = p <**> (appEndo . getDual <$> mmany chars)
+  where
+    chars = Dual . Endo <$> ((flip <$> o) <*> p)
 
-instance Monoid a => Monoid (Parser a) where
-  mempty = pure mempty
+add = (+) <$ char '+'
+sub = (-) <$ char '-'
+mul = (*) <$ char '*'
+frac = div <$ char '/'
+
+integer :: Parser Int
+integer = read <$> some digit
+
+unexpected = getInput >>= err . msg
+  where msg s = "Unexpected symbol " <> s
+
+expr = _E
+  where _E = _T `chainl` (add <|> sub)
+        _T = _P `chainl` (mul <|> frac)
+        _P = char '(' *> _E <* (char ')' !> "closing parenthesis")
+             <|> (integer !> "number")
+
+	add = (+) <$ char '+'
+        sub = (-) <$ char '-'
+        mul = (*) <$ char '*'
+        frac = div <$ char '/'
+
+between p [c1,c2] = char c1 *> p <* char c2
+
+collect p = mmany (p <|> mempty <$ next) 
+search p = collect (only p)
+------------------------------------------------------------
+
+string_ = char '\'' *> some (char `except` "'") <* char '\''
+
+sepBy p s = only p <> many (s *> p)
+
+chainr1 p o = appEndo <$> mmany terms <*> p
+  where
+    terms = Endo <$> (p <**> o)
+
+
+regexp_ = chainr1 (msome element) alt
+  where
+    alt = (<|>) <$ char '|'
+    element = (group <|> (only <$> symbol)) <**> modifier
+    group = regexp_ `between` "()"
+    symbol = anychar <|> charClass <|> literal 
+
+literal = char <$> char `except` "?+*()[]|."
+anychar = next <$ char '.'
+
+charClass = c `between` "[]"
+   where
+     c = except char <$> (char '^' *> chars)
+         <|> oneof char <$> chars
+     chars = msome (range <|> only lit)
+     lit = char `except` "]"
+     range = enumFromTo <$> lit <*> (char '-' *> lit)
+
+modifier = option <|> repeat0 <|> repeat1 <|> pure id
+  where
+    option = mopt <$ char '?'
+    repeat1 = msome <$ char '+'
+    repeat0 = mmany <$ char '*'
+
+regexp s = case run regexp_ s of
+  Ok p "" -> p
+  _ -> empty
+
+params = search (regexp "[a-z]+=[^&]+")
+
+replace p f = collect (f <$> p <|> only next)
+
+------------------------------------------------------------
+
+float :: Parser Float
+float = read <$> regexp "-?[0-9]+([.][0-9]*)?"
+
+spaces = many (char ' ')
+
+identifier = regexp "[a-zA-Z][a-zA-Z0-9_-]*"
+
+tag t p = do
+  char '<' *> string t
+  attrs <- many attr
+  spaces *> char '>'
+  contents <- p
+  string "</" *> string t *> char '>'
+  return (attrs, contents)
+
+tag' t = do
+  char '<' *> string t
+  attrs <- many attr
+  spaces *> string "/>"
+  return attrs
+
+attr = (,) <$> (spaces *> identifier)
+       <*> (spaces *> char '=' *> spaces *> string_)
+
+
+getAttr p a as = Parser $ \s ->
+  case lookup a as of
+    Nothing -> Fail s
+    Just x -> case run p x of
+                Ok r _ -> Ok r s
+                Fail _ -> Fail s
+
+findAttr p a as = Parser $ \s ->
+  case lookup a as of
+    Nothing -> Ok empty s
+    Just x -> case run p x of
+                Ok r _ -> Ok (pure r) s
+                _ -> Ok empty s
+
+point_ = do
+  as <- tag' "circle"
+  r <- getAttr float "r" as
+  guard $ r == 1
+  x <- getAttr float "rx" as
+  y <- getAttr float "ry" as
+  return $ Point (Pt x y) 
+
+line_ = do
+  as <- tag' "polyline"
+  pts <- getAttr points_ "points" as
+  return $ Line pts
+
+points_ = pt `sepBy` spaces <* spaces
+  where pt = Pt <$> float <* char ',' <*> float
+
+group_ = do
+  (as, ps) <- tag "g" primitives
+  attrs <- mconcat
+    [ LineColor <$*> findAttr identifier "stroke"
+    , Fill <$*> findAttr identifier "fill"
+    , LineWidth <$*> findAttr float "stroke-width"
+    , Opacity <$*> findAttr float "fill-opacity"
+    ] as
+  return $ Group attrs ps
+  where
+    (<$*>) = fmap . fmap . fmap
+  
+primitives = many $ point_ <|> line_ <|> group_
+
+picture = foldMap primitive . snd <$> tag "svg" primitives
+
+------------------------------------------------------------
+

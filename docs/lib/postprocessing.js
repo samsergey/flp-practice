@@ -38,7 +38,7 @@ Array.prototype.forEach.call(code, function(el) {
 
 
 var COURSE = "Функциональное и логическое программирование";
-var N_MAX = 18;
+var N_MAX = 11;
 
 header.innerHTML ='<table cellspacing="0" cellpadding="0"><tbody><tr style="height: 56px;"><td id="projectlogo"><img alt="Logo" src="img/Logo.jpg"/></td><td style="padding-left: 0.5em;">' + COURSE + '<hr><small>Методические указания к лабораторным работам</small></td></tr></tbody></table><hr><p class="navigation"> </p>';
 
