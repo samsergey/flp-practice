@@ -22,8 +22,39 @@ instance Functor Result where
     Fail s -> Fail s
     Error s -> Error s
 
+instance Semigroup a => Semigroup (Parser a) where
+  p1 <> p2 = (<>) <$> p1 <*> p2
+
+instance Monoid a => Monoid (Parser a) where
+  mempty = pure mempty
+  
 instance Functor Parser where
   fmap f p = Parser $ fmap f <$> run p
+
+instance Applicative Parser where
+  pure x = Parser $ Ok x
+  p1 <*> p2 = Parser $ \s ->
+    case run p1 s of
+      Ok f s' -> f <$> run p2 s'
+      Fail s' -> Fail s'
+      Error s -> Error s
+
+instance Alternative Parser where
+  empty = Parser Fail
+  p1 <|> p2 = Parser $ \s ->
+    case run p1 s of
+      Ok x s' -> Ok x s'
+      Fail _ -> run p2 s
+      Error s -> Error s
+
+instance Monad Parser where
+  p >>= f = Parser $ \s ->
+    case run p s of
+      Ok x s' -> run (f x) s'
+      Fail s' -> Fail s'
+      Error s -> Error s
+
+------------------------------------------------------------
 
 next = Parser $ \r -> case r of
   x:xs -> Ok x xs
@@ -43,32 +74,10 @@ end = Parser $ \r -> case r of
   [] -> Ok () []
   r  -> Fail r
 
-instance Applicative Parser where
-  pure x = Parser $ Ok x
-  p1 <*> p2 = Parser $ \s ->
-    case run p1 s of
-      Ok f s' -> f <$> run p2 s'
-      Fail s' -> Fail s'
-      Error s -> Error s
-
 string :: String -> Parser String
 string s = sequenceA $ char <$> s
 
 rep n p = sequenceA $ replicate n p
-
-instance Alternative Parser where
-  empty = Parser Fail
-  p1 <|> p2 = Parser $ \s ->
-    case run p1 s of
-      Ok x s' -> Ok x s'
-      Fail _ -> run p2 s
-      Error s -> Error s
-
-instance Monad Parser where
-  p >>= f = Parser $ \s -> case run p s of
-                             Ok x s' -> run (f x) s'
-                             Fail s' -> Fail s'
-                             Error s -> Error s
 
 epsilon :: Parser ()
 epsilon = pure ()
@@ -105,11 +114,7 @@ mopt p = mconcat <$> opt p
 
 opt p = toList <$> optional p
 
-instance Semigroup a => Semigroup (Parser a) where
-  p1 <> p2 = (<>) <$> p1 <*> p2
 
-instance Monoid a => Monoid (Parser a) where
-  mempty = pure mempty
 
 skip p  = const () <$> p
 
