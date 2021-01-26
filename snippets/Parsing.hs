@@ -1,4 +1,3 @@
-{-# language OverloadedStrings, FlexibleInstances #-}
 module Parsing where
 
 import Control.Monad
@@ -47,10 +46,8 @@ instance Applicative Parser where
       Fail s' -> Fail s'
       Error m -> Error m
 
+string :: String -> Parser String
 string s = sequenceA $ char <$> s
-
-instance IsString (Parser String) where
-  fromString = string
 
 rep n p = sequenceA $ replicate n p
 
@@ -74,9 +71,11 @@ neg p = Parser $ \r -> case run p r of
   Ok a i -> Fail r
   Fail i  -> Ok () r
 
-_E = (_T *> char '+' *> _E) <|> _T
-_T = (char '(' *> _E <* char ')') <|> _N
-_N = digit *> (_N <|> epsilon)
+arythmetic = _E
+  where
+    _E = (_T *> char '+' *> _E) <|> _T
+    _T = (char '(' *> _E <* char ')') <|> _N
+    _N = digit *> (_N <|> epsilon)
 
 -- ------------------------------------------------------------
 

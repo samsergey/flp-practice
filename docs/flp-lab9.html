@@ -37,10 +37,9 @@ import Data.Char</hs></pre></p>
 
 data Result a = Ok a String
               | Fail String
-              | Error String
   deriving (Show, Eq)</hs></pre>
       
-      <p>где <code>a</code>&nbsp;— тип результата трансляции. Разница между состояниями <code>Fail</code> и <code>Error</code> состоит в том, что <code>Error</code> прерывает разбор, выдавая сообщение об ошибке, а <code>Fail</code> позволяет продолжить его по какой-то альтернативной ветке в грамматике.</p>
+      <p>где <code>a</code>&nbsp;— тип результата трансляции.</p>
 
       <p>Можно создать первый почти тривиальный, но полезный комбинатор, считывающий первый произвольный символ в строке. Он соответствует метасиволу <tt>.</tt> в регулярных выражениях.</p>
       <pre><hs>next = Parser $ \r -> case r of
@@ -107,8 +106,7 @@ set :: [Char] -> Parser Char </hs></pre>
       <pre><hs>instance Functor Result where
   fmap f r = case r of
     Ok a s -> Ok (f a) s
-    Fail s -> Fail s
-    Error m -> Error m</hs></pre>
+    Fail s -> Fail s</hs></pre>
 
       <pre><ghci><l></l> toUpper <$> run next "abc"
 <o>Ok 'A' "bc"</o>
@@ -134,8 +132,7 @@ set :: [Char] -> Parser Char </hs></pre>
   p1 <*> p2 = Parser $ \s ->
     case run p1 s of
       Ok f s' -> f <$> run p2 s'
-      Fail s' -> Fail s'
-      Error m -> Error m</hs></pre>
+      Fail s' -> Fail s'</hs></pre>
 
 <p>Аппликативное поведение даёт нам очень много возможностей для трансляции цепочек. Например, таким образом можно считать два первых символа в разбираемой строке и вернуть их в виде кортежа:</p>
 <pre><ghci><l></l> run ((,) <$> next <*> next) "abc"
@@ -149,14 +146,18 @@ set :: [Char] -> Parser Char </hs></pre>
 <l></l> run (char '(' *> digit <* char ')') "(4)"
 <o>Ok '4' ""</o></ghci></pre>
 
-<p>Для всех аппликативных функторов определены две функции <code>sequenceA</code> и <code>traverse</code> вот их тип (немного упрощённый):
-  <pre><hs>sequenceA :: Applicative f => [f a] -> f [a]
-traverse :: Applicative f => (a -> f b) -> [a] -> f [b]</hs></pre>
-Они позволяют превратить последовательность аппликативных функторов, в результат их последовательной работы. В нашем случае ос их помощью можно список парсеров превратить в парсер, распознающий их последовательность, и возвращающий список результатов разбора:</p>
+<p>Для всех аппликативных функторов определены две функции <code>traverse</code> и <code>sequenceA</code>:
+  <pre><hs>traverse :: Applicative f => (a -> f b) -> [a] -> f [b]
+traverse f = foldr (\x r -> (:) <$> f x <*> r) (pure [])
+
+sequenceA :: Applicative f => [f a] -> f [a]
+sequenceA = traverse id</hs></pre>
+
+Они позволяют превратить последовательность аппликативных функторов, в результат их последовательной работы. В нашем случае, с их помощью можно список парсеров превратить в парсер, распознающий их последовательность, и возвращающий список результатов разбора:</p>
 <pre><ghci><l></l> run (sequenceA [char 'c', char 'a']) "catana"
 <o>Ok "ca" "tana"</o>
-<l></l> run (sequenceA [char 'c', char 'a']) "city"
-<o>Fail "ity"</o>
+<l></l> run (sequenceA [digit, digit]) "1234"
+Ok "12" "34"
 <l></l> run (traverse char "cat") "catalog"
 <o>Ok "cat" "alog"</o></ghci></pre>
 
@@ -190,9 +191,9 @@ epsilon = pure ()</hs></pre>
 <task>Напишите универсальный комбинатор <code>neg</code>, который возвращал бы отрицание указанного транслятора <code>p</code>, то есть, "что угодно, только не <code>p</code>".</task> 
 <pre><ghci><l></l> run (neg end) "abc"
 <o>Ok () "abc"</o>
-<l></l> run (neg digit) "abc"
-<o>Ok () "abc"</o>
-<l></l> run (neg digit) "123"
+<l></l> run (neg digit *> next) "abc"
+<o>Ok 'a' "bc"</o>
+<l></l> run (neg digit *> next) "123"
 <o>Fail "123"</o>
 <l></l> run (neg $ string "cat") "dog"
 <o>Ok () "dog"</o>
@@ -208,8 +209,7 @@ epsilon = pure ()</hs></pre>
   p1 <|> p2 = Parser $ \s ->
     case run p1 s of
       Ok x s' -> Ok x s'
-      Fail _ -> run p2 s
-      Error m -> Error m</hs></pre>
+      Fail _ -> run p2 s</hs></pre>
 
       <p> Теперь у нас появился выбор!!</p>
       <pre><ghci><l></l> run (char 'a' <|> char 'b') "abab"
@@ -267,7 +267,7 @@ A \rightarrow \alpha ~|~ \beta ~|~ \gamma ~|~ ...
     <task>Протестируйте правильность работы парсера <code>_A</code>.</task>
 
     
-    <p>А как насчёт более сложной грамматики для арифметических выражений с целыми числами, правоассоциативной операцией сложения и скобками?</p>
+    <p>А как насчёт более сложной грамматики для арифметики с целыми числами, правоассоциативной операцией сложения и скобками?</p>
 
     <eqns>
       E \rightarrow T ~\text{'+'}~ E ~|~ T\\
@@ -276,64 +276,139 @@ A \rightarrow \alpha ~|~ \beta ~|~ \gamma ~|~ ...
     </eqns>
 
     
-   <pre><hs>_E = _T >> term '+' >> _E <|> _T
-_T = term '(' >> _E >> term ')' <|> _N
-_N = digit >> (_N <|> epsilon)</hs></pre>
+   <pre><hs>arythmetic = _E
+  where
+    _E = (_T *> char '+' *> _E) <|> _T
+    _T = (char '(' *> _E <* char ')') <|> _N
+    _N = digit *> (_N <|> epsilon)</hs></pre>
 
-    <p>Выглядит неплохо. Но не компилируется!</p>
-
-    <pre><ghci><err>parserM.hs:83:37-38: Couldn't match type ‘()’ with ‘Char’ …
-    Expected type: Parser [Char] Char
-      Actual type: Parser [Char] ()
-    In the second argument of ‘(<|>)’, namely ‘_N’
-    In the expression: term '(' >> _E >> term ')' <|> _N
-Compilation failed.</err></ghci></pre>
-
-    <details><summary>Учите английский!!</summary>
-    <pre><ghci><err>parserM.hs:83:37-38: Не смог сопоставить тип ‘()’ с ‘Char’ …
-     Ожидаемый тип: Parser [Char] Char
-    Полученный тип: Parser [Char] ()
-    Во втором аргументе ‘(<|>)’, а именно ‘_N’
-    В выражении: term '(' >> _E >> term ')' <|> _N
-Компиляция не удалась.</err></ghci></pre></details>
-    
-    <p>Компилятор даёт исчерпывающее объяснение, что именно ему не понравилось. Вот бы все компиляторы так внятно изъяснялись! То есть, транслятор <code>term</code> возвращает тип <code>Char</code>, а анализатор <code>_N</code>&nbsp;— <code>()</code>, и их нельзя комбинировать оператором <code><|></code>. Вот его тип:</p>
-
-    <pre><ghci><l></l> :t (<|>)
-<o>(<|>) :: Parser i a -> Parser i a -> Parser i a</o></ghci></pre>
-
-    <p>Значит, надо привести типы комбинируемых выражений к одному. Проще всего это сделать так:</p>
-
-   <pre><hs>_T = term '(' >> _E >> term ')' >> epsilon <|> _N</hs></pre>
-
-      <p> Добавление пустого элемента ничего не изменяет в цепочке. А оператор <code>>></code> вернёт тип своего второго операнда: <code>()</code>. Для анализаторов это очень частый случай, значит можно ввести для этого специальный комбинатор. Назовём его <code>?></code>:
- <pre><hs>(?>) :: Parser i a -> Parser i b -> Parser i ()
- p1 ?> p2 = p1 >> epsilon >> p2 >> epsilon</hs></pre>
-и перепишем код для анализаторов арифметических выражений:
-   <pre><hs>_E = _T ?> term '+' ?> _E <|> _T
-_T = term '(' ?> _E ?> term ')' <|> _N
-_N = digit ?> (_N <|> epsilon)</hs></pre>
-</p>
-      Теперь всё компилируется и можно проверять работу анализатора:</p>
-    <pre><hs>test_E = runTestsFor _E "E"
-  [ ("12",            Ok () "" )
-  , ("(1+2)+3",       Ok () "" )
-  , ("1+(2+3)",       Ok () "" )
-  , ("1+2+3",         Ok () "" )
-  , ("((123+4))",     Ok () "" )
-  , ("(13+4)+6345",   Ok () "" )
-  , ("(13+4)+(6+32)", Ok () "" ) ]</hs></pre>
-
-    <pre><ghci><l></l> testsG1</ghci></pre>
-
-    <task> Напишите анализатор <code>maybe p</code>, позволяющий выразить мысль, что элемент <code>p</code> может встретиться, а может и не встретиться.</task>
-    
+   <task>Проверьте корректность работы анализатора <code>arythmetic</code> на тестовых примерах:</p>
+<pre><hs>  "12"
+  "(1+2)+3"    
+  "1+(2+3)"      
+  "1+2+3"        
+  "((123+4))"    
+  "(13+4)+(6+32)"</hs></pre>
+Задайте несколько неверных выражений.</task>
+  
     <task> Напишите анализатор <code>bracket</code>, распознающий правильные скобочные выражения с круглыми и квадратными скобками. </task>
+
+    <h2>Повторение трансляторов</h2>
     
-    <task> Определите анализатор строк, представляющих простой e-mail адрес.</task>
+<p>Для всех альтернативных функторов в модуле <code>Control.Applicative</code> определены три функции <code>some</code>, <code>many</code> и <code>optional</code>
+      <pre><hs>some :: Alternative f => f a -> f [a]
+some p = (:) <$> p <*> many p
 
+many :: Alternative f => f a -> f [a]
+many p = some p <|> pure []
 
+optional :: Alternative f => f a -> f (Maybe a)
+optional p = Just <$> p <|> pure Nothing</hs></pre>
+
+      которые соответствуют повторению элементов:
+      <ul>
+	<li> <code>some p</code>&nbsp;— элемент <code>p</code> встречается один или много раз подряд
+	<li> <code>many p</code>&nbsp;— элемент <code>p</code> встречается ноль или много раз подряд
+	<li> <code>optional p</code>&nbsp;— элемент <code>p</code> встречается ноль или один раз
+      </ul>
+      </p>
       
+      <pre><ghci><l></l> run (many digit) "1234xse"
+<o>Ok "1234" "xse"</o>
+<l></l> run (many digit) "xse"
+<o>Ok "" "xse"</o>
+<l></l> run (some digit) "123xse"
+<o>Ok "123" "xse"</o>
+<l></l> run (some digit) "xse"
+<o>Fail "xse"</o>
+<l></l> run (optional digit) "123"
+<o>Ok (Just '1') "23"</o>
+<l></l> run (optional digit) "c123"
+<o>Ok Nothing "c123"</o></ghci></pre>
+
+      <task>Пользоваться функцией <code>optional</code> в ряду с <code>some</code> и <code>many</code> не очень удобно. Последние две возвращают списки, а <code>optional</code> -- тип <code>Maybe</code> и если нам захочется их комбинировать, это будет непросто.
+  Определите функцию <code>opt</code> -- аналогичную по смыслу <code>optional</code>, но возвращающую список. Воспользуйтесь универсальной функцией <code>toList</code>
+
+      <pre><ghci><l></l> run (opt digit) "123"
+<o>Ok "1" "23"</o>
+<l></l> run (opt digit) "x123"
+<o>Ok "" "23"</o> </ghci></pre>
+  
+      </task>
+
+      <task>Для полноты картины, добавьте функцию <code>only</code>, которая просто возвращает элемент в списке. Она понадобится нам позже.
+	<pre><ghci><l></l> run (only digit) "123"
+<o>Ok "1" "23"</o> </ghci></pre>  
+      </task>
+  
+      <task> Напишите транслятор <code>integer</code> для положительного целого числа с произвольным количеством цифр, возвращающий число типа <code>Integer</code></task>
+
+      <pre><ghci><l></l> run integer "1234bc"
+<o>Ok 1234 "bc"</o>
+<l></l> run ((+) <$> (integer <* next) <*> integer) "12 34"
+<o>Ok 46 ""</o></ghci></pre>
+            
+      <task> Напишите модификатор <code>oneof p args</code> задающий множество возможных параметров транслятора <code>p</code>:
+<pre><hs>oneof :: (b -> Parser i a) -> [b] -> Parser i a</hs></pre>
+    
+<h2>Трансляторы как моноиды</h2>
+
+<p>Моноиды и алгебры оказались мощной универсальной абстракцией, образуют ли трансляторы моноид? Образуют, причём несколькими способами. Вот два из них:
+  <ul>
+    <li> с операцией <code><|></code> и нейтральным элементом <code>empty</code>
+    <li> с операцией <code>*></code> и нейтральным элементом <code>epsilon</code>
+</ul>
+Второй способ определён только для анализаторов, возвращающих единичный тип <code>()</code>.  
+С этими операциями мы получили алгебру анализаторов, эквивалентную алгебре типов, электрических сопротивлений, логических значений и т.п.   
+</p>
+<task>Проверьте, являются ли нейтральные элементы нулевыми для дуальных операций? Работает для для алгебры анализаторов распределительный закон, то есть можно ли выносить анализаторы за скобки, сокращая вычисления?</task>
+
+<p> Все альтернативные трансляторы образуют моноид, и для использования этого обстоятельства, в модуле <code>Data.Foldable</code> определёна функция <code>asum</code>.
+<pre><hs>asum :: (Foldable t, Alternative f) => t (f a) -> f a</hs></pre>
+  Она суммирует альтернативы. Так, например, с её помощью можно определить комбинатор <code>oneof</code>:
+  <pre><hs>oneof p lst = asum $ p <$> lst</hs></pre>
+</p>
+
+<task>Определите экземпляр классов <code>Semigroup</code> и  <code>Monoid</code> для типа <code>Parser</code>. Это позволит легко соединять результаты трансляции, просто соединяя трансляторы:
+
+<pre><ghci><l></l>run (string "a" <> some next <> string "b") "axb"
+<o>Ok "axb" ""</o>
+<l></l>run (string "a" <> many next <> string "b") "axyzb"
+<o>Ok "axyzb" ""</o>
+<l></l>run (string "a" <> many next <> string "b") "ab"
+<o>Ok "ab" ""</o></ghci></pre>
+</task>
+
+<p>Для удобства, введём обобщённые моноидальные аналоги функциям <code>some</code>, <code>many</code> и <code>opt</code>:</p>
+
+<pre><hs>msome p = mconcat <$> some p
+mmany p = mconcat <$> many p
+mopt p = mconcat <$> opt p</hs></pre>
+
+<task> Напишите грамматику для простого e-mail адреса. Определите анализатор строк для этой грамматики. Он должен распознавать корректные адреса и возвращать их в качестве результата.:</task>
+<pre><ghci><l></l> run email "noname@google.com"
+<o>Ok "noname@google.com" ""</o></ghci></pre>
+Проверьте его работу на таких примерах:
+
+<pre><hs>Ok
+ "noname@google.com"
+ "very_Oryginal_name41@ya.ru"
+ "jenny.2021@very.original.domain.com"
+ "1234@90.163.56.78"
+    
+Fail
+ "@google.com"
+ "login@@google.com"
+ "login@google"
+ "login @google.com"
+ "login@google."
+ "(13+4)+(6+32)"</hs></pre>
+
+
+<h2>Трансляторы как монады</h2>
+
+ <p>То, что трансляторы являются аппликативными и альтернативными функторами и моноидами достаточно для кодирования ими любой контекстно-свободной грамматики. Они охватывают очень широкий класс языков и языковых конструкций.</p>
+
       <!-- ------------------------------------------------------------ -->
     </div>
     <p id="footer"></p>
