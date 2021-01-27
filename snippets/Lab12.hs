@@ -117,9 +117,8 @@ prob3 m n = do
 
 trees 1 = [Leaf ()]
 trees 2 = [Node () (Leaf ()) (Leaf ())]
-trees n = nub $ do t <- trees (n-1)
-                   insertT t (head (trees 2))
-
-insertT (Leaf ()) t = [t]
-insertT (Node () t1 t2) t = (Node () <$> insertT t1 t <*> pure t2)
-                            <|> (Node () <$> pure t1 <*> insertT t2 t)
+trees n = nub $ trees (n-1) >>= ins (Node () (Leaf ()) (Leaf ()))
+  where
+    ins t (Leaf ()) = [t]
+    ins t (Node () t1 t2)
+      = (Node () <$> ins t t1 <*> [t2]) <|> (Node () <$> [t1] <*> ins t t2)
