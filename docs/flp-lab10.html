@@ -20,10 +20,10 @@
 
       <h2>Поиск и замена подстрок</h2>
 
-<task>Используя универсальную функцию <code>collect</code> для поиска подстрок, описываемых транслятором <code>p</code>  
+<task>Для трансляторов-моноидов можно написать универсальную функцию <code>collect</code>, полезную для поиска подстрок, описываемых транслятором <code>p</code>  
   <pre><hs>collect :: Monoid b => Parser b -> Parser b
 collect p = mmany (p <|> mempty <$ next)</hs></pre>
-  определите следующие функции:
+  С её помощью определите следующие функции:
   <pre><hs>count :: Parser a -> Parser Integer
 search :: Parser a -> Parser [a]
 longest :: Parser [a] -> Parser [a]</hs></pre>

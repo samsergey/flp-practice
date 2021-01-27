@@ -8,29 +8,40 @@ import Data.Monoid
 import Data.Foldable
 import Lab8
 
-data Parser m a = Parser ( State String (m a) )
+data Parser m a = Parser { getRunner :: State String (m a) }
 
-run (Parser p) s = runState p s
+run p s = runState (getRunner p) s
 
-getInput :: (Alternative m) => Parser m get
-getInput = Parser get
-setInput s = Parser $ set s
+runList :: Parser [] a -> String -> (String, [a])
+runList = run
+
+runMaybe :: Parser Maybe a -> String -> (String, Maybe a)
+runMaybe = run
 
 instance Functor m => Functor (Parser m) where
   fmap f (Parser p) = Parser $ fmap (fmap f) p
 
 instance Applicative m => Applicative (Parser m) where
   pure x = Parser $ pure (pure x)
-  Parser p1 <*> Parser p2 = Parser $ (<*>) <$> p1 <*> p2 
+  p1 <*> p2 = Parser $ \s -> case run p1 s of
+    (s', f) -> case run p2 s' of
+      (
 
 instance Alternative m => Alternative (Parser m) where
-  empty = Parser $ pure (empty)
-  Parser p1 <|> Parser p2 = Parser $ (<|>) <$> p1 <*> p2 
+  empty = Parser $ pure empty
+  p1 <|> p2 = Parser . State $ \s -> run p1 s <|> run p2 s
+    where run (Parser p) = runState p
 
--- next :: Alternative m => Parser m Char
--- next = do
---   x <- getInput
---   case x of
---     [] -> empty
---     x:xs -> do setInput xs
---                pure x
+
+check :: Alternative m => (Char -> Bool) -> Parser m Char
+check p = Parser $ do
+  x <- get
+  case x of
+    x:xs | p x -> do set xs
+                     return (pure x)
+    _ -> pure empty
+
+char c = check (== c)
+
+next :: Alternative m => Parser m Char
+next = check (const True)
