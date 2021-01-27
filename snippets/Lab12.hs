@@ -92,16 +92,28 @@ showQueens n = foldMap line
 -- MONEY
 
 prob2 = do
-  [d,e,y] <- different 3 [0..9]
-  guard $ (d + e) `mod` 10 == y
-  [s,m] <- different 2 ([1..9] \\ [d,e,y])
-  [o,r,n] <- different 3 ([0..9] \\ [d,e,y,s,m])
-  let a = fromBase 10 [s,e,n,d]
-      b = fromBase 10 [m,o,r,e]
+  [s,e,n,d,m,o,r,y] <- different 8 [0..9]
+  guard $ s*m /= 0
+  let a =   fromBase 10 [s,e,n,d]
+      b =   fromBase 10 [m,o,r,e]
       c = fromBase 10 [m,o,n,e,y]
   guard $ a + b == c
   return (a,b,c)
 
+prob2' = do
+  [d,e,y] <- different 3 [0..9]
+  guard $ (d + e) `mod` 10 == y
+  [n,r] <- different 2 $ [0..9] \\ [d,e,y]
+  guard $ (n + r + (d + e) `div` 10) `mod` 10 == e
+  o <- From $ [0..9] \\ [d,e,y,n,r]
+  guard $ (e + o + (n + r) `div` 10) `mod` 10 == n
+  [s,m] <- different 2 $ [1..9] \\ [d,e,y,n,r]
+  guard $ (s + m + (e + o) `div` 10) `mod` 10 == o
+  let a =   fromBase 10 [s,e,n,d]
+      b =   fromBase 10 [m,o,r,e]
+      c = fromBase 10 [m,o,n,e,y]
+  guard $ a + b == c
+  return (a,b,c)
 
 prob3 m n = do
   [o1,o2,o3] <- samples 3 ["+","-","*","/"]
