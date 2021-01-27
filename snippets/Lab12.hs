@@ -1,12 +1,12 @@
-{-# LANGUAGE FlexibleInstances,FlexibleContexts #-}
-{-# LANGUAGE TypeSynonymInstances #-}
-{-# language MultiParamTypeClasses #-}
 module Lab12 where
 
 import Control.Applicative
 import Control.Monad
+import Control.Monad.Fail
 import Data.Maybe
 import Data.List
+import Lab4
+import Lab8 (calc, BTree (..), traditional)
 
 newtype Logic a = From { toList :: [a] }
 
@@ -38,7 +38,6 @@ instance Semigroup (Logic a) where
 instance Monoid (Logic a) where
   mempty = empty
 
-
 instance Alternative Logic where
   empty = From []
   From l1 <|> From l2  = From $ interleave l1 l2
@@ -50,22 +49,19 @@ instance Monad Logic where
 instance MonadFail Logic where
   fail _ = empty
 
-different :: Eq a => Int -> [a] -> Logic [a]
+different :: (Eq a) => Int -> [a] -> Logic [a]
 different 0 _ = pure []
 different n lst = do x <- From lst
                      xs <- different (n-1) $ filter (/= x) lst
                      pure (x:xs)
 
-samples :: Int -> [a] -> Logic [a]
 samples 0 _ = pure []
-samples n lst = do x <- From lst
-                   xs <- samples (n-1) lst
-                   pure (x:xs)
+samples n lst = (:) <$> From lst <*> samples (n-1) lst
 
 fact 0 x = x == 1
 fact n m = m `mod` n == 0 && fact (n-1) (m `div` n)
 
- 
+
 prob1 = do [a,p,k] <- different 3 [1,2,3]
            guard $ and [ a /= 2
                        , p > a
@@ -91,53 +87,39 @@ showQueens n = foldMap line
              <> replicate (n-i+1) '.'
              <> "\n"
 
+--  SEND
+--  MORE
+-- MONEY
+
+prob2 = do
+  [d,e,y] <- different 3 [0..9]
+  guard $ (d + e) `mod` 10 == y
+  [s,m] <- different 2 ([1..9] \\ [d,e,y])
+  [o,r,n] <- different 3 ([0..9] \\ [d,e,y,s,m])
+  let a = fromBase 10 [s,e,n,d]
+      b = fromBase 10 [m,o,r,e]
+      c = fromBase 10 [m,o,n,e,y]
+  guard $ a + b == c
+  return (a,b,c)
 
 
--- пилеты
+prob3 m n = do
+  [o1,o2,o3] <- samples 3 ["+","-","*","/"]
+  let s = Leaf (show m)
+  expr <- From [ Node o1 (Node o2 s s)
+                         (Node o3 s s)
+               , Node o1 s (Node o2 s (Node o3 s s))
+               , Node o1 (Node o2 (Node o3 s s) s) s
+               , Node o1 (Node o2 s (Node o3 s s)) s
+               , Node o1 s (Node o2 (Node o3 s s) s) ]
+  guard $ calc expr == n
+  return $ traditional expr <> " = " <> show n
 
-class Search s m  where
-  move :: s -> [([m], s)]
-  isSolution :: ([m], s) -> Bool
+trees 1 = [Leaf ()]
+trees 2 = [Node () (Leaf ()) (Leaf ())]
+trees n = nub $ do t <- trees (n-1)
+                   insertT t (head (trees 2))
 
-  space :: s -> [([m], s)]
-  space s = step <> expand step
-    where
-      step = move s
-      expand ss = do (m, s) <- ss
-                     (n, t) <- space s
-                     return (m <> n, t)
-
-  solutions :: s -> [([m], s)]
-  solutions = filter isSolution . space
-
-data Toy = Buzz | Hamm | Rex | Woody deriving (Eq,Ord,Show)
-data Pos = L | R deriving (Eq,Show)
-type Group = [Toy]
-type BridgePos = (Pos,Group)
-type Move = Either Toy Group
-
-toys :: [Toy]
-toys = [Buzz,Hamm,Rex,Woody]
-
-time :: Toy -> Int
-time Buzz = 5
-time Woody = 10
-time Rex = 20
-time Hamm = 25
-
-duration :: [Move] -> Int
-duration = sum . map (either time (maximum.map time))
-
-backw :: Group -> [([Move],BridgePos)]
-backw xs = [([Left x],(L,sort (x:(toys \\ xs)))) | x <- xs]
-
-forw :: Group -> [([Move],BridgePos)]
-forw xs = [([Right [x,y]],(R,delete y ys)) |
-           x <- xs,let ys=delete x xs, y <- ys, x<y]
-
-
-instance Search BridgePos Move where
-  move (L,l) = forw l
-  move (R,l) = backw (toys \\ l)
-  isSolution (ms,s) = s == (R,[]) && duration ms <= 60
-
+insertT (Leaf ()) t = [t]
+insertT (Node () t1 t2) t = (Node () <$> insertT t1 t <*> pure t2)
+                            <|> (Node () <$> pure t1 <*> insertT t2 t)

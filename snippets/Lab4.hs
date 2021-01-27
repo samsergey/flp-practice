@@ -5,6 +5,8 @@ import Data.Char
 import Data.List
 import Text.Printf
 
+fromBase b = foldl (\r x -> r*b+x) 0  
+
 data Automat s i =
   Automat { alphabet :: [i] -- допустимые символы
           , delta :: s -> i -> s -- функция перехода

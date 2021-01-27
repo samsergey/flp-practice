@@ -5,7 +5,6 @@ import Lab7 (headE, calculateA)
 
 import Control.Applicative
 import Control.Monad
-import Control.Monad.Logic
 
 import System.CPUTime
 import Text.Printf
@@ -35,7 +34,7 @@ modify f = get >>= set . f
   
 data BTree a = Leaf a
              | Node a (BTree a) (BTree a)
-  deriving Show
+  deriving (Show, Eq)
 
 mkTree :: Int -> State Int (BTree Int)
 mkTree 0 = Leaf <$> modify (+ 1)
@@ -181,7 +180,7 @@ floyd :: [[Int]]
 floyd = mapM (`replicateM` (modify succ)) [1..] `evalState` 0
 
 traditional (Leaf a) = a
-traditional (Node a t1 t2) = printf "(%s %s %s)" (traditional t1) a (traditional t2)
+traditional (Node a t1 t2) = printf "(%s%s%s)" (traditional t1) a (traditional t2)
 
 lisp (Leaf a) = a
 lisp (Node a t1 t2) = printf "(%s %s %s)"  a (lisp t1) (lisp t2)
@@ -195,6 +194,7 @@ calc (Node a t1 t2) = case a of
   "-" -> calc t1 - calc t2
   "*" -> calc t1 * calc t2
   "/" -> calc t1 / calc t2
+  "^" -> calc t1 ** calc t2
 
 randomAST :: Int -> Random (BTree String)
 randomAST 0 = Leaf . show <$> random 10
