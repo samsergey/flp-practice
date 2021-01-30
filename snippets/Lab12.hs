@@ -134,3 +134,27 @@ trees n = nub $ trees (n-1) >>= ins (Node () (Leaf ()) (Leaf ()))
     ins t (Leaf ()) = [t]
     ins t (Node () t1 t2)
       = (Node () <$> ins t t1 <*> [t2]) <|> (Node () <$> [t1] <*> ins t t2)
+
+unfoldM :: (Alternative m, Monad m)
+        => (a -> m (b, a)) -> a -> m [b]
+unfoldM f a = do (b, c) <- f a
+                 bs <- unfoldM f c <|> pure []
+                 return $ b : bs
+
+prefix :: (Alternative m, Monad m)
+        => String -> String -> m (String, String)
+prefix p = go p
+  where
+    go [] str = pure (p, str)
+    go (x:xs) (y:ys) | x == y = go xs ys
+    go _ _ = empty
+
+wordify :: [String] -> String -> [] [String]
+wordify d s = unfoldM (foldMap prefix d) s
+
+dict = words "and cream go i ice icecream like man mango mobile sam samsung sung"
+s = "ilikeicecreammangoandsamsung"
+
+------------------------------------------------------------
+
+

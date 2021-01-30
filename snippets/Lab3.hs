@@ -1,4 +1,4 @@
-{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE TupleSections, BangPatterns #-}
 module Lab3 where
 
 import Data.List
@@ -23,3 +23,11 @@ floyd' = unfoldr (\(i,xs) -> Just $ (i+1,) <$> splitAt i xs) (1,[1..])
 
 floyd'' :: Int -> [[Int]]
 floyd'' x = [x] : ((x:) <$> floyd'' (x+1))
+
+sumsq 0 = 0
+sumsq n = n^2 + sumsq (n-1)
+
+sumsq' n = iter 0 1
+  where iter s i = if i > n
+                   then s
+                   else iter (s + i^2) (i + 1)
