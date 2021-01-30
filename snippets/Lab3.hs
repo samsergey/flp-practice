@@ -31,3 +31,8 @@ sumsq' n = iter 0 1
   where iter s i = if i > n
                    then s
                    else iter (s + i^2) (i + 1)
+
+fib' n = go 0 1 n
+  where go a b 1 = a
+        go a b 2 = b
+        go a b i = go b (a+b) (i-1) 

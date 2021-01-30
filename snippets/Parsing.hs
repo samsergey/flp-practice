@@ -291,6 +291,9 @@ spaces = many (char ' ')
 
 identifier = regexp "[a-zA-Z][a-zA-Z0-9_-]*"
 
+type Attr = (String, String)
+
+tag :: String -> Parser b -> Parser ([Attr], b)
 tag t p = do
   char '<' *> string t
   attrs <- many attr
@@ -299,16 +302,20 @@ tag t p = do
   string "</" *> string t *> char '>'
   return (attrs, contents)
 
+tag' :: String -> Parser [Attr]
 tag' t = do
   char '<' *> string t
   attrs <- many attr
   spaces *> string "/>"
   return attrs
 
-attr = (,) <$> (spaces *> identifier)
-       <*> (spaces *> char '=' *> spaces *> string_)
+attr :: Parser Attr
+attr = do
+  a <- spaces *> identifier
+  v <- spaces *> char '=' *> spaces *> string_
+  return (a,v)
 
-
+getAttr :: Parser v -> String -> [Attr] -> Parser v
 getAttr p a as = Parser $ \s ->
   case lookup a as of
     Nothing -> Fail s
@@ -316,6 +323,7 @@ getAttr p a as = Parser $ \s ->
                 Ok r _ -> Ok r s
                 Fail _ -> Fail s
 
+findAttr :: Parser v -> String -> [Attr] -> Parser [v]
 findAttr p a as = Parser $ \s ->
   case lookup a as of
     Nothing -> Ok empty s

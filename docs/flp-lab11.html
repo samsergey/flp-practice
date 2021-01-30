@@ -272,6 +272,51 @@ between p [s1,s2] = _</hs></pre>
 
  <task>Напишите трансляторы, заменяющие в предложении "What a wonderfull day it was!" все слова, начинающиеся с буквы 'w' (заглавной, или строчной, неважно) 1) на это же слово, но записанное в обратном порядке, 2) на длину слова.</task>
 
+ <h2>Трансляция SVG</h2>
+<p>Написанные нами на занятии 6 язык описания изображений транслируется в формат SVG, это текстовый формат, и его можно однозначно транслировать обратно во внутреннее представление изображения — тип <code>Picture</code>. Для этого нужно написать трансляторы для двух видов тэгов SVG:
+  <pre>&lt;tagname a1='..' a2='..'/&gt;
+&lt;tagname a1='..' a2='..'&gt;..&lt;/tagname&gt;</pre>
+  Здесь строка <tt>tagname</tt> — имя тэга, а <tt>a1</tt>, <tt>a2</tt>, ... — атрибуты. Для атрибутов этих двух типов выражений напишем соответствующие транслятора:</p>
+  
+  <pre><hs>type Attrs = [(String, String)]
+
+attr :: Parser (String, String)
+attr = do
+  a <- spaces *> identifier
+  v <- spaces *> char '=' *> spaces *> string_
+  return (a,v)
+	  
+tag&#39; :: String -> Parser Attrs
+tag&#39; t = do
+  char '&lt;' *> string t
+  attrs <- many attr
+  spaces *> string "/&gt;"
+  return attrs
+
+tag :: String -> Parser b -> Parser (Attrs, b)
+tag t p = do
+  char '&lt;' *> string t
+  attrs <- many attr
+  spaces *> char '&gt;'
+  contents <- p
+  string "&lt;/" *> string t *> char '&gt;'
+  return (attrs, contents)</hs></pre></p>
+
+<pre><ghci><l></l> run (tag "A" integer) "&lt;A a1='v1' a2='v2'&gt;12345&lt;/A&gt;"
+<o>Ok ([("a1","v1"),("a2","v2")],12345) ""</o>
+<l></l> run (tag&#39; "A") "&lt;A a1='v1' a2='v2'/&gt;"
+<o>Ok [("a1","v1"),("a2","v2")] ""</o></ghci></pre>
+
+<p>Атрибуты создают определённые сложности. Они могут следовать в произвольном порядке, каких-то из них может не быть вовсе. К тому же, они бывают разными, одни содержат числовые значения, другие — строковые. Для работы с атрибутами мы пойдём на хитрость и создадим трансляторы, обрабатывающие список уже прочитанных пар атрибут-значение, используя его как словарь.</p>
+<pre><hs>getAttr :: Parser v -> String -> Attrs -> Parser v
+getAttr p a as = Parser $ \s ->
+  case lookup a as of
+    Nothing -> Fail s
+    Just x -> case run p x of
+                Ok r _ -> Ok r s
+                Fail _ -> Fail s</hs></pre>
+
+<p>Такой подход позволит вводить требования для атрибутов в разбор тэга </p>
 
       <!-- ------------------------------------------------------------ -->
     </div>
@@ -279,4 +324,4 @@ between p [s1,s2] = _</hs></pre>
     <script src="lib/postprocessing.js"></script>
   </body>
 </html>
-g
+
