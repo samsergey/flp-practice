@@ -4,6 +4,18 @@ module Lab3 where
 import Data.List
 import Data.Monoid
 
+toBase :: Int -> Int -> [Int]
+-- toBase b 0 = [0]
+-- toBase b n = go [] n
+--   where
+--     go res 0 = res
+--     go res n = go (mod n b : res) (div n b)
+
+toBase b n = reverse
+           $ map (`mod` b)
+           $ takeWhile (> 0)
+           $ iterate (`div` b) n
+
 pascalStep r = zipWith (+) (0:r) (r++[0])
 
 pascals = iterate pascalStep [1]

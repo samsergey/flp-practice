@@ -323,14 +323,6 @@ getAttr p a as = Parser $ \s ->
                 Ok r _ -> Ok r s
                 Fail _ -> Fail s
 
-findAttr :: Parser v -> String -> [Attr] -> Parser [v]
-findAttr p a as = Parser $ \s ->
-  case lookup a as of
-    Nothing -> Ok empty s
-    Just x -> case run p x of
-                Ok r _ -> Ok (pure r) s
-                _ -> Ok empty s
-
 point_ = do
   as <- tag' "circle"
   r <- getAttr float "r" as
@@ -349,19 +341,18 @@ points_ = pt `sepBy` spaces <* spaces
 
 group_ = do
   (as, ps) <- tag "g" primitives
-  attrs <- mconcat
-    [ LineColor <$*> findAttr identifier "stroke"
-    , Fill <$*> findAttr identifier "fill"
-    , LineWidth <$*> findAttr float "stroke-width"
-    , Opacity <$*> findAttr float "fill-opacity"
-    ] as
+  attrs <- findAttr LineColor identifier "stroke" <>
+           findAttr Fill identifier "fill" <>
+           findAttr LineWidth float "stroke-width" <>
+           findAttr Opacity float "fill-opacity" $ as
   return $ Group attrs ps
   where
-    (<$*>) = fmap . fmap . fmap
-  
-primitives = many $ point_ <|> line_ <|> group_
+    findAttr a p s as = mopt . only $ a <$> getAttr p s as
 
+primitives = many $ point_ <|> line_ <|> group_
+  
 picture = foldMap primitive . snd <$> tag "svg" primitives
+
 
 ------------------------------------------------------------
 

@@ -183,3 +183,10 @@ calculateD = foldM interprete [] . words
 
         err m = exception $ op ++": " ++ m ++ "  Stack: " ++ show s
 
+spaces' s = case s of
+  x:xs -> (x :) <$> go xs
+  "" -> [""]
+  where
+    go s = case s of
+      x:xs -> (++) <$> [[x], [' ',x]] <*> go xs
+      "" -> [""]

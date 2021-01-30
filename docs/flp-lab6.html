@@ -44,7 +44,7 @@ data Primitive = Point Pt
 
 data Picture = Picture [Primitive] deriving Show
 
-contents :: Picture -> [Primitive]
+<d>contents :: Picture -> [Primitive]</d>
 contents (Picture c) = c </hs></pre>
 
       <p>Сразу продумаем как можно комбинировать примитивы и изображения. Самый непротиворечивый способ — накладывать их друг на друга, то есть, изображать на одном холсте.</p>
@@ -159,11 +159,11 @@ triangle :: (Float, Float) -> Float -> Float -> Picture</hs></pre>
 instance Boxed a => Boxed [a] where
   box = foldMap box
 	    
-width :: Boxed a => a -> Float
+<d>width :: Boxed a => a -> Float</d>
 width p = x2 - x1
   where ((Min x1,_),(Max x2,_)) = box p
 
-height :: Boxed a => a -> Float
+<d>height :: Boxed a => a -> Float</d>
 height p = y2 - y1
   where ((_,Min y1),(_,Max y2)) = box p</hs></pre></p>
 
@@ -174,7 +174,7 @@ height p = y2 - y1
       <p>Обрамляющую рамку изображения можно вычислить по его примитивам, но делать это всякий раз, как она потребуется не эффективно. Вместо этого, мы включим рамку в определение типа <code>Picture</code>:
 	<pre><hs>data Picture = Picture (Box, [Primitive]) deriving Show
 
-contents :: Picture -> Primitive
+<d>contents :: Picture -> Primitive</d>
 contents (Picture (_, c)) = c
 	    
 instance Boxed Picture where
@@ -186,7 +186,7 @@ instance Boxed Picture where
       
       <task>Переопределите конструкторы <code>point, line, square, ...</code>
 	Для этого имеет смысл определить вспомогательную функцию <code>primitive</code>, которая выполняла бы необходимые вычисления обрамляющей рамки для формируемого изображения:
-	<pre><hs>primitive :: Primitive -> Picture
+	<pre><hs><d>primitive :: Primitive -> Picture</d>
 primitive p = Picture (box p, [p])</hs></pre>
       </task>
 
@@ -380,7 +380,7 @@ rotate 30 &lt;&gt; (`at` (40, 40)) $ square 10</hs></pre>
       </task>
 
       <task>С помощью вспомогательной функции 
-	<pre><hs>setAttr :: (t -> Attribute) -> t -> Picture -> Picture</def>
+	<pre><hs><d>setAttr :: (t -> Attribute) -> t -> Picture -> Picture</d>
 setAttr attr c p = case p of
   Picture (b, [Group a p]) -> Picture (b, [Group (a <> [attr c]) p])
   p -> primitive $ Group [attr c] (contents p)</hs></pre>

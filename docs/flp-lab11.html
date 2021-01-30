@@ -316,9 +316,44 @@ getAttr p a as = Parser $ \s ->
                 Ok r _ -> Ok r s
                 Fail _ -> Fail s</hs></pre>
 
-<p>Такой подход позволит вводить требования для атрибутов в разбор тэга </p>
+<p>Такой подход позволит гармонично вводить требования для атрибутов в синтаксический разбор. Продемонстрируем это на примере примитива <code>Point</code>:</p>
+<pre><hs>point_ :: Parser Primitive
+point_ = do
+  as <- tag&#39; "circle"
+  r <- getAttr float "r" as
+  guard $ r == 1
+  x <- getAttr float "rx" as
+  y <- getAttr float "ry" as
+  return $ Point (Pt x y)</hs></pre>
 
-      <!-- ------------------------------------------------------------ -->
+       <task>Напишите с помощью регулярных выражений транслятор для чисел с плавающей точкой <code>float</code>. Проверьте корректность работы парсера <code>point_</code> убедившись в том, что для примитивов Point функции (run point_) и toSVG обратны друг другу.
+	 <pre><ghci><l></l> run point_ . toSVG $ Point (Pt 2 3)
+<o>Ok (Pt 2.0 3.0) ""</o>
+<l></l> (fmap toSVG <$> run point_) $ "&lt;circle rx='2.0' ry='3.0' r='1'/&gt;"
+<o>Ok "&lt;circle rx='2.0' ry='3.0' r='1'/&gt;" ""</o></pre> Проверьте. что порядок следования атрибутов в SVG не меняет результата.</task>
+
+       <task>Напишите транслятор <code>line_ :: Parser Primitive</code></task>
+       
+<p>У транслятора для группы принцип работы с атрибутами несколько иной — они должны складываться в список атрибутов группы. </p>
+<pre><hs>group_ :: Parser Primitive
+group_ = do
+  (as, ps) <- tag "g" primitives
+  attrs <- findAttr LineColor identifier "stroke" <>
+           findAttr Fill identifier "fill" <>
+           findAttr LineWidth float "stroke-width" <>
+           findAttr Opacity float "fill-opacity" $ as
+  return $ Group attrs ps
+  where
+    findAttr a p s as = mopt . only $ a <$> getAttr p s as
+
+	   primitives = many $ point_ <|> line_ <|> group_</hs></pre>
+
+	   <p>Теперь всё готово для написания транслятора для типа <code>Picture</code>:	
+	   <pre><hs>picture :: Parser Picture
+picture = foldMap primitive . snd <$> tag "svg" primitives</hs></pre></p>
+
+       <task>Убедитесь в том, что генерация и трансляция изображений — это взаимно обратные операции.</task>
+	   <!-- ------------------------------------------------------------ -->
     </div>
     <p id="footer"></p>
     <script src="lib/postprocessing.js"></script>

@@ -141,16 +141,15 @@ unfoldM f a = do (b, c) <- f a
                  bs <- unfoldM f c <|> pure []
                  return $ b : bs
 
-prefix :: (Alternative m, Monad m)
-        => String -> String -> m (String, String)
-prefix p = go p
-  where
-    go [] str = pure (p, str)
-    go (x:xs) (y:ys) | x == y = go xs ys
-    go _ _ = empty
-
 wordify :: [String] -> String -> [] [String]
 wordify d s = unfoldM (foldMap prefix d) s
+  where
+    prefix p = go p
+      where
+        go [] str = pure (p, str)
+        go (x:xs) (y:ys) | x == y = go xs ys
+        go _ _ = empty
+
 
 dict = words "and cream go i ice icecream like man mango mobile sam samsung sung"
 s = "ilikeicecreammangoandsamsung"
@@ -158,3 +157,35 @@ s = "ilikeicecreammangoandsamsung"
 ------------------------------------------------------------
 
 
+type Space s m = [(m , s)]
+type Move s m = s -> Space s m
+type Strategy s m = Space s m -> Space s m -> Space s m
+
+space :: Monoid m =>
+  Strategy s m -> Move s m -> s -> Space s m
+space f trans s = expand f (step (mempty, s))
+    where expand f [] = mempty
+          expand f (s:ss) = s:expand f (f (step s) ss)
+          step (ms, s) = [(ms <> m, t) | (m, t) <- trans s]
+
+search :: Monoid m =>
+  Strategy s m -> Move s m -> ((m, s) -> Bool) -> s -> Space s m
+search f trans isSolution = filter isSolution . space f trans
+
+dfs, bfs :: Monoid m => Strategy s m
+dfs = (<>)
+bfs = flip (<>)
+
+------------------------------------------------------------
+
+wordSplit dict s = unwords.fst <$> search (<>) trans isSolution s
+  where
+    trans = foldMap prefix dict
+    isSolution (_, s) = null s
+    prefix p s = go p s
+      where
+        go [] str = [([p], str)]
+        go (x:xs) (y:ys) | x == y = go xs ys
+        go _ _ = mempty
+
+------------------------------------------------------------

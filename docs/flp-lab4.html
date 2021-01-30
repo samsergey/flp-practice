@@ -49,7 +49,7 @@
 	<eqn>e = 1 + \frac{1}{1!} + \frac{1}{2!} + \frac{1}{3!} + ...</eqn>
 Вычислите приближение числа <eq>e</eq> более эффективным способом. Для этого сгенерируйте последовательность значений факториалов натуральных чисел с помощью функции <code>scanl</code>.</task>
 
-      <task>В последовательности целых чисел найдите за один проход минимальное число и количество его повторений. Используйте следующий шаблон: <pre><hs>minCount :: Ord a => [a] -> (a, Int)
+      <task>В последовательности целых чисел найдите за один проход минимальное число и количество его повторений. Используйте следующий шаблон: <pre><hs><d>minCount :: Ord a => [a] -> (a, Int)</d>
 minCount [] = error "List is empty"
 minCount (x:xs) = foldl count _ xs
   where
@@ -106,7 +106,7 @@ minCount (x:xs) = foldl count _ xs
       <p><img src="img/automata3tuple.jpg" alt="" width='75%' align='center'/></p>
 
       <p>Вот как можно определить его с помощью нашего типа:
-      <pre><hs>mod3 :: Automat Int Int 
+	<pre><hs><d>mod3 :: Automat Int Int </d>
 mod3 = Automat [0,1] f 0 [] [0,1,2]
   where f 0 0 = 0
         f 0 1 = 1
@@ -121,7 +121,7 @@ mod3 = Automat [0,1] f 0 [] [0,1,2]
 Проверьте правильность работы автомата <code>mod3</code> на последовательности натуральных чисел от 0 до 10.
 
 	<details><summary>Схема решения</summary>
-	<pre><hs>scanA :: (Eq s, Eq i)
+	  <pre><hs><d>scanA :: (Eq s, Eq i)</d>
         => Automat s i -> [i] -> [(i, s)]
 scanA fsm xs = takeWhile (not . halt) 
                $ zip inputs states

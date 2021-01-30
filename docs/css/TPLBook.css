@@ -68,9 +68,8 @@ the {
     color: #022;
 }
 
-def {
-    font-style: italic;
-    text-decoration: none;
+d {
+    opacity: 60%;
 }
 
 .tasks {
