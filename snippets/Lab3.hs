@@ -1,8 +1,9 @@
 {-# LANGUAGE TupleSections, BangPatterns #-}
-module Lab3 where
+module Main where
 
 import Data.List
 import Data.Monoid
+import GHC.Conc
 
 toBase :: Int -> Int -> [Int]
 -- toBase b 0 = [0]
@@ -44,7 +45,20 @@ sumsq' n = iter 0 1
                    then s
                    else iter (s + i^2) (i + 1)
 
+fib 1 = 0
+fib 2 = 1
+fib n = fib (n-1) + fib (n-2)
+
+
 fib' n = go 0 1 n
   where go a b 1 = a
         go a b 2 = b
         go a b i = go b (a+b) (i-1) 
+
+pfib 1 = 0
+pfib 2 = 1
+pfib n = x `par` y `pseq` (x + y)
+  where x = pfib (n-1)
+        y = pfib (n-2)
+
+main = print $ pfib 40 
