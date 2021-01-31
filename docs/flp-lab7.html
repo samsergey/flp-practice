@@ -246,7 +246,7 @@ replicateM</ghci></pre>
 
 <pre><hs>type Stack = [Double]
 
-calculate :: String -> Stack
+<d>calculate :: String -> Stack</d>
 calculate = foldl interprete [] . words
   where
     interprete s op = case op of
@@ -274,7 +274,7 @@ calculate = foldl interprete [] . words
 <p>Стандартным решением в процедурном программировании является "поимка исключений" с помощью конструкции <code>try/catch</code>. Это добавляет программе надёжности, но позволяет потоку выполнения прерываться и перескакивать из одного блока в другой. В функциональном программирований поток вычислений непрерывен и больше похож на течение тока в электрической цепи. Здесь одним из самых типичных способов управления потоком -- использование функторов и монад.</p>
 
 <p>Мы можем воспользоваться монадой <code>Either</code> для того, чтобы ошибочные состояния превратить в данные и прерывая вычисления, не останавливать работу всей программы. </p>
-  <pre><hs>calculateE :: String -> Either String Stack
+  <pre><hs><d>calculateE :: String -> Either String Stack</d>
 calculateE = foldM interprete [] . words
   where
     interprete s op = case op of
@@ -295,7 +295,7 @@ calculateE = foldM interprete [] . words
 
         err m = Left $ op ++": " ++ m
 
-readE :: Read a => String -> Either String a
+<d>readE :: Read a => String -> Either String a</d>
 readE s = case [x | (x,t) <- reads s, ("","") <- lex t] of
             [x] -> Right x
             _ -> Left $ "could not parse " ++ s</hs></pre>
@@ -323,7 +323,7 @@ instance Exception Err where
 
 
 <p>Теперь можно написать обобщённый калькулятор:</p>
-  <pre><hs>calculateE :: Exception m => String -> m Stack
+  <pre><hs><d>calculateE :: Exception m => String -> m Stack</d>
 calculateE = foldM interprete [] . words
   where
     interprete s op = case op of
@@ -344,7 +344,7 @@ calculateE = foldM interprete [] . words
 
         err m = exception $ op ++": " ++ m
 
-readE :: (Exception m, Read a) => String -> m a
+<d>readE :: (Exception m, Read a) => String -> m a</d>
 readE s = case [x | (x,t) <- reads s, ("","") <- lex t] of
             [x] -> pure x
             _ -> exception $ "could not parse " ++ s</hs></pre>
@@ -368,7 +368,7 @@ readE s = case [x | (x,t) <- reads s, ("","") <- lex t] of
 tailE :: Exception m => [a] -> m [a]</hs></pre></task>
     
 	      </div>
-g
+
     <p id="footer"></p>
     <script src="lib/postprocessing.js"></script>
 </body>

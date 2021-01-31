@@ -205,10 +205,12 @@ xml = tag <|> text
 --   , ("(13+4)+6345",   Ok () "" )
 --   , ("(13+4)+(6+32)", Ok () "" ) ]
 
+chainr :: Parser a -> Parser (a -> a -> a) -> Parser a
 chainr p o = appEndo <$> mmany chars <*> p
   where
     chars = Endo <$> (p <**> o)
 
+chainl :: Parser a -> Parser (a -> a -> a) -> Parser a
 chainl p o = p <**> (appEndo . getDual <$> mmany chars)
   where
     chars = Dual . Endo <$> ((flip <$> o) <*> p)
@@ -230,7 +232,7 @@ expr = _E
         _P = char '(' *> _E <* (char ')' !> "closing parenthesis")
              <|> (integer !> "number")
 
-	add = (+) <$ char '+'
+        add = (+) <$ char '+'
         sub = (-) <$ char '-'
         mul = (*) <$ char '*'
         frac = div <$ char '/'

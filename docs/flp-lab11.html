@@ -280,20 +280,20 @@ between p [s1,s2] = _</hs></pre>
   
   <pre><hs>type Attrs = [(String, String)]
 
-attr :: Parser (String, String)
+<d>attr :: Parser (String, String)</d>
 attr = do
   a <- spaces *> identifier
   v <- spaces *> char '=' *> spaces *> string_
   return (a,v)
 	  
-tag&#39; :: String -> Parser Attrs
+<d>tag&#39; :: String -> Parser Attrs</d>
 tag&#39; t = do
   char '&lt;' *> string t
   attrs <- many attr
   spaces *> string "/&gt;"
   return attrs
 
-tag :: String -> Parser b -> Parser (Attrs, b)
+<d>tag :: String -> Parser b -> Parser (Attrs, b)</d>
 tag t p = do
   char '&lt;' *> string t
   attrs <- many attr
@@ -308,7 +308,7 @@ tag t p = do
 <o>Ok [("a1","v1"),("a2","v2")] ""</o></ghci></pre>
 
 <p>Атрибуты создают определённые сложности. Они могут следовать в произвольном порядке, каких-то из них может не быть вовсе. К тому же, они бывают разными, одни содержат числовые значения, другие — строковые. Для работы с атрибутами мы пойдём на хитрость и создадим трансляторы, обрабатывающие список уже прочитанных пар атрибут-значение, используя его как словарь.</p>
-<pre><hs>getAttr :: Parser v -> String -> Attrs -> Parser v
+<pre><hs><d>getAttr :: Parser v -> String -> Attrs -> Parser v</d>
 getAttr p a as = Parser $ \s ->
   case lookup a as of
     Nothing -> Fail s
@@ -317,7 +317,7 @@ getAttr p a as = Parser $ \s ->
                 Fail _ -> Fail s</hs></pre>
 
 <p>Такой подход позволит гармонично вводить требования для атрибутов в синтаксический разбор. Продемонстрируем это на примере примитива <code>Point</code>:</p>
-<pre><hs>point_ :: Parser Primitive
+<pre><hs><d>point_ :: Parser Primitive</d>
 point_ = do
   as <- tag&#39; "circle"
   r <- getAttr float "r" as
@@ -335,7 +335,7 @@ point_ = do
        <task>Напишите транслятор <code>line_ :: Parser Primitive</code></task>
        
 <p>У транслятора для группы принцип работы с атрибутами несколько иной — они должны складываться в список атрибутов группы. </p>
-<pre><hs>group_ :: Parser Primitive
+<pre><hs><d>group_ :: Parser Primitive</d>
 group_ = do
   (as, ps) <- tag "g" primitives
   attrs <- findAttr LineColor identifier "stroke" <>
@@ -349,7 +349,7 @@ group_ = do
 	   primitives = many $ point_ <|> line_ <|> group_</hs></pre>
 
 	   <p>Теперь всё готово для написания транслятора для типа <code>Picture</code>:	
-	   <pre><hs>picture :: Parser Picture
+	   <pre><hs><d>picture :: Parser Picture</d>
 picture = foldMap primitive . snd <$> tag "svg" primitives</hs></pre></p>
 
        <task>Убедитесь в том, что генерация и трансляция изображений — это взаимно обратные операции.</task>

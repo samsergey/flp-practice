@@ -38,10 +38,10 @@
 
     <p>и две функции для работы с этим типом:</p>
 
-    <pre><hs>runState :: State s a -> s -> (s, a)
+    <pre><hs><d>runState :: State s a -> s -> (s, a)</d>
 runState (State f) = f
 
-evalState :: State s a -> s -> a
+<d>evalState :: State s a -> s -> a</d>
 evalState (State f) = snd . f</hs></pre>
 <p>Тип <code>State</code> представляет собой обёртку для функции, которая принимает состояние типа <code>s</code> и возвращает новое состояние и некий результат типа <code>a</code>. Тип <code>State</code> можно объявить экзепляром классов <code>Functor</code>, <code>Applicative</code> и <code>Monad</code>:</p>
 <pre><hs>instance Functor (State s) where
@@ -58,13 +58,13 @@ instance Monad (State s) where
 <p>Эти определения стоят того, чтобы над ними помедитировать. Монадическое поведение <code>State</code> состоит в передаче состояния от вычисления к вычислению.</p>
 
 <p>Для того, чтобы состояние использовать и изменять нужны вспомогательные функции:</p>
-<pre><hs>get :: State s s
+<pre><hs><d>get :: State s s</d>
 get = State $ \s -> (s, s)
 
-set :: s -> State s s
+<d>set :: s -> State s s</d>
 set s = State $ const (s, s)
 
-modify :: (s -> s) -> State s s
+<d>modify :: (s -> s) -> State s s</d>
 modify f = get >>= set . f</hs></pre>
 <p>Функция <code>get</code> превращает состояние в результат вычисления, функция <code>set</code> устанавливает значение состоянию, а <code>modify</code> их комбинирует и изменяет состояние с помощью указанной функции. Вот как они работают:</p>
 <pre><ghci><l></l> runState get 6
@@ -108,7 +108,7 @@ mkTree n = Node <$> modify (+ 1)
 <task>Напишите обход дерева в глубину слева и правый обход дерева.</task>
 
 <p>Наконец, давайте полностью инкапсулируем монадические вычисления:</p>
-<pre><hs>enumTree :: Int -> BTree Int
+<pre><hs><d>enumTree :: Int -> BTree Int</d>
 enumTree n = evalState (mkTree n) 0</hs></pre>
 
 <p>В таком виде функцию <code>enumTree</code> можно использовать в любых вычислениях, она имеет тип, ничего не говорящий о том, что внутри неё работала монада <code>State</code>.</p>
@@ -136,7 +136,7 @@ enumTree n = evalState (mkTree n) 0</hs></pre>
 <p>Определим наш генератор последовательности псевдослучайных целых чисел на отрезке <eq>[0, k]</eq> таким образом:</p>
 <pre><hs>type Random a = State Integer a
 
-random :: Integral a => a -> Random a
+<d>random :: Integral a => a -> Random a</d>
 random k = rescale <$> modify iter 
   where
     iter x = (x * a + c) `mod` m
@@ -162,7 +162,7 @@ randomTree n = Node <$> random 100
 <o>Node 24 (Node 62 (Leaf 88) (Leaf 26)) (Node 52 (Node 54 (Leaf 72) (Leaf 82)) (Node 0 (Leaf 78) (Leaf 92)))</o></ghci></pre>
 
 <p>Наконец, можно выйти во внешний мир с помощью монады <code>IO</code> и запросить абсолютное время у процессора в качестве затравки генератора. Функция <code>getCPUTime</code> определена в библиотеке <tt>System.CPUTime</tt>. </p>
-<pre><hs>randomIO :: Integral a => a -> IO a
+<pre><hs><d>randomIO :: Integral a => a -> IO a</d>
 randomIO n = evalState (random n) <$> getCPUTime</hs></pre>
 <pre><ghci><l></l> randomIO 100
 <o>5</o>
@@ -198,10 +198,10 @@ randomIO n = evalState (random n) <$> getCPUTime</hs></pre>
 
     <p>Давайте, завершая тему случайных чисел, напишем классическую игру в угадайку, которая входит во все учебники по элементарному программированию. Программа должна "задумать" случайное число, а человек в диалоге с ней попытаться его угадать, получая подсказки типа "больше" или "меньше". </p>
     <p>Наша программа будет генерировать случайное число и передавать его интерактивному собеседнику — функции <code>dialog</code>:</p>
-    <pre><hs>ugadaika :: Integer -> IO ()
+    <pre><hs><d>ugadaika :: Integer -> IO ()</d>
 ugadaika n = randomIO n >>= dialog</hs></pre>
     <p>Функция <code>dialog</code> может быть устроена, например, так:</p>
-    <pre><hs>dialog :: Integer -> IO ()
+    <pre><hs><d>dialog :: Integer -> IO ()</d>
 dialog x = do
   y <- read <$> getLine
   case compare x y of
@@ -225,11 +225,11 @@ yes!</o></ghci></pre>
 <pre><ghci><l></l> ugadaika 100
 <o>You have 8 guesses
 50
-less (7 guesse left)
+less (7 guesses left)
 25
-less (6 guesse left)
+less (6 guesses left)
 12
-greater (5 guesse left)
+greater (5 guesses left)
 17
 ...</o></ghci></pre>
 
@@ -275,33 +275,33 @@ greater (5 guesse left)
 <p>Этот алгоритм можно реализовать практически один в один в чистой функциональной программе с использованием монады <code>Sate</code>. Для этого напишем полезные универсальные функции для работы со стеком.</p>
 <pre><hs>type StackFn a = State [a] [a]
 
-evalStackFn :: StackFn a -> [a]
+<d>evalStackFn :: StackFn a -> [a]</d>
 evalStackFn fn = evalState fn []
 
 -- поместить значение на вершину стека
-push :: a -> StackFn a
+<d>push :: a -> StackFn a</d>
 push x = modify (x:) >> return []
 
 -- получить значение на вершине стека
-peek :: StackFn a
+<d>peek :: StackFn a</d>
 peek = headE <$> get
 
 -- снять значение с вершины стека
-pop :: StackFn a
+<d>pop :: StackFn a</d>
 pop = get >>= split
   where split [] = return []
         split (x:s) = set s >> return [x]
 
 -- снимать с вершины стека все значения
 -- до тех пор, пока выполняется указанное условие
-popWhile :: (a -> Bool) -> StackFn a
+<d>popWhile :: (a -> Bool) -> StackFn a</d>
 popWhile p = do (r, s') <- span p <$> get
                 set s'
                 return r</hs></pre>
 
  <p>Эти функции используют монаду <code>[]</code> для обработки исключительных ситуаций. С их помощью шаг алгоритма Дейкстры можно записать буквально так:</p>
 
- <pre><hs>step :: String -> StackFn String
+ <pre><hs><d>step :: String -> StackFn String</d>
 step x
   | isOperator x =
       do r <- popWhile (\y -> prec x < prec y)
@@ -325,17 +325,17 @@ prec x = case x of
 
 <p>Все этапы обработки возвращают списки результатов (возможно, пустые). Это позволяет представить основной цикл алгоритма Дейкстры в виде моноидальной свёртки.</p>
  
- <pre><hs>dijkstra :: [String] -> [String]
+ <pre><hs><d>dijkstra :: [String] -> [String]</d>
 dijkstra s = evalStackFn $ (<>) <$> foldMapM step s <*> get</hs></pre>
 
 <p>Моноидальную свёртку, выполняемую в какой-то монаде определить нетрудно:</p>
 
-  <pre><hs>foldMapM :: (Monoid b, Monad m) => (a -> m b) -> [a] -> m b
+  <pre><hs><d>foldMapM :: (Monoid b, Monad m) => (a -> m b) -> [a] -> m b</d>
 foldMapM f xs = mconcat <$> mapM f xs</hs></pre> 
 
 <p>Наконец, добавим простой лексический анализ, то есть, превращение строки в последовательность токенов — чисел, опереаторов и скобок. И эту задачу тоже легко можно выполнить с помощью моноидов:</p>
 
-<pre><hs>lexer :: String -> [String]
+<pre><hs><d>lexer :: String -> [String]</d>
 lexer = words . foldMap separate
   where separate x
           | x `elem` "+-*/()" = " " <> [x] <> " "

@@ -42,7 +42,8 @@ data Result a = Ok a String
       <p>где <code>a</code>&nbsp;— тип результата трансляции.</p>
 
       <p>Можно создать первый почти тривиальный, но полезный комбинатор, считывающий первый произвольный символ в строке. Он соответствует метасиволу <tt>.</tt> в регулярных выражениях.</p>
-      <pre><hs>next = Parser $ \r -> case r of
+      <pre><hs><d>next :: Parser Char</d>
+next = Parser $ \r -> case r of
   x:xs -> Ok x xs
   [] -> Fail r</hs></pre>
       <p>Вот примеры его работы:</p>
@@ -58,7 +59,7 @@ data Result a = Ok a String
 <l></l> run end ""
 <o>Ok () ""</o></ghci></pre>
       <details><summary>Вариант решения</summary>
-	<pre><hs>end :: Parser ()
+	<pre><hs><d>end :: Parser ()</d>
 end = Parser $ \r -> case r of
   [] -> Ok () []
   r  -> Fail r</hs></pre>
@@ -75,21 +76,19 @@ end = Parser $ \r -> case r of
 <l></l> run (check isUpper) "abc"
 <o>Fail "abc"</o></ghci></pre>
       <details><summary>Вариант решения</summary>
-	<pre><hs>check :: (Char -> Bool) -> Parser Char
+	<pre><hs><d>check :: (Char -> Bool) -> Parser Char</d>
 check p = Parser $ \r -> case r of
   x:xs | p x -> Ok x xs
   _          -> Fail r </hs></pre>
       </details>
 
       С его помощью определите несколько полезных парсеров:
-      <ul>
-	<li> <code>char c</code> — распознаёт конкретный символ <code>c</code>,</li>
-	<li> <code>digit</code> — распознаёт произвольную цифру.</li>
-	<li> <code>set s</code> — распознаёт символы из указанного списка.</li>
-      </ul>      </task>
 
-      <pre><hs>char :: Char -> Parser Char
+      <pre><hs>-- распознаёт конкретный символ
+char :: Char -> Parser Char
+-- распознаёт произвольную цифру
 digit :: Parser Char
+-- распознаёт символы из указанного списка
 set :: [Char] -> Parser Char </hs></pre>
       <pre><ghci><l></l> run (char 'x') "xor"
 <o>Ok 'x' "or"</o>
@@ -99,6 +98,7 @@ set :: [Char] -> Parser Char </hs></pre>
 <o>Ok '(' "+ 1 2)"</o>
 <l></l> run (set ['a'..'z']) "cat"
 <o>Ok 'c' "at"</o></ghci></pre> </task>
+</task>
 
       <h2>Обработка результата трансляции</h2>
       
@@ -147,10 +147,10 @@ set :: [Char] -> Parser Char </hs></pre>
 <o>Ok '4' ""</o></ghci></pre>
 
 <p>Для всех аппликативных функторов определены две функции <code>traverse</code> и <code>sequenceA</code>:
-  <pre><hs>traverse :: Applicative f => (a -> f b) -> [a] -> f [b]
+  <pre><hs><d>traverse :: Applicative f => (a -> f b) -> [a] -> f [b]</d>
 traverse f = foldr (\x r -> (:) <$> f x <*> r) (pure [])
 
-sequenceA :: Applicative f => [f a] -> f [a]
+<d>sequenceA :: Applicative f => [f a] -> f [a]</d>
 sequenceA = traverse id</hs></pre>
 
 Они позволяют превратить последовательность аппликативных функторов, в результат их последовательной работы. В нашем случае, с их помощью можно список парсеров превратить в парсер, распознающий их последовательность, и возвращающий список результатов разбора:</p>
@@ -178,7 +178,7 @@ Ok "12" "34"
 <o>Fail ""</o></ghci></pre>
 
 <p>С помощью функции <code>pure</code> мы можем вводить любые значения в результат разбора. В частности, с его помощью можно определить пустой символ <eq>\varepsilon</eq>: </p>
-<pre><hs>epsilon :: Parser ()
+<pre><hs><d>epsilon :: Parser ()</d>
 epsilon = pure ()</hs></pre>
 
   <pre><ghci><l></l> run epsilon "abc"
@@ -295,13 +295,13 @@ A \rightarrow \alpha ~|~ \beta ~|~ \gamma ~|~ ...
     <h2>Повторение трансляторов</h2>
     
 <p>Для всех альтернативных функторов в модуле <code>Control.Applicative</code> определены три функции <code>some</code>, <code>many</code> и <code>optional</code>
-      <pre><hs>some :: Alternative f => f a -> f [a]
+      <pre><hs><d>some :: Alternative f => f a -> f [a]</d>
 some p = (:) <$> p <*> many p
 
-many :: Alternative f => f a -> f [a]
+<d>many :: Alternative f => f a -> f [a]</d>
 many p = some p <|> pure []
 
-optional :: Alternative f => f a -> f (Maybe a)
+<d>optional :: Alternative f => f a -> f (Maybe a)</d>
 optional p = Just <$> p <|> pure Nothing</hs></pre>
 
       которые соответствуют повторению элементов:
@@ -360,7 +360,7 @@ optional p = Just <$> p <|> pure Nothing</hs></pre>
 Второй способ определён только для анализаторов, возвращающих единичный тип <code>()</code>.  
 С этими операциями мы получили алгебру анализаторов, эквивалентную алгебре типов, электрических сопротивлений, логических значений и т.п.   
 </p>
-<task>Проверьте, являются ли нейтральные элементы нулевыми для дуальных операций? Работает для для алгебры анализаторов распределительный закон, то есть можно ли выносить анализаторы за скобки, сокращая вычисления?</task>
+<task>Проверьте, являются ли нейтральные элементы нулевыми для дуальных операций? Работает ли для алгебры анализаторов распределительный закон, то есть можно ли выносить анализаторы за скобки, сокращая вычисления?</task>
 
 <p> Все альтернативные трансляторы образуют моноид, и для использования этого обстоятельства, в модуле <code>Data.Foldable</code> определёна функция <code>asum</code>.
 <pre><hs>asum :: (Foldable t, Alternative f) => t (f a) -> f a</hs></pre>
@@ -431,7 +431,7 @@ Fail
          | Text String
   deriving Show
 
-xml :: Parser XML
+<d>xml :: Parser XML</d>
 xml = tag <|> text
   where
     text = Text <$> some (check (/= '<'))

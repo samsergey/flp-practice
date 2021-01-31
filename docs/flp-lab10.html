@@ -21,7 +21,7 @@
       <h2>Поиск и замена подстрок</h2>
 
 <task>Для трансляторов-моноидов можно написать универсальную функцию <code>collect</code>, полезную для поиска подстрок, описываемых транслятором <code>p</code>  
-  <pre><hs>collect :: Monoid b => Parser b -> Parser b
+  <pre><hs><d>collect :: Monoid b => Parser b -> Parser b</d>
 collect p = mmany (p <|> mempty <$ next)</hs></pre>
   С её помощью определите следующие функции:
   <pre><hs>count :: Parser a -> Parser Integer
@@ -65,10 +65,12 @@ longest :: Parser [a] -> Parser [a]</hs></pre>
 
  <p>Моноиды позволили нам с помощью единственной функции <code>foldMap</code> построить правую и левую свёртки. Аналогом <code>foldMap</code> для трансляторов является функция <code>mmany</code>, и с её помощью мы можем повторить "фокус" с  моноидами <code>Endo</code>  и <code>Dual</code>: </p>
 
-<pre><hs>chainr p o = appEndo <$> mmany chars <*> p
+ <pre><hs><d>chainr :: Parser a -> Parser (a -> a -> a) -> Parser a</d>
+chainr p o = appEndo <$> mmany chars <*> p
   where
     chars = Endo <$> (p <**> o)
 
+<d>chainl :: Parser a -> Parser (a -> a -> a) -> Parser a</d>
 chainl p o = p <**> (appEndo . getDual <$> mmany chars)
   where
     chars = Dual . Endo <$> ((flip <$> o) <*> p)
@@ -100,7 +102,8 @@ frac = div <$ char '/' </hs></pre>
 
 <p>Имея такую свёртку, легко напишем транслятор арифметических выражений, производящий вычисления в ходе трансляции:</p>
 
-<pre><hs>expr = _E
+<pre><hs><d>expr :: Parser Int</d>
+expr = _E
   where _E = _T `chainl` (add <|> sub)
         _T = _P `chainl` (mul <|> frac)
         _P = char '(' *> _E <* char ')' <|> integer
@@ -182,14 +185,14 @@ frac = div <$ char '/' </hs></pre>
 
       <p>Это заставит нас добавить тривиальную строчку <pre><hs>Error s -> Error s</hs></pre>во все определения типов <code>Result</code> и <code>Parser</code> экземплярами классов <code>Functor</code>, <code>Applicative</code>, <code>Alternative</code> и <code>Monad</code>.
       <p>Это изменение никак не скажется на поведении нашей системы, пока мы не определим  комбинатор, создающий ошибочное состояние:</p>
-      <pre><hs>err :: String -> Parser a
+      <pre><hs><d>err :: String -> Parser a</d>
 err m = Parser $ \_ -> Error m</hs></pre>
 
 <pre><ghci><l></l> run (err "something went wrong!") "abc"
 <o>Error "something went wrong!"</o></ghci></pre>
 
  <p>Сам по себе, этот комбинатор не очень интересен. Для работы с ним мы определим ещё два полезный оператора. Один позволит работать с разбираемой строкой, как с результатом работы парсера:</p>  
-<pre><hs>getInput :: Parser String
+<pre><hs><d>getInput :: Parser String</d>
 getInput = Parser $ \s -> Ok s s</hs></pre>
 
 <p>Другой превращает транслятор в обязательный и снабжает его описанием:</p>

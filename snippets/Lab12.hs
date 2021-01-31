@@ -87,6 +87,7 @@ showQueens n = foldMap line
              <> replicate (n-i+1) '.'
              <> "\n"
 
+------------------------------------------------------------
 --  SEND
 --  MORE
 -- MONEY
@@ -115,6 +116,8 @@ prob2' = do
   guard $ a + b == c
   return (a,b,c)
 
+------------------------------------------------------------
+
 prob3 m n = do
   [o1,o2,o3] <- samples 3 ["+","-","*","/"]
   let s = Leaf (show m)
@@ -134,6 +137,8 @@ trees n = nub $ trees (n-1) >>= ins (Node () (Leaf ()) (Leaf ()))
     ins t (Leaf ()) = [t]
     ins t (Node () t1 t2)
       = (Node () <$> ins t t1 <*> [t2]) <|> (Node () <$> [t1] <*> ins t t2)
+
+------------------------------------------------------------
 
 unfoldM :: (Alternative m, Monad m)
         => (a -> m (b, a)) -> a -> m [b]
@@ -178,7 +183,7 @@ bfs = flip (<>)
 
 ------------------------------------------------------------
 
-wordSplit dict s = unwords.fst <$> search (<>) trans isSolution s
+wordSplit dict s = unwords.fst <$> search dfs trans isSolution s
   where
     trans = foldMap prefix dict
     isSolution (_, s) = null s
@@ -189,3 +194,19 @@ wordSplit dict s = unwords.fst <$> search (<>) trans isSolution s
         go _ _ = mempty
 
 ------------------------------------------------------------
+
+isqrt n | fromIntegral rs == s = pure rs
+        | otherwise = empty
+  where s = sqrt (fromIntegral n)
+        rs = round s
+
+triangles = do
+  a <- From [1..]
+  b <- From [1..a]
+  guard $ gcd a b == 1
+  c <- isqrt (a^2 + b^2)
+  return (b,a,c)
+
+area (a,b,_) = a * b `div`2
+
+perimiter (a,b,c) = a + b + c
