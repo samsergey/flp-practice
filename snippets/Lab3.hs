@@ -4,6 +4,8 @@ module Main where
 import Data.List
 import Data.Monoid
 import GHC.Conc
+import Data.List
+import Data.Maybe
 
 toBase :: Int -> Int -> [Int]
 -- toBase b 0 = [0]
@@ -39,13 +41,25 @@ floyd'' x = [x] : ((x:) <$> floyd'' (x+1))
 
 euler f h (x0, y0) = (x0 + h, y0 + h * f x0 y0)
 
-euler' f h (x0, y0) = (x, y)
-  where x = x0 + h
-        y = findroot (\y -> f x y - (y-y0)/h) (f x) y0
+--euler' f h (x0, y0) = (x, y)
+--  where x = x0 + h
+--        y = findroot (\y -> f x y - (y-y0)/h) (f x) y0
 
-findroot f df = fixPoint 1e-8 (\x -> x - f x / df x)
+findRoot' f df = fixedPoint
+                 . take 150
+                 . iterate (\x -> x - f x / df x)
 
-fixPoint dx f x = snd $ dropWhile (\(x1,x2) -> abs(x2-x1) < 1e-8) $ iterate f x
+findRoot f = findRoot' f (diff f)
+
+fixedPoint xs = (snd
+                <$> find (\(x1,x2) -> abs(x2-x1) <= 1e-12))
+                $ zip xs (tail xs)
+
+diff f x = maybe (df 1e-8)
+           $ fixedPoint
+           $ take 20
+           $ df <$> iterate (/ 2) 1e-3
+  where df dx = (f (x + dx) - f(x - dx))/(2*dx)
 
 sumsq 0 = 0
 sumsq n = n^2 + sumsq (n-1)
