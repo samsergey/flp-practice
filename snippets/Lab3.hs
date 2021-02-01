@@ -37,6 +37,14 @@ floyd' = unfoldr (\(i,xs) -> Just $ (i+1,) <$> splitAt i xs) (1,[1..])
 floyd'' :: Int -> [[Int]]
 floyd'' x = [x] : ((x:) <$> floyd'' (x+1))
 
+euler f h (x0, y0) = (x0 + h, y0 + h * f x0 y0)
+
+euler' f h (x0, y0) = (x, y)
+  where x = x0 + h
+        y = findroot (\y -> f x y - (y-y0)/h) (f x) y0
+
+findroot f df x = 
+
 sumsq 0 = 0
 sumsq n = n^2 + sumsq (n-1)
 
