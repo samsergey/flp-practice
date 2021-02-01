@@ -43,7 +43,9 @@ euler' f h (x0, y0) = (x, y)
   where x = x0 + h
         y = findroot (\y -> f x y - (y-y0)/h) (f x) y0
 
-findroot f df x = 
+findroot f df = fixPoint 1e-8 (\x -> x - f x / df x)
+
+fixPoint dx f x = snd $ dropWhile (\(x1,x2) -> abs(x2-x1) < 1e-8) $ iterate f x
 
 sumsq 0 = 0
 sumsq n = n^2 + sumsq (n-1)
