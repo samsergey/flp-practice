@@ -39,11 +39,20 @@ floyd' = unfoldr (\(i,xs) -> Just $ (i+1,) <$> splitAt i xs) (1,[1..])
 floyd'' :: Int -> [[Int]]
 floyd'' x = [x] : ((x:) <$> floyd'' (x+1))
 
-euler f h (x0, y0) = (x0 + h, y0 + h * f x0 y0)
+euler h f (x0, y0) = (x0 + h, y0 + h * f x0 y0)
 
---euler' f h (x0, y0) = (x, y)
---  where x = x0 + h
---        y = findroot (\y -> f x y - (y-y0)/h) (f x) y0
+euler' h f (x0, y0) = case y' of
+                      Nothing -> euler h f (x0, y0)
+                      Just y' -> (x, y')
+  where x = x0 + h
+        y' = findRoot (\y -> h*(f x y) - (y-y0)) y0
+
+rk2' h f (x0,y0) = case y' of
+                      Nothing -> euler h f (x0, y0)
+                      Just y' -> (x, y')
+  where x = x0 + h
+        y' = findRoot (\y -> y0 + h/2*(f x0 y0 + f x y)-y) y0
+
 
 findRoot' f df = fixedPoint
                  . take 150
@@ -51,11 +60,12 @@ findRoot' f df = fixedPoint
 
 findRoot f = findRoot' f (diff f)
 
-fixedPoint xs = (snd
-                <$> find (\(x1,x2) -> abs(x2-x1) <= 1e-12))
-                $ zip xs (tail xs)
+fixedPoint :: [Double] -> Maybe Double
+fixedPoint xs = snd <$>
+                (find (\(x1,x2) -> abs(x2-x1) <= 1e-12)
+                 $ zip xs (tail xs))
 
-diff f x = maybe (df 1e-8)
+diff f x = fromMaybe (df 1e-8)
            $ fixedPoint
            $ take 20
            $ df <$> iterate (/ 2) 1e-3
