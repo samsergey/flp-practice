@@ -39,20 +39,33 @@ floyd' = unfoldr (\(i,xs) -> Just $ (i+1,) <$> splitAt i xs) (1,[1..])
 floyd'' :: Int -> [[Int]]
 floyd'' x = [x] : ((x:) <$> floyd'' (x+1))
 
+type RHS = Double -> Double -> Double
+type Pt = (Double, Double)
+type ODESolve = Double -> RHS -> Pt -> Pt
+
+euler :: ODESolve
 euler h f (x0, y0) = (x0 + h, y0 + h * f x0 y0)
 
+euler' :: ODESolve
 euler' h f (x0, y0) = case y' of
                       Nothing -> euler h f (x0, y0)
                       Just y' -> (x, y')
   where x = x0 + h
         y' = findRoot (\y -> h*(f x y) - (y-y0)) y0
 
+rk2' :: ODESolve
 rk2' h f (x0,y0) = case y' of
                       Nothing -> euler h f (x0, y0)
                       Just y' -> (x, y')
   where x = x0 + h
         y' = findRoot (\y -> y0 + h/2*(f x0 y0 + f x y)-y) y0
 
+adaptive :: ODESolve -> ODESolve
+adaptive method h f (x,y) = fromMaybe (method h f (x,y))
+                            $ fixedPointBy snd
+                            $ take 10
+                            $ ((\h -> method h f (x,y))
+                            <$> (iterate (/ 2) sh))
 
 findRoot' f df = fixedPoint
                  . take 150
