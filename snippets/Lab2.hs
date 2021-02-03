@@ -1,19 +1,30 @@
+{-# language TypeSynonymInstances,FlexibleInstances #-}
 module Lab2 where
 
 import Lab1 (mean)
 import Data.List
 import Data.Ord
 
-data Circuit = R Double
-               | Par Circuit Circuit
-               | Seq Circuit Circuit deriving Show
+data Electronics = R Double
+                 | Key Bool
+  deriving Show
+
+data Circuit a = Elem a 
+               | Par (Circuit a) (Circuit a)
+               | Seq (Circuit a) (Circuit a) deriving Show
+
+runCircuit elem = go
+  where
+    go c = case c of
+      Elem x -> elem x 
+      Seq c1 c2 -> go c1 <&&> go c2
+      Par c1 c2 -> go c1 <||> go c2
 
 
-resistance :: Circuit -> Resistance Double
-resistance c = case c of
-  R r -> Value r
-  Seq c1 c2 -> resistance c1 <&&> resistance c2
-  Par c1 c2 -> resistance c1 <||> resistance c2
+resistance :: Circuit Electronics -> Resistance Double
+resistance = runCircuit elem
+  where elem (R r) = Value r
+        elem (Key k) = if k then Short else Break
 
 ------------------------------------------------------------
 
@@ -34,16 +45,37 @@ resistanceToNum (Value x) = x
 data Resistance a = Short | Value a | Break
   deriving (Show, Eq, Ord)
 
-Break <&&> _ = Break
-Short <&&> r = r
-Value a <&&> Value b = Value $ a + b
-a <&&> b = b <&&> a
+class DeMorgan a where
+  inv :: a -> a
 
-inv Short = Break
-inv Break = Short
-inv (Value x) = Value (1/x)
+  (<&&>) :: a -> a -> a
+  a <&&> b = inv (inv a <||> inv b)  
 
-a <||> b = inv (inv a <&&> inv b)
+  (<||>) :: a -> a -> a
+  a <||> b = inv (inv a <&&> inv b)
+    
+instance Fractional a => DeMorgan (Resistance a) where
+  inv Short = Break
+  inv Break = Short
+  inv (Value r) = Value (1/r)
+  
+  Break <&&> _ = Break
+  Short <&&> r = r
+  Value a <&&> Value b = Value $ a + b
+  a <&&> b = b <&&> a
+
+instance DeMorgan (Circuit a) where
+  inv (Elem x) = Elem x
+  inv (Par c1 c2) = Seq (inv c1) (inv c2)
+  inv (Seq c1 c2) = Par (inv c1) (inv c2)
+  
+  (<&&>) = Seq
+  (<||>) = Par
+
+instance DeMorgan String where
+  inv = id
+  s1 <&&> s2 = "(" ++ s1 ++ "," ++ s2 ++ ")"
+  s1 <||> s2 = "(" ++ s1 ++ "+" ++ s2 ++ ")"
 
 ------------------------------------------------------------
 
@@ -86,31 +118,23 @@ floyd = (\i -> [arsum i + 1 .. arsum (i+1)]) <$> [1..]
 
 ------------------------------------------------------------
 
-data Worker = A | B | C | D deriving (Show, Eq)
+data Worker = A | B | C deriving (Show, Eq)
 
-worker w stage = case stage of
-  1 -> case w of
-         A -> R 3
-         B -> R 2
-         C -> R 4
-         D -> R 3
-  2 -> case w of
-         A -> R 6
-         B -> R 4
-         C -> R 5
-         D -> R 4
-         
-pairs = [ (w1, w2)
-        | w1 <- [A, B, C, D]
-        , w2 <- [A, B, C, D]
-        , w1 /= w2]
+worker A = [10, 37, 55]
+worker B = [23, 20, 64]
+worker C = [34, 18, 42]
 
-opt = [ (p1, p2)
-      | p1 <- pairs
-      , p2 <- pairs ]
+pairs = [ ( ((x,y),(y,z),(z,x))
+          , strategy (temp x) (temp y) (temp z))
+        | x <- [A, B, C]
+        , y <- [A, B, C]
+        , z <- [A, B, C]
+        , x /= y && x /= z && y /= z]
 
--- strategy s ((a,b),(c,d)) = case s of
---    1 -> (worker a 1 <||> worker b 1) <&&>
---         (worker c 2 <||> worker d 2)
---    2 -> (worker a 1 <&&> worker b 1) <||>
---         (worker c 2 <&&> worker d 2)
+temp w i = Value $ worker w !! (i-1)
+
+strategy x y z = (x 1 <&&> y 1) <||>
+                 (y 2 <&&> z 2) <||>
+                 (z 3 <&&> x 3)
+
+
