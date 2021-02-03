@@ -118,8 +118,8 @@
 	<pre><hs><d>resistance :: Circuit -> Double</d>
 resistance c = case c of
   R r -> r
-  Seq c1 c2 -> 1/(1/resistance c1 + 1/resistance c2)
-  Par c1 c2 -> resistance c1 + resistance c2</hs></pre></details>
+  Par c1 c2 -> 1/(1/resistance c1 + 1/resistance c2)
+  Seq c1 c2 -> resistance c1 + resistance c2</hs></pre></details>
       Рассчитайте с помощью функции <code>resistance</code> сопротивление цепи 1.
       </task>
 
