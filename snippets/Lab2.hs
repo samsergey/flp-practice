@@ -118,23 +118,11 @@ floyd = (\i -> [arsum i + 1 .. arsum (i+1)]) <$> [1..]
 
 ------------------------------------------------------------
 
-data Worker = A | B | C deriving (Show, Eq)
-
-worker A = [10, 37, 55]
-worker B = [23, 20, 64]
-worker C = [34, 18, 42]
-
-pairs = [ ( ((x,y),(y,z),(z,x))
-          , strategy (temp x) (temp y) (temp z))
-        | x <- [A, B, C]
-        , y <- [A, B, C]
-        , z <- [A, B, C]
-        , x /= y && x /= z && y /= z]
-
-temp w i = Value $ worker w !! (i-1)
-
-strategy x y z = (x 1 <&&> y 1) <||>
-                 (y 2 <&&> z 2) <||>
-                 (z 3 <&&> x 3)
+a 1 = Value 10
+a 2 = Value 37g
+b 1 = Value 23
+b 2 = Value 20
+c 1 = Value 34
+c 2 = Value 18
 
 
