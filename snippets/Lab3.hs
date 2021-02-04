@@ -60,12 +60,16 @@ rk2' h f (x0,y0) = case y' of
   where x = x0 + h
         y' = findRoot (\y -> y0 + h/2*(f x0 y0 + f x y)-y) y0
 
-adaptive :: ODESolve -> ODESolve
-adaptive method h f (x,y) = fromMaybe (method h f (x,y))
-                            $ fixedPointBy snd
-                            $ take 10
-                            $ ((\h -> method h f (x,y))
-                            <$> (iterate (/ 2) sh))
+solveODE method f h = iterate (method h f) 
+
+
+
+-- adaptive :: ODESolve -> ODESolve
+-- adaptive method h f (x,y) = fromMaybe (method h f (x,y))
+--                             $ fixedPointBy snd
+--                             $ take 10
+--                             $ ((\h -> method h f (x,y))
+--                             <$> (iterate (/ 2) h))
 
 findRoot' f df = fixedPoint
                  . take 150

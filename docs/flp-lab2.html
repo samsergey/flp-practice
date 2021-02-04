@@ -227,7 +227,8 @@ c 2 = Value 18
  bisection (\x -> x < 2000) (0, 1000000)
  bisection (\x -> x < 2e6) (0, 1e9)
  bisection (\x -> x^2 < 2) (1, 2)
- (^2) <$> bisection (\x -> x^2 < 2) (1, 2)
+ bisection (\x -> (x-2)*(x-5) < 0) (1, 3)
+ bisection (\x -> (x-2)*(x-5) < 0) (1, 13)
  bisection (\x -> cos x > 1 - 1/x) (0, 2)
  bisection (\x -> 1/x > 0) (-1, 2)
  bisection (\x -> isNaN (sqrt (3 - x^2))) (0, 2) </hs></pre>
