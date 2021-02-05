@@ -113,3 +113,6 @@ pfib n = x `par` y `pseq` (x + y)
         y = pfib (n-2)
 
 main = print $ pfib 40 
+
+floyd''' = map (\i -> [arsum i + 1 .. arsum (i + 1)]) [1..]
+  where arsum n = (n*(n - 1)) `div` 2

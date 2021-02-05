@@ -325,8 +325,8 @@ optional p = Just <$> p <|> pure Nothing</hs></pre>
 <l></l> run (optional digit) "c123"
 <o>Ok Nothing "c123"</o></ghci></pre>
 
-      <task>Пользоваться функцией <code>optional</code> в ряду с <code>some</code> и <code>many</code> не очень удобно. Последние две возвращают списки, а <code>optional</code> -- тип <code>Maybe</code> и если нам захочется их комбинировать, это будет непросто.
-  Определите функцию <code>opt</code> -- аналогичную по смыслу <code>optional</code>, но возвращающую список. Воспользуйтесь универсальной функцией <code>toList</code>
+      <task>Пользоваться функцией <code>optional</code> в ряду с <code>some</code> и <code>many</code> не очень удобно. Последние две возвращают списки, а <code>optional</code> — тип <code>Maybe</code> и если нам захочется их комбинировать, это будет непросто.
+  Определите функцию <code>opt</code> — аналогичную по смыслу <code>optional</code>, но возвращающую список. Воспользуйтесь универсальной функцией <code>toList</code>
 
       <pre><ghci><l></l> run (opt digit) "123"
 <o>Ok "1" "23"</o>
