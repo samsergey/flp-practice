@@ -46,6 +46,9 @@ data Resistance a = Short | Value a | Break
   deriving (Show, Eq, Ord)
 
 class DeMorgan a where
+  {-# MINIMAL inv, ((<&&>) | (<||>)) #-}
+  one :: a
+  zero :: a
   inv :: a -> a
 
   (<&&>) :: a -> a -> a
@@ -53,8 +56,11 @@ class DeMorgan a where
 
   (<||>) :: a -> a -> a
   a <||> b = inv (inv a <&&> inv b)
-    
+  one = inv zero
+  zero = inv one  
+
 instance Fractional a => DeMorgan (Resistance a) where
+  zero = Break
   inv Short = Break
   inv Break = Short
   inv (Value r) = Value (1/r)
@@ -73,10 +79,27 @@ instance DeMorgan (Circuit a) where
   (<||>) = Par
 
 instance DeMorgan String where
+  zero = ""
   inv = id
   s1 <&&> s2 = "(" ++ s1 ++ "," ++ s2 ++ ")"
   s1 <||> s2 = "(" ++ s1 ++ "+" ++ s2 ++ ")"
 
+newtype Fuzzy = Fuzzy Double deriving Show
+
+instance DeMorgan Fuzzy where
+  zero = Fuzzy 0
+  inv (Fuzzy x) = Fuzzy $ 1 - x
+  Fuzzy v1 <&&> Fuzzy v2 = Fuzzy (v1 * v2)
+
+newtype Zadeh = Zadeh Double deriving Show
+
+instance DeMorgan Zadeh where
+  zero = Zadeh 0
+  inv (Zadeh x) = Zadeh $ 1 - x
+  Zadeh v1 <&&> Zadeh v2 = Zadeh (v1 `min` v2)
+
+xor :: DeMorgan a => a -> a -> a
+xor a b = a <||> b <&&> inv (a <&&> b)
 ------------------------------------------------------------
 
 bisection :: Eq a
