@@ -15,6 +15,7 @@ toBase' b n
     go res 0 = res
     go res n = go (mod n b : res) (div n b)
 
+
 toBase :: Int -> Int -> [Int]
 toBase b n
   | b <= 1 = error ""
@@ -24,6 +25,7 @@ toBase b n
                 $ takeWhile (> 0)
                 $ iterate (`div` b) n
 
+pascalStep :: Num a => [a] -> [a]
 pascalStep r = zipWith (+) (0:r) (r++[0])
 
 pascals :: [[Integer]]
@@ -58,10 +60,11 @@ euler h f (x0, y0) = (x0 + h, y0 + h * f x0 y0)
 
 euler' :: ODESolve
 euler' h f (x0, y0) = case y' of
-                      Nothing -> euler h f (x0, y0)
-                      Just r -> (x, r)
-  where x = x0 + h
-        y' = findRoot (\y -> h * f x y - (y-y0)) y0
+    Nothing -> euler h f (x0, y0)
+    Just y' -> (x, y')
+  where 
+    x = x0 + h
+    y' = findRoot (\y -> h * f x y - (y-y0)) y0
 
 rk2' :: ODESolve
 rk2' h f (x0,y0) = case y' of
@@ -72,6 +75,7 @@ rk2' h f (x0,y0) = case y' of
 
 solveODE :: (t1 -> t2 -> a -> a) -> t2 -> t1 -> a -> [a]
 solveODE method f h = iterate (method h f) 
+
 
 
 -- adaptive :: ODESolve -> ODESolve
@@ -116,19 +120,18 @@ fib 1 = 0
 fib 2 = 1
 fib n = fib (n-1) + fib (n-2)
 
-
 fib' :: Integer -> Integer
 fib' = go 0 1
   where go a b 1 = a
         go a b 2 = b
         go a b i = go b (a+b) (i-1) 
 
-pfib :: Int -> Integer
+pfib :: (Eq a, Num p, Num a) => a -> p
 pfib 1 = 0
 pfib 2 = 1
 pfib n = x `par` y `pseq` (x + y)
   where x = pfib (n-1)
-        y = pfib (n-2)
+        y = pfib (n-2) 
 
 main :: IO ()
 main = print $ pfib 40 
@@ -136,3 +139,6 @@ main = print $ pfib 40
 floyd''' :: [[Integer]]
 floyd''' = map (\i -> [arsum i + 1 .. arsum (i + 1)]) [1..]
   where arsum n = (n*(n - 1)) `div` 2
+
+g :: Num a => a -> a
+g x = x + 8
