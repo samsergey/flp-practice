@@ -1,4 +1,4 @@
-{-# language TypeSynonymInstances,FlexibleInstances #-}
+{-# language TypeSynonymInstances,FlexibleInstances, GeneralizedNewtypeDeriving  #-}
 module Lab2 where
 
 import Prelude hiding ((&&), (||))
@@ -91,24 +91,26 @@ instance DeMorgan String where
   s1 && s2 = "(" ++ s1 ++ "," ++ s2 ++ ")"
   s1 || s2 = "(" ++ s1 ++ "+" ++ s2 ++ ")"
 
-newtype Fuzzy = Fuzzy Double deriving Show
+newtype Fuzzy = Fuzzy Double 
+  deriving (Show, Num, Fractional,Eq, Ord)
 
 instance DeMorgan Fuzzy where
-  zero = Fuzzy 0
-  inv (Fuzzy x) = Fuzzy $ 1 - x
-  Fuzzy v1 && Fuzzy v2 = Fuzzy (v1 * v2)
+  zero = 0
+  inv x = 1 - x
+  (&&) = (*)
 
-newtype Zadeh = Zadeh Double deriving Show
+newtype Zadeh = Zadeh Double 
+  deriving (Show, Num, Fractional,Eq,Ord)
 
 instance DeMorgan Zadeh where
-  zero = Zadeh 0
-  inv (Zadeh x) = Zadeh $ 1 - x
-  Zadeh v1 && Zadeh v2 = Zadeh (v1 `min` v2)
+  zero = 0
+  inv x = 1 - x
+  (&&) = min
 
 xor :: DeMorgan a => a -> a -> a
 xor a b = a || b && inv (a && b)
 
-instance Num Zadeh where
+{- instance Num Zadeh where
   fromInteger 0 = Zadeh 0
   fromInteger _ = Zadeh 1
 
@@ -122,7 +124,7 @@ instance Num Fuzzy where
 
 instance Fractional Fuzzy where
   fromRational x = Fuzzy (fromRational x)
-------------------------------------------------------------
+ -}------------------------------------------------------------
 
 bisection :: Eq a
           => (Double -> a)
