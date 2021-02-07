@@ -1,6 +1,7 @@
 {-# language TypeSynonymInstances,FlexibleInstances #-}
 module Lab2 where
 
+import Prelude hiding ((&&), (||))
 import Lab1 (mean)
 import Data.List
 
@@ -17,8 +18,8 @@ runCircuit el = go
   where
     go c = case c of
       Elem x -> el x 
-      Seq c1 c2 -> go c1 <&&> go c2
-      Par c1 c2 -> go c1 <||> go c2
+      Seq c1 c2 -> go c1 && go c2
+      Par c1 c2 -> go c1 || go c2
 
 
 resistance :: Circuit Electronics -> Resistance Double
@@ -46,18 +47,24 @@ data Resistance a = Short | Value a | Break
   deriving (Show, Eq, Ord)
 
 class DeMorgan a where
-  {-# MINIMAL inv, ((<&&>) | (<||>)) #-}
+  {-# MINIMAL inv, ((&&) | (||)) #-}
   one :: a
   zero :: a
   inv :: a -> a
 
-  (<&&>) :: a -> a -> a
-  a <&&> b = inv (inv a <||> inv b)  
+  (&&) :: a -> a -> a
+  a && b = inv (inv a || inv b)  
 
-  (<||>) :: a -> a -> a
-  a <||> b = inv (inv a <&&> inv b)
+  (||) :: a -> a -> a
+  a || b = inv (inv a && inv b)
   one = inv zero
   zero = inv one  
+
+instance DeMorgan Bool where
+  zero = False
+  inv = not
+  True && x = x
+  False && _ = False
 
 instance Fractional a => DeMorgan (Resistance a) where
   zero = Break
@@ -65,41 +72,56 @@ instance Fractional a => DeMorgan (Resistance a) where
   inv Break = Short
   inv (Value r) = Value (1/r)
   
-  Break <&&> _ = Break
-  Short <&&> r = r
-  Value a <&&> Value b = Value $ a + b
-  a <&&> b = b <&&> a
+  Break && _ = Break
+  Short && r = r
+  Value a && Value b = Value $ a + b
+  a && b = b && a
 
 instance DeMorgan (Circuit a) where
   inv (Elem x) = Elem x
   inv (Par c1 c2) = Seq (inv c1) (inv c2)
   inv (Seq c1 c2) = Par (inv c1) (inv c2)
   
-  (<&&>) = Seq
-  (<||>) = Par
+  (&&) = Seq
+  (||) = Par
 
 instance DeMorgan String where
   zero = ""
   inv = id
-  s1 <&&> s2 = "(" ++ s1 ++ "," ++ s2 ++ ")"
-  s1 <||> s2 = "(" ++ s1 ++ "+" ++ s2 ++ ")"
+  s1 && s2 = "(" ++ s1 ++ "," ++ s2 ++ ")"
+  s1 || s2 = "(" ++ s1 ++ "+" ++ s2 ++ ")"
 
 newtype Fuzzy = Fuzzy Double deriving Show
 
 instance DeMorgan Fuzzy where
   zero = Fuzzy 0
   inv (Fuzzy x) = Fuzzy $ 1 - x
-  Fuzzy v1 <&&> Fuzzy v2 = Fuzzy (v1 * v2)
+  Fuzzy v1 && Fuzzy v2 = Fuzzy (v1 * v2)
 
 newtype Zadeh = Zadeh Double deriving Show
 
 instance DeMorgan Zadeh where
   zero = Zadeh 0
   inv (Zadeh x) = Zadeh $ 1 - x
-  Zadeh v1 <&&> Zadeh v2 = Zadeh (v1 `min` v2)
+  Zadeh v1 && Zadeh v2 = Zadeh (v1 `min` v2)
 
 xor :: DeMorgan a => a -> a -> a
-xor a b = a <||> b <&&> inv (a <&&> b)
+xor a b = a || b && inv (a && b)
+
+instance Num Zadeh where
+  fromInteger 0 = Zadeh 0
+  fromInteger _ = Zadeh 1
+
+instance Fractional Zadeh where
+  fromRational x = Zadeh (fromRational x)
+
+
+instance Num Fuzzy where
+  fromInteger 0 = Fuzzy 0
+  fromInteger _ = Fuzzy 1
+
+instance Fractional Fuzzy where
+  fromRational x = Fuzzy (fromRational x)
 ------------------------------------------------------------
 
 bisection :: Eq a
