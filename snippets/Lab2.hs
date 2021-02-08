@@ -128,38 +128,19 @@ instance Fractional Fuzzy where
 
 bisection :: Eq a
           => (Double -> a)
-          -> Double -> Double
+          -> (Double, Double)
           -> Maybe Double 
-bisection test a b
+bisection p (a, b)
   -- тестовая функция не меняется на границах
-  | test a == test b = Nothing
+  | p a == p b = Nothing
   -- достигнута абсолютная или относительная погрешность
   | abs (b - a) < 1e-11 = Just c
   -- шаг бисекции
-  | otherwise = case bisection test a c of
-                  Nothing -> bisection test c b
+  | otherwise = case bisection p (a, c) of
+                  Nothing -> bisection p (c, b)
                   Just c' -> Just c'
   where c = (a + b) / 2
                        
-data Tree a = Node a (Tree a) (Tree a)
-             deriving Show
-
-tree :: (t -> (t,t)) -> t -> Tree t
-tree f x = let (a, b) = f x
-           in Node x (tree f a) (tree f b)
-
-path :: (a -> Bool) -> Tree a -> [a]
-path p (Node a t1 t2) =
-  if p a then [] else [a] ++ path p t1 ++ path p t2 
-
-bisection'
-  :: Eq a2 =>
-     (Double -> a2) -> (Double, Double) -> Maybe Double
-bisection' p =
-  (uncurry mean <$>) .
-  find (\(a, b) -> abs (b - a) < 1e-11) .
-  path (\(a, b) -> p a == p b) .
-  tree (\(a, b) -> let c = mean a b in ((a,c),(c,b)))
 
 floyd :: [[Int]]
 floyd = (\i -> [arsum i + 1 .. arsum (i+1)]) <$> [1..]

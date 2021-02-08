@@ -1,11 +1,15 @@
+{-# LANGUAGE DeriveFoldable #-}
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE TupleSections #-}
 
-module Main where
+module Lab3 where
 
 import Data.List (find, unfoldr)
 import Data.Maybe (fromMaybe)
 import Data.Monoid ()
 import GHC.Conc (par, pseq)
+import Lab1 (mean)
+import Lab2 (bisection)
 
 toBase' :: Int -> Int -> [Int]
 toBase' b n
@@ -139,3 +143,30 @@ floyd''' :: [[Integer]]
 floyd''' = map (\i -> [arsum i + 1 .. arsum (i + 1)]) [1 ..]
   where
     arsum n = (n * (n - 1)) `div` 2
+
+data Tree a = Node a (Tree a) (Tree a)
+  deriving (Show, Foldable)
+
+--instance Foldable Tree where
+--  foldMap f (Node x t1 t2) = f x <> foldMap f t1 <> foldMap f t2
+
+tree :: (a -> (a, a)) -> a -> Tree a
+tree f x = let (a, b) = f x
+           in Node x (tree f a) (tree f b)
+
+path :: (a -> Bool) -> Tree a -> [a]
+path p (Node a t1 t2)
+  | p a = [a] ++ path p t1 ++ path p t2
+  | otherwise = []
+
+path' p = foldMap $ \a -> if not(p a) then [a] else mempty
+
+bisection' ::
+  Eq a => (Double -> a)
+       -> (Double, Double)
+       -> Maybe Double
+bisection' p =
+  fmap (\(a, b) -> mean a b) .
+  find (\(a, b) -> abs (b - a) < 1e-11) .
+  path' (\(a, b) -> p a /= p b) .
+  tree (\(a, b) -> let c = mean a b in ((a,c),(c,b)))
