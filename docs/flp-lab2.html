@@ -242,8 +242,8 @@ resistance c = case c of
 работы	  II | 12 | 17 | 18 </pre>
       </task>
 
-      <details><summary>Вариант решения</summary><pre><hs>
--- информация о призводительности работников
+      <details><summary>Вариант решения</summary>
+	<pre><hs>-- информация о призводительности работников
 a 1 = Value 56
 a 2 = Value 12
 b 1 = Value 48
@@ -271,19 +271,19 @@ c 2 = Value 18
 	  </ul></p>
       
       <task>Напишите функцию <code>bisection p a b</code>, которая методом деления отрезка пополам, находит точку на отрезке <code>(a,b)</code>, такую, что условие <code>p</code> в ней изменяется. <pre><hs>bisection :: Eq a
-          => (Double -> a)
-          -> (Double, Double)
+          => (Double -> a) -- тестовая функция
+          -> (Double, Double) -- начальный интервал
           -> Maybe Double </hs></pre> При этом, если на указанном отрезке искомой точки не обнаруживается, функция должна возвращать значение <code>Nothing</code> (посмотрите определение типа <code>Maybe</code> с помощью команды интерпретатора <code>:i</code>). Относительная точность <eq>\varepsilon</eq>, с которой работает функция, должна составлять <eq>10^{-11}.</eq></task>
 
       <details><summary>Схема решения</summary>
-	<pre><hs>bisection test (a, b)
-  -- тестовая функция не меняется на границах
+	<pre><hs>bisection p (a, b)
+  -- тестовая функция p не меняется на границах интервала
   | ... = Nothing
   -- достигнута абсолютная или относительная погрешность
-п  | ... = Just c
+  | ... = Just c
   -- шаг бисекции
-  | otherwise = case bisection test (a, c) of
-                  Nothing -> bisection test (c, b)
+  | otherwise = case bisection p (a, c) of
+                  Nothing -> bisection p (c, b)
                   Just c -> Just c
   where c = mean a b</hs></pre></details>
       

@@ -173,3 +173,5 @@ floyd = (\i -> [arsum i + 1 .. arsum (i+1)]) <$> [1..]
 -- b 2 = Value 12
 -- c 1 = Value 52
 -- c 2 = Value 18
+
+g x = 8
