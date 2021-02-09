@@ -98,3 +98,19 @@ var code = document.getElementsByTagName('lm')
 Array.prototype.forEach.call(code, function(el) {
     el.innerHTML = "<span class='promt'>λ&gt;</span>"
 });
+
+function step(id,txt)
+  {
+      var lines = txt.split('\n'),
+	  n = lines.length,
+	  i = 0
+      return () => {
+	  id.innerHTML = lines[i]
+	  if (i++ >= n-1) i = 0
+      }
+  }
+
+function animateText(id,txt,t)
+{
+      window.setInterval(step(id, txt),t)
+}
