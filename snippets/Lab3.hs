@@ -1,5 +1,4 @@
 {-# LANGUAGE DeriveFoldable #-}
-{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE TupleSections #-}
 
 module Lab3 where
@@ -24,10 +23,14 @@ toBase :: Int -> Int -> [Int]
 toBase b n
   | b <= 1 = error ""
   | n == 0 = [0]
-  | otherwise = reverse $ map (`mod` b) $ takeWhile (> 0) $ iterate (`div` b) n
+  | otherwise = reverse 
+                $ map (`mod` b) 
+                $ takeWhile (> 0) 
+                $ iterate (`div` b) n
 
 pascalStep :: Num a => [a] -> [a]
 pascalStep r = zipWith (+) (0 : r) (r ++ [0])
+
 
 pascals :: [[Integer]]
 pascals = iterate pascalStep [1]

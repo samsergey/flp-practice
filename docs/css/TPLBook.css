@@ -362,8 +362,7 @@ ht {
 
 sl {
     font-family: sans-serif;
-    font-weight: bold;
-    font-size:90%;
+    font-size:86%;
 }
 
 keystroke {
@@ -390,4 +389,9 @@ code {
 
 ul {
     text-align: left;   
+}
+
+lang {
+    font-family: sans-serif;
+    font-size:86%;
 }
