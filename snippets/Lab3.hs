@@ -8,7 +8,7 @@ import Data.List (find, unfoldr)
 import Data.Maybe (fromMaybe)
 import Data.Monoid ()
 import GHC.Conc (par, pseq)
-import Lab1 (mean)
+import Lab1 (mean, gauss)
 import Lab2 (bisection)
 
 toBase' :: Int -> Int -> [Int]
@@ -43,9 +43,8 @@ binomial' n k = product [n - k + 1 .. n] `div` product [1 .. k]
 
 
 floyd :: [[Integer]]
-floyd =
-  let arsum n = (n * (n - 1)) `div` 2
-   in (\i -> [arsum i + 1 .. arsum (i + 1)]) <$> [1 ..]
+floyd = [ [arsum i + 1 .. arsum (i + 1)] | i <- [1..] ]
+  where arsum n = (n * (n - 1)) `div` 2
 
 floyd' :: [[Integer]]
 floyd' = unfoldr (\(i, xs) -> Just $ (i + 1, ) <$> splitAt i xs) (1, [1 ..])
@@ -170,3 +169,6 @@ bisection' p =
   find (\(a, b) -> abs (b - a) < 1e-11) .
   path' (\(a, b) -> p a /= p b) .
   tree (\(a, b) -> let c = mean a b in ((a,c),(c,b)))
+
+integrate :: (Double -> Double) -> [Double] -> Double
+integrate f mesh = sum $ zipWith (gauss f) mesh (tail mesh)
