@@ -19,4 +19,4 @@ collatz n | even n = n `div` 2
 path' :: Foldable t => (a -> Bool) -> t a -> [a]
 path' p = foldMap $ pure `when` p
 
-facts = 1 : zipWith (*) facts (tail facts)
+facts = 1 : map (*) (tail facts)

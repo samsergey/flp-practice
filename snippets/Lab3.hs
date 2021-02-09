@@ -161,7 +161,6 @@ path p (Node a t1 t2)
   | p a = [a] ++ path p t1 ++ path p t2
   | otherwise = []
 
-path' p = foldMap $ \a -> if not(p a) then [a] else mempty
 
 bisection' ::
   Eq a => (Double -> a)
@@ -170,7 +169,7 @@ bisection' ::
 bisection' p =
   fmap (\(a, b) -> mean a b) .
   find (\(a, b) -> abs (b - a) < 1e-11) .
-  path' (\(a, b) -> p a /= p b) .
+  path (\(a, b) -> p a /= p b) .
   tree (\(a, b) -> let c = mean a b in ((a,c),(c,b)))
 
 integrate :: (Double -> Double) -> [Double] -> Double
