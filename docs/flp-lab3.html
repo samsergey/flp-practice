@@ -567,34 +567,41 @@ var lengthLines = `length 1 : (2 : (3 : (4 : (5 : []))))
 
   animateText(replicateA, replicateLines, 800)
 
-var toBaseLines = `map (\`mod\` 2) (takeWhile (> 0) (iterate (\`div\` 2) 123))
-map (\`mod\` 2) (takeWhile (> 0) (<r>61</r> : iterate (\`div\` 2) 61))
-map (\`mod\` 2) (<r>61</r> : takeWhile (> 0) (iterate (\`div\` 2) 61))
-<r>1</r> : map (\`mod\` 2) (takeWhile (> 0) (iterate (\`div\` 2) 61))
-1 : map (\`mod\` 2) (takeWhile (> 0) (<r>30</r> : iterate (\`div\` 2) 30))
-1 : map (\`mod\` 2) (<r>30</r> : takeWhile (> 0) (iterate (\`div\` 2) 30))
-1 : <r>0</r> : map (\`mod\` 2) (takeWhile (> 0) (iterate (\`div\` 2) 30))
-1 : 0 : map (\`mod\` 2) (takeWhile (> 0) (<r>15</r> : iterate (\`div\` 2) 15))
-1 : 0 : map (\`mod\` 2) (<r>15</r> : takeWhile (> 0) (iterate (\`div\` 2) 15))
-1 : 0 : <r>1</r> : map (\`mod\` 2) (takeWhile (> 0) (iterate (\`div\` 2) 15))
-1 : 0 : 1 : map (\`mod\` 2) (takeWhile (> 0) (<r>7</r> : iterate (\`div\` 2) 7))
-1 : 0 : 1 : map (\`mod\` 2) (<r>7</r> : takeWhile (> 0) (iterate (\`div\` 2) 7))
-1 : 0 : 1 : <r>1</r> : map (\`mod\` 2) (takeWhile (> 0) (iterate (\`div\` 2) 7))
-1 : 0 : 1 : 1 : map (\`mod\` 2) (takeWhile (> 0) (<r>3</r> : iterate (\`div\` 2) 3))
-1 : 0 : 1 : 1 : map (\`mod\` 2) (<r>3</r> : takeWhile (> 0) (iterate (\`div\` 2) 3))
-1 : 0 : 1 : 1 : <r>1</r> : map (\`mod\` 2) (takeWhile (> 0) (iterate (\`div\` 2) 3))
-1 : 0 : 1 : 1 : 1 : map (\`mod\` 2) (takeWhile (> 0) (<r>1</r> : iterate (\`div\` 2) 1))
-1 : 0 : 1 : 1 : 1 : map (\`mod\` 2) (<r>1</r> : takeWhile (> 0) (iterate (\`div\` 2) 1))
-1 : 0 : 1 : 1 : 1 : <r>1</r> : map (\`mod\` 2) (takeWhile (> 0) (iterate (\`div\` 2) 1))
-1 : 0 : 1 : 1 : 1 : 1 : map (\`mod\` 2) (takeWhile (> 0) (<r>0</r> : iterate (\`div\` 2) 0))
-1 : 0 : 1 : 1 : 1 : 1 : map (\`mod\` 2) <r>[]</r>
-1 : 0 : 1 : 1 : 1 : 1 : <r>[]</r>
-[1, 0, 1, 1, 1, 1]
-[1, 0, 1, 1, 1, 1]
-[1, 0, 1, 1, 1, 1]`
+var toBaseLines = `reverse (map (\`mod\` 2) (takeWhile (> 0) (iterate (\`div\` 2) 123)))
+reverse (map (\`mod\` 2) (takeWhile (> 0) (<r>61</r> : iterate (\`div\` 2) 61)))
+reverse (map (\`mod\` 2) (<r>61</r> : takeWhile (> 0) (iterate (\`div\` 2) 61)))
+reverse (<r>1</r> : map (\`mod\` 2) (takeWhile (> 0) (iterate (\`div\` 2) 61)))
+reverse (map (\`mod\` 2) (takeWhile (> 0) (iterate (\`div\` 2) 61))) ++ <r>[1]</r>
+reverse (map (\`mod\` 2) (takeWhile (> 0) (<r>30</r> : iterate (\`div\` 2) 30))) ++ [1]
+reverse (map (\`mod\` 2) (<r>30</r> : takeWhile (> 0) (iterate (\`div\` 2) 30))) ++ [1]
+reverse (<r>0</r> : map (\`mod\` 2) (takeWhile (> 0) (iterate (\`div\` 2) 30))) ++ [1]
+reverse (map (\`mod\` 2) (takeWhile (> 0) (iterate (\`div\` 2) 30))) ++ <r>[0] ++ [1]</r>
+reverse (map (\`mod\` 2) (takeWhile (> 0) (<r>15</r> : iterate (\`div\` 2) 15))) ++ [0, 1]
+reverse (map (\`mod\` 2) (<r>15</r> : takeWhile (> 0) (iterate (\`div\` 2) 15))) ++ [0, 1]
+reverse (<r>1</r> : map (\`mod\` 2) (takeWhile (> 0) (iterate (\`div\` 2) 15))) ++ [0, 1]
+reverse (map (\`mod\` 2) (takeWhile (> 0) (iterate (\`div\` 2) 15))) ++ <r>[1] ++ [0, 1]</r>
+reverse (map (\`mod\` 2) (takeWhile (> 0) (<r>7</r> : iterate (\`div\` 2) 7))) ++ [1,0,1]
+reverse (map (\`mod\` 2) (<r>7</r> : takeWhile (> 0) (iterate (\`div\` 2) 7))) ++ [1,0,1]
+reverse (<r>1</r> : map (\`mod\` 2) (takeWhile (> 0) (iterate (\`div\` 2) 7))) ++ [1,0,1]
+reverse (map (\`mod\` 2) (takeWhile (> 0) (iterate (\`div\` 2) 7))) ++ <r>[1] ++ [1,0,1]</r>
+reverse (map (\`mod\` 2) (takeWhile (> 0) (<r>3</r> : iterate (\`div\` 2) 3))) ++ [1,1,0,1]
+reverse (map (\`mod\` 2) (<r>3</r> : takeWhile (> 0) (iterate (\`div\` 2) 3))) ++ [1,1,0,1]
+reverse (<r>1</r> : map (\`mod\` 2) (takeWhile (> 0) (iterate (\`div\` 2) 3))) ++ [1,1,0,1]
+reverse (map (\`mod\` 2) (takeWhile (> 0) (iterate (\`div\` 2) 3))) ++ <r>[1] ++ [1,1,0,1]</r>
+reverse (map (\`mod\` 2) (takeWhile (> 0) (<r>1</r> : iterate (\`div\` 2) 1))) ++ [1,1,1,0,1]
+reverse (map (\`mod\` 2) (<r>1</r> : takeWhile (> 0) (iterate (\`div\` 2) 1))) ++ [1,1,1,0,1]
+reverse (<r>1</r> : map (\`mod\` 2) (takeWhile (> 0) (iterate (\`div\` 2) 1))) ++ [1,1,1,0,1]
+reverse (map (\`mod\` 2) (takeWhile (> 0) (iterate (\`div\` 2) 1))) ++ <r>[1] ++ [1,1,1,0,1]</r>
+reverse (map (\`mod\` 2) (takeWhile (> 0) (<r>0</r> : iterate (\`div\` 2) 0))) ++ [1,1,1,1,0,1]
+reverse (map (\`mod\` 2) <r>[]</r>) ++ [1,1,1,1,0,1]
+reverse <r>[]</r> ++ [1,1,1,1,0,1]
+<r>[] ++ [1,1,1,1,0,1]</r>
+[1,1,1,1,0,1]
+[1,1,1,1,0,1]
+[1,1,1,1,0,1]`
 
   
-  animateText(toBaseA, toBaseLines, 400)
+  animateText(toBaseA, toBaseLines, 800)
   
   
 </script>
