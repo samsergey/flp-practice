@@ -24,7 +24,7 @@ mod3 = Automat [0,1] f 0 [] [0,1,2]
         f 2 0 = 1
         f 2 1 = 2
 
-scanA :: (Eq s, Eq i) => Automat s i -> [i] -> [(i, s)]
+scanA :: (Eq s, Eq i) => Automat s i -> [i] -> [(s, i)]
 scanA m xs = takeWhile (not . halt . snd) 
                $ zip inputs states
   where

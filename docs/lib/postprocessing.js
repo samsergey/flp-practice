@@ -105,7 +105,7 @@ function step(id,txt)
 	  n = lines.length,
 	  i = 0
       return () => {
-	  id.innerHTML = lines[i]
+	  id.innerHTML = '<tt>' + lines[i] + '</tt>'
 	  if (i++ >= n-1) i = 0
       }
   }

@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE TupleSections #-}
-
+{-# LANGUAGE BangPatterns #-}
 module Lab3 where
 
 import Data.List (find, unfoldr)
@@ -29,10 +29,9 @@ toBase b n
                 $ iterate (`div` b) n
 
 pascalStep :: Num a => [a] -> [a]
-pascalStep r = zipWith (+) (0 : r) (r ++ [0])
+pascalStep !r = zipWith (+) (0 : r) (r ++ [0])
 
-
-pascals :: [[Integer]]
+pascals :: [[Intger]]
 pascals = iterate pascalStep [1]
 
 binomial :: Int -> Int -> Integer
@@ -42,8 +41,8 @@ bernoulli :: Int -> Int -> Integer
 bernoulli n k = (tail . scanl (+) 0 <$> pascals) !! n !! k
 
 binomial' :: Integral a => a -> a -> a
-binomial' n k = product [n - k + 1 .. n] `div` product [1 .. k]
-
+binomial' n k = fact n `div` (fact k * fact (n-k))
+  where fact n = product [1..n]
 
 floyd :: [[Integer]]
 floyd = [ [arsum i + 1 .. arsum (i + 1)] | i <- [1..] ]
