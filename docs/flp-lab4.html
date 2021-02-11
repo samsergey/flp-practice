@@ -84,6 +84,7 @@ minCount (x:xs) = foldl count _ xs
       <pre id="mapA"></pre>
       <pre id="appendA"></pre>
       <pre id="reverseA"></pre>
+      <pre id="filterA"></pre>
 
       <task>Напишите свою реализацию функций <code>foldr</code> и <code>scanr</code>, <code>foldl</code>  и <code>scanl</code>. </task>
 
@@ -356,6 +357,7 @@ map f [a, b, c, d]     = <rs>f a : f b : f c : f d :</rs> map f <r>[]</r>
 map f [a, b, c, d]     = <rs>f a : f b : f c : f d : []</rs>
 map f [a, b, c, d]     = <rs>[f a, f b, f c, f d]</rs>
 map f [a, b, c, d]     = <rs>[f a, f b, f c, f d]</rs>
+map f [a, b, c, d]     = <rs>[f a, f b, f c, f d]</rs>
 map f [a, b, c, d]     = <rs>[f a, f b, f c, f d]</rs>`
 
     animateText(mapA, mapLines, 800)
@@ -370,6 +372,7 @@ map f [a, b, c, d]     = <rs>[f a, f b, f c, f d]</rs>`
 [a, b, c, d] ++ [e, f] = <rs>a : b : c :</rs> ((<r>d : []</r>) ++ [e, f])
 [a, b, c, d] ++ [e, f] = <rs>a : b : c : d :</rs> (<r>[]</r> ++ [e, f])
 [a, b, c, d] ++ [e, f] = <rs>a : b : c : d :</rs> [e, f]
+[a, b, c, d] ++ [e, f] = <rs>[a, b, c, d, e, f]</rs>
 [a, b, c, d] ++ [e, f] = <rs>[a, b, c, d, e, f]</rs>
 [a, b, c, d] ++ [e, f] = <rs>[a, b, c, d, e, f]</rs>
 [a, b, c, d] ++ [e, f] = <rs>[a, b, c, d, e, f]</rs>`
@@ -388,10 +391,30 @@ reverse [a, b, c, d]   = go <rs>(c : b : a : [])</rs> (<r>d : []</r>)
 reverse [a, b, c, d]   = go <rs>(d : c : b : a : [])</rs> []
 reverse [a, b, c, d]   = go <rs>[d, c, b, a]</rs> <r>[]</r>
 reverse [a, b, c, d]   = <rs>[d, c, b, a]</rs>
+reverse [a, b, c, d]   = <rs>[d, c, b, a]</rs>
 reverse [a, b, c, d]   = <rs>[d, c, b, a]</rs>`
 
     animateText(reverseA, reverseLines, 800)
 
+    var filterLines=`filter odd [1,2,5,4,7]
+filter odd [1,2,5,4,7] = filter odd (<r>1 : [2,5,4,7]</r>)
+filter odd [1,2,5,4,7] = <rs>1 :</rs> filter odd [2,5,4,7]
+filter odd [1,2,5,4,7] = <rs>1 :</rs> filter odd (<r>2 : [5,4,7]</r>)
+filter odd [1,2,5,4,7] = <rs>1 :</rs> filter odd [5,4,7]
+filter odd [1,2,5,4,7] = <rs>1 :</rs> filter odd (<r>5 : [4,7]</r>)
+filter odd [1,2,5,4,7] = <rs>1 : 5 :</rs> filter odd [4,7]
+filter odd [1,2,5,4,7] = <rs>1 : 5 :</rs> filter odd (<r>4 : [7]</r>)
+filter odd [1,2,5,4,7] = <rs>1 : 5 :</rs> filter odd [7]
+filter odd [1,2,5,4,7] = <rs>1 : 5 :</rs> filter odd (<r>7 : []</r>)
+filter odd [1,2,5,4,7] = <rs>1 : 5 : 7 :</rs> filter odd []
+filter odd [1,2,5,4,7] = <rs>1 : 5 : 7 : []</rs>
+filter odd [1,2,5,4,7] = <rs>[1, 5, 7]</rs>
+filter odd [1,2,5,4,7] = <rs>[1, 5, 7]</rs>`
+
+    animateText(filterA, filterLines, 800)
+
+
+    
     var foldrLines=`foldr f x0 [a, b, c, d]
 foldr f x0 [a, b, c, d] = foldr f x0 (a : [b, c, d])
 foldr f x0 [a, b, c, d] = <rs>f a</rs> (foldr f x0 [b, c, d])
@@ -417,10 +440,10 @@ foldl f x0 [a, b, c, d] = foldl f <rs>(f (f x0 a) b)</rs> (c : [d])
 foldl f x0 [a, b, c, d] = foldl f <rs>(f (f (f x0 a) b) c)</rs> [d]
 foldl f x0 [a, b, c, d] = foldl f <rs>(f (f (f x0 a) b) c)</rs> (d : [])
 foldl f x0 [a, b, c, d] = foldl f <rs>(f (f (f (f x0 a) b) c) d)</rs> []
-foldl f x0 [a, b, c, d] = <rs>(f (f (f (f x0 a) b) c) d)</rs>
-foldl f x0 [a, b, c, d] = <rs>(f (f (f (f x0 a) b) c) d)</rs>
-foldl f x0 [a, b, c, d] = <rs>(f (f (f (f x0 a) b) c) d)</rs>
-foldl f x0 [a, b, c, d] = <rs>(f (f (f (f x0 a) b) c) d)</rs>`
+foldl f x0 [a, b, c, d] = <rs>f (f (f (f x0 a) b) c) d</rs>
+foldl f x0 [a, b, c, d] = <rs>f (f (f (f x0 a) b) c) d</rs>
+foldl f x0 [a, b, c, d] = <rs>f (f (f (f x0 a) b) c) d</rs>
+foldl f x0 [a, b, c, d] = <rs>f (f (f (f x0 a) b) c) d</rs>`
 
     animateText(foldlA, foldlLines, 800)
 

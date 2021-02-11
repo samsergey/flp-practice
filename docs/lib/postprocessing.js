@@ -99,18 +99,19 @@ Array.prototype.forEach.call(code, function(el) {
     el.innerHTML = "<span class='promt'>λ&gt;</span>"
 });
 
-function step(id,txt)
+function step(id, txt, hd)
   {
       var lines = txt.split('\n'),
 	  n = lines.length,
-	  i = 0
+          i = 0,
+          head = hd ? (hd + '\n') : ""
       return () => {
-	  id.innerHTML = '<tt>' + lines[i] + '</tt>'
+	  id.innerHTML = '<tt>' + head + lines[i] + '</tt>'
 	  if (i++ >= n-1) i = 0
       }
   }
 
-function animateText(id,txt,t)
+function animateText(id, txt, t, hd)
 {
-      window.setInterval(step(id, txt),t)
+      window.setInterval(step(id, txt, hd), t)
 }
