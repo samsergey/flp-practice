@@ -99,6 +99,15 @@ Array.prototype.forEach.call(code, function(el) {
     el.innerHTML = "<span class='promt'>λ&gt;</span>"
 });
 
+var ons = {}
+
+var code = document.getElementsByClassName('animate')
+Array.prototype.forEach.call(code, function(el) {
+    ons[el.id] = false
+    el.onclick = () => {ons[el.id] = !ons[el.id]}
+});
+
+
 function step(id, txt, hd)
   {
       var lines = txt.split('\n'),
@@ -107,11 +116,12 @@ function step(id, txt, hd)
           head = hd ? (hd + '\n') : ""
       return () => {
 	  id.innerHTML = '<tt>' + head + lines[i] + '</tt>'
-	  if (i++ >= n-1) i = 0
-      }
+	  if (ons[id]) i++
+	  if (i >= n-1) i = 0
+      } 
   }
 
 function animateText(id, txt, t, hd)
 {
-      window.setInterval(step(id, txt, hd), t)
+    window.setInterval(step(id, txt, hd), t)
 }
