@@ -81,17 +81,17 @@ minCount (x:xs) = foldl count _ xs
 
       <task>Напишите свою реализацию функций <code>map</code>, <code>(++)</code>, <code>reverse</code> и <code>filter</code>, используя явную рекурсию и вычислительные схемы в качестве подсказок:</task>
 
-      <pre id="mapA"></pre>
-      <pre id="appendA"></pre>
-      <pre id="reverseA"></pre>
-      <pre id="filterA"></pre>
+      <pre class="animate" id="mapA"></pre>
+      <pre class="animate" id="appendA"></pre>
+      <pre class="animate" id="reverseA"></pre>
+      <pre class="animate" id="filterA"></pre>
 
       <task>Напишите свою реализацию функций <code>foldr</code> и <code>scanr</code>, <code>foldl</code>  и <code>scanl</code>. </task>
 
-      <pre id="foldrA"></pre>
-      <pre id="foldlA"></pre>
+      <pre class="animate" id="foldrA"></pre>
+      <pre class="animate" id="foldlA"></pre>
 	    
-      <task>Реализуйте только при помощи свёртки (правой, либо левой) все эти функции: <code>map</code>, <code>filter</code>, <code>reverse</code>, <code>(++)</code>, <code>any</code> и <code>all</code>, <code>maximum</code> и <code>minimum</code>, <code>length</code>, <code>scanr</code> и <code>scanl</code>. Для этого нужно подобрать подходящуюю сворачивающую функцию <tt>f</tt> и начальное значение <tt>x0</tt>.</task>
+      <task>Реализуйте только при помощи свёртки (правой, либо левой) все эти функции: <code>map</code>, <code>filter</code>, <code>reverse</code>, <code>(++)</code>, <code>any</code> и <code>all</code>, <code>maximum</code> и <code>minimum</code>, <code>length</code>, <code>scanr</code> и <code>scanl</code>. Для этого нужно подобрать подходящую сворачивающую функцию <tt>f</tt> и начальное значение <tt>x0</tt>.</task>
 
       
     <h2>Автоматное программирование</h2>
@@ -123,7 +123,7 @@ minCount (x:xs) = foldl count _ xs
       <p>Определим в качестве примера конечный автомат, который вычисляет остаток от деления на 3 числа, записанного в двоичной форме. Он принимает набор символов из множества <eq>\{0,1\}</eq> и имеет три состояния начальное — 0 и два конечных — 1 и 2. Схема автомата, представленная на рисунке, отражает его функцию перехода.</p>
       <p><img src="img/automata3tuple.jpg" alt="" width='75%' align='center'/></p>
       <p>Работа автомата состоит в переборе элементов входного потока данных и последовательной смене состояния.</p>
-      <pre id='mod3'></pre> 
+      <pre class="animate" id='mod3'></pre> 
       <p>Этот вычислительный процесс соответствует свёртке потока сигналов с помощью функции перехода автомата.</p>
 
       <p>Вот как можно определить его с помощью нашего типа:
@@ -346,21 +346,18 @@ Linking test ...
   </body>
   <script>
     var mapLines=`map f [a, b, c, d]
-map f [a, b, c, d]     = map f (<r>a : [b, c, d]</r>)
-map f [a, b, c, d]     = <rs>f a :</rs> map f [b, c, d]
-map f [a, b, c, d]     = <rs>f a :</rs> map f (<r>b : [c, d]</r>)
-map f [a, b, c, d]     = <rs>f a : f b :</rs> map f [c, d]
-map f [a, b, c, d]     = <rs>f a : f b :</rs> map f (<r>c : [d]</r>)
-map f [a, b, c, d]     = <rs>f a : f b : f c :</rs> map f [d]
-map f [a, b, c, d]     = <rs>f a : f b : f c :</rs> map f (<r>d : []</r>)
-map f [a, b, c, d]     = <rs>f a : f b : f c : f d :</rs> map f <r>[]</r>
-map f [a, b, c, d]     = <rs>f a : f b : f c : f d : []</rs>
-map f [a, b, c, d]     = <rs>[f a, f b, f c, f d]</rs>
-map f [a, b, c, d]     = <rs>[f a, f b, f c, f d]</rs>
-map f [a, b, c, d]     = <rs>[f a, f b, f c, f d]</rs>
-map f [a, b, c, d]     = <rs>[f a, f b, f c, f d]</rs>`
+map f [a, b, c, d] = map f (<r>a : [b, c, d]</r>)
+map f [a, b, c, d] = <rs>f a :</rs> map f [b, c, d]
+map f [a, b, c, d] = <rs>f a :</rs> map f (<r>b : [c, d]</r>)
+map f [a, b, c, d] = <rs>f a : f b :</rs> map f [c, d]
+map f [a, b, c, d] = <rs>f a : f b :</rs> map f (<r>c : [d]</r>)
+map f [a, b, c, d] = <rs>f a : f b : f c :</rs> map f [d]
+map f [a, b, c, d] = <rs>f a : f b : f c :</rs> map f (<r>d : []</r>)
+map f [a, b, c, d] = <rs>f a : f b : f c : f d :</rs> map f <r>[]</r>
+map f [a, b, c, d] = <rs>f a : f b : f c : f d : []</rs>
+map f [a, b, c, d] = <rs>[f a, f b, f c, f d]</rs>`
 
-    animateText(mapA, mapLines, 800)
+    animateText('mapA', mapLines, 800)
 
     var appendLines=`[a, b, c, d] ++ [e, f]
 [a, b, c, d] ++ [e, f] = (<r>a : [b, c, d]</r>) ++ [e, f]
@@ -373,28 +370,25 @@ map f [a, b, c, d]     = <rs>[f a, f b, f c, f d]</rs>`
 [a, b, c, d] ++ [e, f] = <rs>a : b : c : d :</rs> (<r>[]</r> ++ [e, f])
 [a, b, c, d] ++ [e, f] = <rs>a : b : c : d :</rs> [e, f]
 [a, b, c, d] ++ [e, f] = <rs>[a, b, c, d, e, f]</rs>
-[a, b, c, d] ++ [e, f] = <rs>[a, b, c, d, e, f]</rs>
-[a, b, c, d] ++ [e, f] = <rs>[a, b, c, d, e, f]</rs>
 [a, b, c, d] ++ [e, f] = <rs>[a, b, c, d, e, f]</rs>`
 
-    animateText(appendA, appendLines, 800)
+    animateText('appendA', appendLines, 800)
 
     var reverseLines=`reverse [a, b, c, d]
-reverse [a, b, c, d]   = go <rs>[]</rs> [a, b, c, d]
-reverse [a, b, c, d]   = go <rs>[]</rs> (<r>a : [b, c, d]</r>)
-reverse [a, b, c, d]   = go <rs>(a : [])</rs> [b, c, d]
-reverse [a, b, c, d]   = go <rs>(a : [])</rs> (<r>b : [c, d]</r>)
-reverse [a, b, c, d]   = go <rs>(b : a : [])</rs> [c, d]
-reverse [a, b, c, d]   = go <rs>(b : a : [])</rs> (<r>c : [d]</r>)
-reverse [a, b, c, d]   = go <rs>(c : b : a : [])</rs> [d]
-reverse [a, b, c, d]   = go <rs>(c : b : a : [])</rs> (<r>d : []</r>)
-reverse [a, b, c, d]   = go <rs>(d : c : b : a : [])</rs> []
-reverse [a, b, c, d]   = go <rs>[d, c, b, a]</rs> <r>[]</r>
-reverse [a, b, c, d]   = <rs>[d, c, b, a]</rs>
-reverse [a, b, c, d]   = <rs>[d, c, b, a]</rs>
-reverse [a, b, c, d]   = <rs>[d, c, b, a]</rs>`
+reverse [a, b, c, d] = go <rs>[]</rs> [a, b, c, d]
+reverse [a, b, c, d] = go <rs>[]</rs> (<r>a : [b, c, d]</r>)
+reverse [a, b, c, d] = go <rs>(a : [])</rs> [b, c, d]
+reverse [a, b, c, d] = go <rs>(a : [])</rs> (<r>b : [c, d]</r>)
+reverse [a, b, c, d] = go <rs>(b : a : [])</rs> [c, d]
+reverse [a, b, c, d] = go <rs>(b : a : [])</rs> (<r>c : [d]</r>)
+reverse [a, b, c, d] = go <rs>(c : b : a : [])</rs> [d]
+reverse [a, b, c, d] = go <rs>(c : b : a : [])</rs> (<r>d : []</r>)
+reverse [a, b, c, d] = go <rs>(d : c : b : a : [])</rs> []
+reverse [a, b, c, d] = go <rs>[d, c, b, a]</rs> <r>[]</r>
+reverse [a, b, c, d] = <rs>[d, c, b, a]</rs>
+reverse [a, b, c, d] = <rs>[d, c, b, a]</rs>`
 
-    animateText(reverseA, reverseLines, 800)
+    animateText('reverseA', reverseLines, 800)
 
     var filterLines=`filter odd [1,2,5,4,7]
 filter odd [1,2,5,4,7] = filter odd (<r>1 : [2,5,4,7]</r>)
@@ -411,7 +405,7 @@ filter odd [1,2,5,4,7] = <rs>1 : 5 : 7 : []</rs>
 filter odd [1,2,5,4,7] = <rs>[1, 5, 7]</rs>
 filter odd [1,2,5,4,7] = <rs>[1, 5, 7]</rs>`
 
-    animateText(filterA, filterLines, 800)
+    animateText('filterA', filterLines, 800)
 
 
     
@@ -425,11 +419,9 @@ foldr f x0 [a, b, c, d] = <rs>f a (f b (f c</rs> (foldr f x0 [d])))
 foldr f x0 [a, b, c, d] = <rs>f a (f b (f c</rs> (foldr f x0 (d : []))))
 foldr f x0 [a, b, c, d] = <rs>f a (f b (f c (f d</rs> (foldr f x0 []))))
 foldr f x0 [a, b, c, d] = <rs>f a (f b (f c (f d x0)))</rs>
-foldr f x0 [a, b, c, d] = <rs>f a (f b (f c (f d x0)))</rs>
-foldr f x0 [a, b, c, d] = <rs>f a (f b (f c (f d x0)))</rs>
 foldr f x0 [a, b, c, d] = <rs>f a (f b (f c (f d x0)))</rs>`
 
-    animateText(foldrA, foldrLines, 800)
+    animateText('foldrA', foldrLines, 800)
 
     var foldlLines=`foldl f x0 [a, b, c, d]
 foldl f x0 [a, b, c, d] = foldl f <rs>x0</rs> (a : [b, c, d])
@@ -441,11 +433,9 @@ foldl f x0 [a, b, c, d] = foldl f <rs>(f (f (f x0 a) b) c)</rs> [d]
 foldl f x0 [a, b, c, d] = foldl f <rs>(f (f (f x0 a) b) c)</rs> (d : [])
 foldl f x0 [a, b, c, d] = foldl f <rs>(f (f (f (f x0 a) b) c) d)</rs> []
 foldl f x0 [a, b, c, d] = <rs>f (f (f (f x0 a) b) c) d</rs>
-foldl f x0 [a, b, c, d] = <rs>f (f (f (f x0 a) b) c) d</rs>
-foldl f x0 [a, b, c, d] = <rs>f (f (f (f x0 a) b) c) d</rs>
 foldl f x0 [a, b, c, d] = <rs>f (f (f (f x0 a) b) c) d</rs>`
 
-    animateText(foldlA, foldlLines, 800)
+    animateText('foldlA', foldlLines, 800)
 
     
     var mod3Lines=`состояние → [<r>0</r>] 1 1 0 1 0 1 ← данные
@@ -462,6 +452,6 @@ foldl f x0 [a, b, c, d] = <rs>f (f (f (f x0 a) b) c) d</rs>`
 состояние → [<r>2</r> 1]           ← данные
 состояние → [<r>2</r>]             ← данные`
     
-    animateText(mod3, mod3Lines, 800)
+    animateText('mod3', mod3Lines, 800)
   </script>
 </html>

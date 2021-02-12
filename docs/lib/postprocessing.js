@@ -99,25 +99,30 @@ Array.prototype.forEach.call(code, function(el) {
     el.innerHTML = "<span class='promt'>λ&gt;</span>"
 });
 
-var ons = {}
+var animate = {}
 
 var code = document.getElementsByClassName('animate')
 Array.prototype.forEach.call(code, function(el) {
-    ons[el.id] = false
-    el.onclick = () => {ons[el.id] = !ons[el.id]}
+    animate[el.id] = false
+    el.setAttribute('onclick', `toggleAnimation('${el.id}')`)
 });
 
+function toggleAnimation(id)
+{
+    animate[id] = !animate[id]
+}
 
 function step(id, txt, hd)
   {
-      var lines = txt.split('\n'),
-	  n = lines.length,
+      var el = document.getElementById(id),
+          lines = txt.split('\n'),
           i = 0,
           head = hd ? (hd + '\n') : ""
       return () => {
-	  id.innerHTML = '<tt>' + head + lines[i] + '</tt>'
-	  if (ons[id]) i++
-	  if (i >= n-1) i = 0
+	  el.innerHTML = (animate[id]?"<ctrl>⏸</ctrl>  ":"<ctrl>⏵</ctrl>  ") + '<tt>' + head + lines[i] + '</tt>'
+	  if (animate[id]) {	      
+	      if (i++ >= lines.length-1) {i = 0}
+	  }
       } 
   }
 

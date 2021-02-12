@@ -273,7 +273,7 @@ greater (5 guesses left)
       </ul>
 
 <p>Вот как работатет этот алгоритм на простом примере:</p>
-      <pre id = 'dijkstraA'></pre>
+      <pre class="animate" id='dijkstraA'></pre>
       
 <p>Алгоритм Дейкстры можно реализовать практически один в один в чистой функциональной программе с использованием монады <code>State</code>. Для этого напишем полезные универсальные функции для работы со стеком.</p>
 <pre><hs>type StackFn a = State [a] [a]
@@ -376,10 +376,9 @@ toRPN "(2 + 13*4 - 6)*5" ==> "2 13 4 * + - 6 5 *"</hs></pre>
 
 <script src="lib/postprocessing.js"></script>
 <script>
-  var dijkstraHeader = `<rs>              вывод</rs><r>     стек</r>  вход`
+  var dijkstraHeader = `<rs>            вывод</rs><r>     стек</r>  вход`
 
-  var dijkstraLines = `
-<rs>                   </rs><r>       []</r>  ( 2 + 13 * 4 - 6 ) * 5
+  var dijkstraLines = `<rs>                   </rs><r>       []</r>  ( 2 + 13 * 4 - 6 ) * 5
 <rs>                   </rs><r>       []</r>  ( 2 + 13 * 4 - 6 ) * 5
 <rs>                   </rs><r>      [(]</r>  2 + 13 * 4 - 6 ) * 5
 <rs>                  2</rs><r>      [(]</r>  + 13 * 4 - 6 ) * 5
@@ -397,7 +396,7 @@ toRPN "(2 + 13*4 - 6)*5" ==> "2 13 4 * + - 6 5 *"</hs></pre>
 <rs> 2 13 4 * + - 6 5 *</rs><r>       []</r>  
 <rs> 2 13 4 * + - 6 5 *</rs><r>       []</r>`
   
-  animateText(dijkstraA, dijkstraLines, 800, dijkstraHeader)
+  animateText('dijkstraA', dijkstraLines, 800, dijkstraHeader)
   
 </script>
 </body>
