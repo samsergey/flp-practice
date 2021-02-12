@@ -99,34 +99,40 @@ Array.prototype.forEach.call(code, function(el) {
     el.innerHTML = "<span class='promt'>λ&gt;</span>"
 });
 
-var animate = {}
-
 var code = document.getElementsByClassName('animate')
 Array.prototype.forEach.call(code, function(el) {
-    animate[el.id] = false
+    el.setAttribute('animate', false)
     el.setAttribute('onclick', `toggleAnimation('${el.id}')`)
 });
 
+////////////////////////////////////////////////////////////
+//      Text animation
+////////////////////////////////////////////////////////////
+
+const bool = s => s === "true";
+
 function toggleAnimation(id)
 {
-    animate[id] = !animate[id]
+    const el = document.getElementById(id);
+    el.setAttribute('animate', !bool(el.getAttribute('animate')));
 }
 
-function step(id, txt, hd)
+function step(id, text, header, footer)
   {
-      var el = document.getElementById(id),
-          lines = txt.split('\n'),
-          i = 0,
-          head = hd ? (hd + '\n') : ""
+      const el = document.getElementById(id),
+            lines = text.split('\n'),
+	    head = header ? header + "\n" : "",
+      	    foot = footer ? "\n" + footer : "";
+      var i = 0;
       return () => {
-	  el.innerHTML = (animate[id]?"<ctrl>⏸</ctrl>  ":"<ctrl>⏵</ctrl>  ") + '<tt>' + head + lines[i] + '</tt>'
-	  if (animate[id]) {	      
-	      if (i++ >= lines.length-1) {i = 0}
-	  }
+	  const animate = bool(el.getAttribute('animate')),
+		ctrl = animate ? "⏸" : "⏵";
+	  el.innerHTML = `<ctrl>${ctrl}</ctrl><tt>${head}${lines[i]}${foot}</tt>`;
+	  if (animate && i++ >= lines.length - 1) i = 0;
       } 
   }
 
-function animateText(id, txt, t, hd)
+function animateText(id, text, t, header, footer)
 {
-    window.setInterval(step(id, txt, hd), t)
+    window.setInterval(step(id, text, header, footer), t);
 }

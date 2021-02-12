@@ -91,10 +91,10 @@ d {
 
 .tasks task:before {
     content: "✍";
-    margin-left: -1.2em;
+    margin-left: -1.7em;
     padding-right: 0.4em;
     font-family: "Helvetica", "Calibri";
-    font-size: 25px;
+    font-size: 20px;
     font-weight: bold;
     color: firebrick;
     line-height: 0px;
@@ -411,7 +411,8 @@ rs {
 }
 
 ctrl {
-    margin-left: -1.5em;
+    margin-left: -1.8em;
+    margin-right: 0.8em;
     font-weight:bold;
     color: white;
     background: #4CAF50;
