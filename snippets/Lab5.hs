@@ -21,57 +21,26 @@ path' p = foldMap $ pure `when` p
 
 ------------------------------------------------------------
 
-data M a = D a | M [[a]]
+data M a = I | M [[a]]
   deriving Show
 
 toList (M a) = a
-toList (D a) = iterate (0 :) (a : repeat 0)
-
+           
 dot a b = sum $ zipWith (*) a b                 
 
-tr (D a) = D a
-tr (M a) = M $ transpose a
-
 instance Num a => Semigroup (M a) where
-  D a <> D b = D $ a * b
-  D a <> M b = M $ map (map (* a)) b
-  M b <> D a = M $ map (map (* a)) b
   M a <> M b = M $ [ [ dot x y | y <- transpose b ] | x <- a ]
 
 instance Num a => Monoid (M a) where
-    mempty = D 1
-
-D a <+> D b = D (a + b)
-a <+> b = M $ zipWith (zipWith (+)) (toList a) (toList b)
-             
-jumps = [ (3, 22)
-        , (5, 8)
-        , (11, 26)
-        , (17, 4)
-        , (19, 7)
-        , (20, 29)
-        , (21, 9)
-        , (27, 1)]
-
-jump i j = case lookup i jumps of
-             Just j' | j == j' -> 1.0
-             Nothing | i == j -> 1.0
-             _ -> 0.0
-
-move i j
-  | i == 30 = 0 -- && j == 30 = 1
-  | j == 30 && 30 - i <= 6 = 1 - 1/6*(30 - i - 1)
-  | i < j && j <= i + 6 = 1/6
-  | otherwise = 0
+    mempty = I
 
 matrix f rng = M $ [ [f i j | i <- rng ] | j <- rng ]
-
-jumpsM = matrix jump [1..30]
-movesM = matrix move [1..30]
-gameM = jumpsM <> movesM
-
+             
 powers x = mempty : zipWith (<>) (powers x) (repeat x)
 
+diagonal m = zipWith (!!) (toList m) [0..]
+trace = sum . diagonal
+           
 times 0 _ = mempty
 times 1 a = a
 times 2 a = a <> a
@@ -83,3 +52,43 @@ diffs lst = zipWith (-) (tail lst) lst
 
 mean lst = dot lst [1..]
 --median pmf = 
+
+market = M [ [0.9, 0.075, 0.025]
+           , [0.15, 0.8, 0.05 ]
+           , [0.25, 0.25, 0.5] ]
+
+adj = M $ [ [0,1,0,0,0,1]
+          , [0,0,1,0,0,0]
+          , [0,0,0,1,0,0]
+          , [0,0,0,0,1,0]
+          , [1,1,0,0,0,0]
+          , [0,0,1,1,0,0]]
+
+rotate (x:xs) = xs ++ [x]
+rotate' = reverse . rotate . reverse
+rotations lst = take (length lst) $ iterate rotate' lst
+
+tr = M . transpose . toList
+                
+moves = tr . M . rotate . rotations $ replicate 6 (1/6) ++ replicate 6 0
+        --  0 1 2 3 4 5 6 7 8 9 1011
+
+jumps = tr $ M [[1,0,0,0,0,0,0,0,0,0,0,0] --0  
+               ,[0,1,0,0,0,0,0,0,0,0,0,0] --1
+               ,[0,0,1,0,0,0,0,0,0,0,0,0] --2
+               ,[0,0,0,0,0,0,0,0,0,1,0,0] --3
+               ,[0,0,0,0,1,0,0,0,0,0,0,0] --4
+               ,[0,0,0,0,0,0,0,0,1,0,0,0] --5
+               ,[0,0,0,0,0,0,1,0,0,0,0,0] --6
+               ,[0,0,0,0,0,0,0,1,0,0,0,0] --7
+               ,[0,0,0,0,0,0,0,0,1,0,0,0] --8
+               ,[0,0,0,0,0,0,0,0,0,1,0,0] --9
+               ,[0,0,0,0,0,0,0,1,0,0,0,0] --10
+               ,[0,0,0,0,0,0,1,0,0,0,0,0]]--11
+
+--gameM :: M Double
+gameM = jumps <> moves
+
+setM i j x (M m) = let (a, b:c) = splitAt i m
+                       (d, _:f) = splitAt j b
+                   in M $ a <> ((d <> (x : f)) : c)
