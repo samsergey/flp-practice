@@ -148,6 +148,7 @@ floyd''' = map (\i -> [arsum i + 1 .. arsum (i + 1)]) [1 ..]
 data Tree a = Node a (Tree a) (Tree a)
   deriving (Show, Foldable)
 
+           
 --instance Foldable Tree where
 --  foldMap f (Node x t1 t2) = f x <> foldMap f t1 <> foldMap f t2
 
