@@ -7,8 +7,13 @@ import Text.Printf
 
 fromBase b = foldl (\r x -> r*b+x) 0  
 
+data Alphabet i = Set [i]
+                | Only (i -> Bool)
+                | Any
+                  
+             
 data Automat s i =
-  Automat { alphabet :: [i] -- допустимые символы
+  Automat { alphabet :: Alphabet i -- допустимые символы
           , delta :: s -> i -> s -- функция перехода
           , start :: s -- начальное состояние
           , stop :: [s] -- останавливающие состояния
@@ -16,7 +21,7 @@ data Automat s i =
           }
 
 mod3 :: Automat Int Int 
-mod3 = Automat [0,1] f 0 [] [0,1,2]
+mod3 = Automat (Set [0,1]) f 0 [] [0,1,2]
   where f 0 0 = 0
         f 0 1 = 1
         f 1 0 = 2
@@ -25,19 +30,20 @@ mod3 = Automat [0,1] f 0 [] [0,1,2]
         f 2 1 = 2
 
 scanA :: (Eq s, Eq i) => Automat s i -> [i] -> [(s, i)]
-scanA m xs = takeWhile (not . halt . snd) 
-               $ zip inputs states
+scanA m xs = takeWhile (not . halt . fst) 
+               $ zip states inputs
   where
     -- поток допустимых символов
     inputs = case alphabet m of
-               [] -> xs
-               alph -> takeWhile (`elem` alph) xs
+               Any -> xs
+               Set alph -> takeWhile (`elem` alph) xs
+               Only p -> takeWhile p xs
      -- поток состояний автомата
     states = tail $ scanl (delta m) (start m) inputs
      -- условие остановки работы
     halt = (`elem` stop m)
 
-abba = Automat "ab" f 0 [-1] [4]
+abba = Automat (Set "ab") f 0 [-1] [4]
   where f s x = case (s, x) of
           (0, 'a') -> 1
           (0, 'b') -> -1
@@ -50,7 +56,7 @@ abba = Automat "ab" f 0 [-1] [4]
 runA :: (Eq s, Eq i) => Automat s i -> [i] -> s
 runA m xs = case scanA m xs of
                 [] -> start m
-                res -> snd $ last res
+                res -> fst $ last res
 
 testA :: (Eq s, Eq i) => Automat s i -> [i] -> Bool
 testA m = (`elem` final m) . runA m
@@ -62,35 +68,48 @@ unfold f x = case f x of
   Nothing -> []
   Just (a, y) -> a : unfold f y
 
-brackets = Automat "()[]{}" f [] [] [[]]
+brackets = Automat Any f [] [] [[]]
   where f ('(' : s) ')' = s
-        f s x = x:s
+        f ('[' : s) ']' = s
+        f ('{' : s) '}' = s
+        f s x | x `elem` "{}[]()" = x:s
+        f s _ = s
 
-calcRPN = Automat [] f [] [] []
+calcRPN = Automat (Only operator_or_num) f [] [] []
   where f (x:y:s) "+" = (x+y):s
         f (x:y:s) "-" = (y-x):s
         f (x:y:s) "*" = (x*y):s
         f (x:y:s) "/" = (y `div` x):s
         f s n = read n : s
 
-data Token = S | N | O | P | E deriving (Show, Eq)
+operator_or_num w = isOperator w || all (`elem` ['0'..'9']) w
+
+isOperator w = w `elem` ["+","-","*","/"]
+
+rpnToLisp = Automat Any f [] [] []
+  where
+    f (x:y:s) op | isOperator op = printf "(%s %s %s)" op y x : s
+    f s n = n : s
+
+            
+-- data Token = S | N | O | P | E deriving (Show, Eq)
   
-lexer = Automat "01234567890+-*/()" f S [E] [O,P]
-  where f S x | x `elem` digits = N
-              | x `elem` "+-*/" = O
-              | x `elem` "()"   = P
-              | otherwise       = E
-        f N x | x `elem` digits = N
-              | otherwise       = E
-        f _     _               = E
+-- lexer = Automat (Set "01234567890+-*/()") f S [E] [O,P]
+--   where f S x | x `elem` digits = N
+--               | x `elem` "+-*/" = O
+--               | x `elem` "()"   = P
+--               | otherwise       = E
+--         f N x | x `elem` digits = N
+--               | otherwise       = E
+--         f _     _               = E
         
-        digits = "0123456789"
+--         digits = "0123456789"
 
-prefixA m xs = case scanA m xs of
-  [] -> Nothing
-  r -> Just ((fst <$> r, snd (last r)), drop (length r) xs)
+-- prefixA m xs = case scanA m xs of
+--   [] -> Nothing
+--   r -> Just ((fst <$> r, snd (last r)), drop (length r) xs)
 
-tokenize = unfold (prefixA lexer) . filter (`elem` alphabet lexer)
+-- tokenize = unfold (prefixA lexer) . filter (`elem` alphabet lexer)
 
 ------------------------------------------------------------
 
