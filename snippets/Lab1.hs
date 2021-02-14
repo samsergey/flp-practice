@@ -13,3 +13,6 @@ fizzBuzz n | n `mod` 3 == 0 = "Fizz"
 
 gauss f a b = (b-a)/18*(5*g(-sqrt 0.6) + 8*g 0 + 5*g(sqrt 0.6))
   where g x = f $ (a+b)/2 + x*(b-1)/2
+
+diff f x = (f (x + dx) - f (x - dx)) / (2*dx)
+  where dx = 1e-8

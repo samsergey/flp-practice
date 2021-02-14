@@ -2,6 +2,7 @@ module Lab5 where
 
 import Data.Monoid
 import Data.List
+import Lab1 (diff)
 
 when :: Monoid m => (a -> m) -> (a -> Bool) -> a -> m
 when m p x = if p x then m x else mempty
@@ -86,9 +87,19 @@ jumps = tr $ M [[1,0,0,0,0,0,0,0,0,0,0,0] --0
                ,[0,0,0,0,0,0,0,1,0,0,0,0] --10
                ,[0,0,0,0,0,0,1,0,0,0,0,0]]--11
 
---gameM :: M Double
+--gameM :: M Doubleg
 gameM = jumps <> moves
 
 setM i j x (M m) = let (a, b:c) = splitAt i m
                        (d, _:f) = splitAt j b
                    in M $ a <> ((d <> (x : f)) : c)
+
+scale a (M m) = M $ map (map (a*)) m
+                      
+--             I      A     C      P     D
+merch a c = M [ [ 0.98-2*a, 0.015+a, 0.005+a, 0,    0    ]   -- I
+              , [ 0.09, 0.61-c,  0.10+c,  0.12, 0.08 ]   -- A
+              , [ 0.07, 0.05,  0.25,  0.53, 0.10 ]   -- C
+              , [ 0,    0.01,  0.05,  0.70, 0.24 ]   -- P
+              , [ 0,    0.50,  0.20,  0.15, 0.15 ] ] -- D
+g
