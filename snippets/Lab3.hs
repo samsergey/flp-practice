@@ -31,7 +31,7 @@ toBase b n
 pascalStep :: Num a => [a] -> [a]
 pascalStep !r = zipWith (+) (0 : r) (r ++ [0])
 
-pascals :: [[Intger]]
+pascals :: [[Integer]]
 pascals = iterate pascalStep [1]
 
 binomial :: Int -> Int -> Integer
@@ -145,10 +145,16 @@ floyd''' = map (\i -> [arsum i + 1 .. arsum (i + 1)]) [1 ..]
   where
     arsum n = (n * (n - 1)) `div` 2
 
-data Tree a = Node a (Tree a) (Tree a)
+data Tree a = Node a (Tree a) (Tree a) | Stop
   deriving (Show, Foldable)
 
-           
+takeTree 0 _ = Stop
+takeTree _ Stop = Stop
+takeTree n (Node a t1 t2)
+  = Node a (takeTree (n-1) t1) (takeTree (n-1) t2)
+
+f x = x*x - 2
+                                         
 --instance Foldable Tree where
 --  foldMap f (Node x t1 t2) = f x <> foldMap f t1 <> foldMap f t2
 
@@ -174,3 +180,15 @@ bisection' p =
 
 integrate :: (Double -> Double) -> [Double] -> Double
 integrate f mesh = sum $ zipWith (gauss f) mesh (tail mesh)
+
+findTree p Stop = []
+findTree p (Node a t1 t2) = (if p a then [a] else []) ++
+                            (findTree p t1 +++ findTree p t2)
+infixr 5 +++
+[] +++ x = x
+x +++ [] = x
+(x:xs) +++ ys = x:(ys +++ xs)
+
+expand :: Num a => (a,a) -> Tree (a,a)
+expand = tree $ \(a,b) -> let d = b-a in ((a - d, b),(a, b + d))
+

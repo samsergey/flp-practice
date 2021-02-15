@@ -429,9 +429,9 @@ bisection&#39 p =
 
             <p>Реализовать метод Ньютона функционально можно, буквально так:
                 <pre><hs>newton :: (Double -> Double) -> Double -> Maybe Double
-newton f x = limit
-             . take 20
-	     . iterate (\x -> x - f x / diff f x)</hs></pre></p>
+newton f = limit
+         . take 20
+	 . iterate (\x -> x - f x / diff f x)</hs></pre></p>
 
             <task>Напишите простую функцию <code>limit :: [Double] -> Maybe Double</code>, которая для сходящейся последовательности вещественных чисел возвращает её предел, или <code>Nothing</code>, если предела не существует.
 
@@ -448,15 +448,15 @@ newton f x = limit
                 <eqn>(x_{n+1}, y_{n+1}) = \left(x_n + h, y_n + h \cdot f(x_n, y_n)\right)</eqn> где
                 <eq>h</eq> — шаг интегрирования.</p>
 
-            <task>Реализуйте функции <code>euler :: Method</code> и <code>solveODE :: Method -> ODE -> Step -> [Pt]</code> для таких типов:
+            <task>Реализуйте функции <code>euler :: Method</code> и <code>solveODE :: Method -> Step -> ODE -> Pt -> [Pt]</code> для таких типов:
                 <pre><hs>-- точка решения (x,y)
 type Pt = (Double, Double)
 -- шаг интегрирования h
 type Step = Double
 -- метод решения
-type Method = Step -> Pt -> Pt
+type Method = Step -> ODE -> Pt -> Pt
 -- задача Коши: правая чисть уравнения и начальное условие
-data ODE = ODE (Double -> Double -> Double) Pt</hs></pre> Решите с их помощью несколько задач Коши:
+type ODE = Double -> Double -> Double</hs></pre> Решите с их помощью несколько задач Коши:
                 <eqn>y^\prime = -y,\quad y(0) = 1</eqn>
                 <eqn>y^\prime = 1 - y^2/2,\quad y(0) = 0</eqn>
                 <eqn>y^\prime = ry(1-y/K),\quad y(-5) = 0.1</eqn>
