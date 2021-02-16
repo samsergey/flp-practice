@@ -232,10 +232,10 @@ M [ [ 0.98, 0.015, 0.005, 0,    0    ]   -- I
 
 	<h2>Эндоморфизмы и свёртка</h2>
 
-<p>Функции, имеющие тип <code>a -> a</code>, называются <strong>эндоморфизмами</strong>. Они тоже образуют моноид с операцией композиции и тождественной функцией к качестве нейтрального элемента:</p>
+<p>Функции, имеющие тип <code>a -> a</code>, называются <strong>эндоморфизмами</strong>. Они тоже образуют моноид с операцией композиции и тождественной функцией в качестве нейтрального элемента:</p>
 <eqn>(f \circ g) \circ h = f \circ (g \circ h),\quad \mathrm{id} \circ f = f \circ \mathrm{id} = f</eqn>
 
-<p>Для них определён моноид <code>Endo</code>:
+<p>Для них в модуле <code>Data.Monoid</code> определён моноид <code>Endo</code>:
   <pre><hs>newtype Endo a = Endo { appEndo :: a -> a }
 
 instance Semigroup (Endo a) where

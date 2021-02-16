@@ -438,7 +438,24 @@ newton f = limit
                 <p>Проверьте корректность работы функции <code>newton</code> на примере линейных и квадратных уравнений.</p>
             </task>
 
-            <task>Объедините функции <code>newton</code> и <code>bisection</code> в функцию <code>findRoot</code>, которая в случае неуспеха метода Ньютона применяет метод бисекции.</task>
+<!--            <task>Объедините функции <code>newton</code> и <code>bisection</code> в функцию <code>findRoot</code>, которая в случае неуспеха метода Ньютона применяет метод бисекции, отыскивая для него подходящий интервал.</task>
+	    <details><summary>Вариант решения</summary>
+	      <pre><hs>findRoot :: (Double -> Double) -> Double -> Maybe Double
+findRoot f x = newton f x <|> (interval >>= bisection f)
+    where
+      interval = go 1e-8 x <|> go (-1e-8) x
+      go dx x = find (\(a, b) -> f a * f b < 0)
+                $ (\l -> zip l (tail l))
+                $ takeWhile ((< 1e9) . abs)
+                $ map (+ x)
+                $ iterate (* 2) dx</hs></pre>
+Здесь мы использовали два оператора, с которыми мы познакомимся позже. Из их определения можно понять, что они делают.
+ <pre><hs>Nothing <|> x = x
+x <|> _ = x
+
+Nothing >>= f = Nothing
+Just x >>= f = f x </hs></pre>
+	    </details> -->
 
             <h4>Решение ОДУ первого порядка</h4>
 

@@ -91,16 +91,30 @@ solveODE method f h = iterate (method h f)
 --                             $ ((\h -> method h f (x,y))
 --                             <$> (iterate (/ 2) h))
 
-findRoot' :: (Double -> Double) -> (Double -> Double) -> Double -> Maybe Double
-findRoot' f df = fixedPoint . take 150 . iterate (\x -> x - f x / df x)
+newton' :: (Double -> Double) -> (Double -> Double) -> Double -> Maybe Double
+newton' f df = fixedPoint . take 150 . iterate (\x -> x - f x / df x)
 
-findRoot :: (Double -> Double) -> Double -> Maybe Double
-findRoot f = findRoot' f (diff f)
+newton :: (Double -> Double) -> Double -> Maybe Double
+newton f = newton' f (diff f)
 
 fixedPoint :: [Double] -> Maybe Double
 fixedPoint xs =
-  snd <$> find (\(x1, x2) -> aggbs (x2 - x1) <= 1e-12) (zip xs (tail xs))
+  snd <$> find (\(x1, x2) -> abs (x2 - x1) <= 1e-12) (zip xs (tail xs))
 
+findRoot :: (Double -> Double) -> Double -> Maybe Double
+findRoot f x = newton f x <|> (interval >>= bisection f)
+    where
+      interval = go 1e-8 x <|> go (-1e-8) x
+      go dx x = find (\(a, b) -> f a * f b < 0)
+                $ (\l -> zip l (tail l))
+                $ takeWhile ((< 1e9) . abs)
+                $ map (+ x)
+                $ iterate (* 2) dx
+
+Nothing <|> x = x
+x <|> _ = x
+
+          
 diff :: (Double -> Double) -> Double -> Double
 diff f x =
   fromMaybe (df 1e-8) $ fixedPoint $ take 20 $ df <$> iterate (/ 2) 1e-3
