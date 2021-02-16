@@ -90,10 +90,10 @@ minCount (x:xs) = Just $ foldl count (x, 1) xs
       <pre class="animate" id="foldrA"></pre>
       <pre class="animate" id="foldlA"></pre>
 	    
-      <task>Реализуйте только при помощи свёртки (правой, либо левой) все эти функции: <code>map</code>, <code>filter</code>, <code>reverse</code>, <code>(++)</code>, <code>any</code> и <code>all</code>, <code>maximum</code> и <code>minimum</code>, <code>length</code>, <code>scanr</code> и <code>scanl</code>. Для этого нужно подобрать подходящую сворачивающую функцию <tt>f</tt> и начальное значение <tt>x0</tt>.</task>
+      <task>Реализуйте только при помощи свёртки (правой, либо левой) все эти функции: <code>map</code>, <code>filter</code>, <code>reverse</code>, <code>(++)</code>, <code>any</code> и <code>all</code>, <code>maximum</code> и <code>minimum</code>, <code>length</code>, <a href='flp-lab3.html#accumulate'><code>accumulate</code></a>, <code>scanr</code> и <code>scanl</code>. Для этого нужно подобрать подходящую сворачивающую функцию <tt>f</tt> и начальное значение <tt>x0</tt>.</task>
 
-      <p>Раз свёртка универсальна, то с её помощью можно определить такие базовые функции-обработчики списков, как <code>head</code>, <code>tail</code>, <code>last</code>, <code>init</code>:
-	<pre><hs>head lst = foldr (\x _ -> Just x) Nothing lst
+      <task>Поскольку свёртка универсальна, с её помощью можно определить такие базовые функции-обработчики списков, как <code>head</code>, <code>tail</code>, <code>last</code> и <code>init</code>. Попробуйте выразить эти функции через свёртку.
+	<details><summary>Вариант решения</summary><pre><hs>head lst = foldr (\x _ -> Just x) Nothing lst
 
 tail lst = foldl f Nothing lst
   where f Nothing _ = Just []
@@ -103,13 +103,15 @@ last lst = foldl (\_ x -> Just x) Nothing lst
 
 init lst = foldr f Nothing lst
   where f _ Nothing = Just []
-        f x (Just r) = Just (x:r)</hs></pre></p>
-      <p>Наконец, правую и левую свёртки можно выразить друг через друга:</p>
-      <pre><hs>foldr f x0 lst = foldl (\r x -> r . f x) id lst x0
-foldl f x0 lst = foldr (\x r -> r . (`f` x)) id lst x0</hs></pre>
-      <pre class='animate' id='foldrAA'></pre>
-      <pre class='animate' id='foldlAA'></pre>
-</p>
+        f x (Just r) = Just (x:r)</hs></pre></details></task>
+
+      <task> Наконец, в силу универсальности, правую и левую свёртки тоже должно быть возможно выразить друг через друга. Попробуйте найти как выразить правую свёртку через левую, и наоборот, используя функции и их композицию:
+	<details><summary>Вариант решения</summary>
+	  <pre><hs>foldr f x0 lst = foldl (\r x -> r . f x) id lst x0</hs></pre>
+	  <pre class='animate' id='foldrAA'></pre>
+	  <pre><hs>foldl f x0 lst = foldr (\x r -> r . (`f` x)) id lst x0</hs></pre>
+	  <pre class='animate' id='foldlAA'></pre></details>
+      </task>
 
 
       
@@ -209,7 +211,7 @@ testA :: (Eq s, Eq i) => Automat s i -> [i] -> Bool</hs></pre></task>
       <h2>Автомат со стековой памятью</h2>
      
       <p>Конечные автоматы имеют существенное ограничение — число их состояний конечно и должно быть известно на этапе проектирования. Это сильно снижает их вычислительную мощность. Если заменить набор конечных состояний на изменяемый стек, то можно получить более мощный вычислитель: <strong>автомат со стековой памятью</strong>. Такой автомат уже способен производить вычисления конечных арифметических выражений произвольной сложности, разбирать и транслировать широкий класс искусственных языков, которые называются контекстно-свободными.</p>
-     
+п     
       <p> Классический пример задачи, которую может решить стековый автомат, но не сможет конечный автомат — это распознавание сбалансированного скобочного выражения. К сбалансированным выражениям относятся, например такие: <tt>(), (()), ()(), (()((())()))</tt> и т. п., а вот несколько примеров несбалансированных выражений: <tt>)(, (, (()(()(</tt>. </p>
 
       <p>Автомат, распознающий их может быть определён нами так:</p>

@@ -1,11 +1,11 @@
-{-# LANGUAGE DeriveFoldable #-}
+{-# LANGUAGE DeriveFoldable, GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE BangPatterns #-}
 module Lab3 where
 
 import Data.List (find, unfoldr)
 import Data.Maybe (fromMaybe)
-import Data.Monoid ()
+import Data.Monoid
 import GHC.Conc (par, pseq)
 import Lab1 (mean, gauss)
 import Lab2 (bisection)
@@ -99,7 +99,7 @@ findRoot f = findRoot' f (diff f)
 
 fixedPoint :: [Double] -> Maybe Double
 fixedPoint xs =
-  snd <$> find (\(x1, x2) -> abs (x2 - x1) <= 1e-12) (zip xs (tail xs))
+  snd <$> find (\(x1, x2) -> aggbs (x2 - x1) <= 1e-12) (zip xs (tail xs))
 
 diff :: (Double -> Double) -> Double -> Double
 diff f x =
@@ -148,17 +148,17 @@ floyd''' = map (\i -> [arsum i + 1 .. arsum (i + 1)]) [1 ..]
     arsum n = (n * (n - 1)) `div` 2
 
 data Tree a = Node a (Tree a) (Tree a) | Stop
-  deriving (Show, Foldable)
+  deriving (Show)
 
 takeTree 0 _ = Stop
 takeTree _ Stop = Stop
 takeTree n (Node a t1 t2)
   = Node a (takeTree (n-1) t1) (takeTree (n-1) t2)
 
-f x = x*x - 2
-                                         
---instance Foldable Tree where
---  foldMap f (Node x t1 t2) = f x <> foldMap f t1 <> foldMap f t2
+                                       
+instance Foldable Tree where
+  foldMap f (Node x t1 t2) = f x <> foldMap f t1 <> foldMap f t2
+  foldMap f Stop = mempty
 
 tree :: (a -> (a, a)) -> a -> Tree a
 tree f x = let (a, b) = f x
@@ -218,3 +218,16 @@ init' lst = foldr f Nothing lst
 foldr' f x0 lst = foldl (\r x -> r . (f x)) id lst x0
 
 foldl' f x0 lst = foldr (\x r -> r . ((flip f) x)) id lst x0
+
+accumulate g x0 f lst  = foldr (g . f) x0 lst
+
+newtype DList a = DList (Endo [a])
+   deriving (Semigroup, Monoid)
+
+instance Foldable DList where
+  foldMap f = foldMap f . toList
+
+dList lst = DList (Endo (lst ++))
+toList (DList e) = appEndo e []
+
+
