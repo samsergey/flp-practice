@@ -9,6 +9,8 @@ import Data.Monoid ()
 import GHC.Conc (par, pseq)
 import Lab1 (mean, gauss)
 import Lab2 (bisection)
+import Text.Printf
+import Data.Maybe
 
 toBase' :: Int -> Int -> [Int]
 toBase' b n
@@ -192,3 +194,27 @@ x +++ [] = x
 expand :: Num a => (a,a) -> Tree (a,a)
 expand = tree $ \(a,b) -> let d = b-a in ((a - d, b),(a, b + d))
 
+foldt f z []     = z
+foldt f z [x]    = f x z
+foldt f z xs     = foldt f z (pairs f xs)
+
+pairs f (x:y:t)  = f x y : pairs f t
+pairs _ t        = t
+
+id' lst = foldr (:) [] lst
+
+head' lst = foldr (\x _ -> Just x) Nothing lst
+
+tail' lst = foldl f Nothing lst
+  where f Nothing _ = Just []
+        f (Just r) x = Just (r ++ [x])
+
+last' lst = foldl (\_ x -> Just x) Nothing lst
+
+init' lst = foldr f Nothing lst
+  where f _ Nothing = Just []
+        f x (Just r) = Just (x:r)
+
+foldr' f x0 lst = foldl (\r x -> r . (f x)) id lst x0
+
+foldl' f x0 lst = foldr (\x r -> r . ((flip f) x)) id lst x0
