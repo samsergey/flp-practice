@@ -4,7 +4,8 @@ import Data.Semigroup
 import Data.Monoid
 import Data.List
 import Text.Printf
---import Lab1 (diff)
+import Data.Foldable
+import Lab3 (Tree(..))
 
 when :: Monoid m => (a -> m) -> (a -> Bool) -> a -> m
 when m p x = if p x then m x else mempty
@@ -27,7 +28,7 @@ path' p = foldMap $ pure `when` p
 data M a = I | M [[a]]
   deriving Show
 
-toList (M a) = a
+toListM (M a) = a
            
 dot a b = sum $ zipWith (*) a b                 
 
@@ -41,7 +42,7 @@ matrix f rng = M $ [ [f i j | i <- rng ] | j <- rng ]
              
 powers x = mempty : zipWith (<>) (powers x) (repeat x)
 
-diagonal m = zipWith (!!) (toList m) [0..]
+diagonal m = zipWith (!!) (toListM m) [0..]
 trace = sum . diagonal
            
 times 0 _ = mempty
@@ -71,7 +72,7 @@ rotate (x:xs) = xs ++ [x]
 rotate' = reverse . rotate . reverse
 rotations lst = take (length lst) $ iterate rotate' lst
 
-tr = M . transpose . toList
+tr = M . transpose . toListM
                 
 moves = tr . M . rotate . rotations $ replicate 6 (1/6) ++ replicate 6 0
         --  0 1 2 3 4 5 6 7 8 9 1011
@@ -111,6 +112,3 @@ fibi n = go 0 1 n
   where go a b 0 = a
         go a b 1 = b
         go a b n = go b (a + b) (n - 1)
-
-
-

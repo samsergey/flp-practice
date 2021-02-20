@@ -378,12 +378,15 @@ floyd = [ [arsum i + 1 .. arsum (i + 1)] | i <- [1..] ]
         </p>
 
 	<a name="Tree"></a>
-        <p>Для бесконечного дерева можно создать такой тип:
-            <pre><hs>data Tree a = Node a (Tree a) (Tree a) deriving Show</hs></pre> Он параметризован типом <code>a</code>, так что наше дерево может содержать любые данные. Порождать такие деревья можно такой функцией:
+        <p>Для потенциально бесконечного дерева можно создать такой тип:
+          <pre><hs>data Tree a = Node a (Tree a) (Tree a)
+            | Empty
+  deriving Show</hs></pre> Он параметризован типом <code>a</code>, так что наше дерево может содержать любые данные. Порождать бесконечные деревья можно такой функцией:
             <pre><hs><d>tree :: (a -> (a, a)) -> a -> Tree a</d>
 tree f x = let (a, b) = f x
            in Node x (tree f a) (tree f b)</hs></pre> А так можно выделять в нём путь с помощью указанного условия:
             <pre><hs><d>path :: (a -> Bool) -> Tree a -> [a]</d>
+path _ Empty = []
 path p (Node a t1 t2)
   | p a = [a] ++ path p t1 ++ path p t2
   | otherwise = []</hs></pre></p>

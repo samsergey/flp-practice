@@ -161,18 +161,18 @@ floyd''' = map (\i -> [arsum i + 1 .. arsum (i + 1)]) [1 ..]
   where
     arsum n = (n * (n - 1)) `div` 2
 
-data Tree a = Node a (Tree a) (Tree a) | Stop
+data Tree a = Node a (Tree a) (Tree a) | Empty
   deriving (Show)
 
-takeTree 0 _ = Stop
-takeTree _ Stop = Stop
+takeTree 0 _ = Empty
+takeTree _ Empty = Empty
 takeTree n (Node a t1 t2)
   = Node a (takeTree (n-1) t1) (takeTree (n-1) t2)
 
                                        
 instance Foldable Tree where
   foldMap f (Node x t1 t2) = f x <> foldMap f t1 <> foldMap f t2
-  foldMap f Stop = mempty
+  foldMap f Empty = mempty
 
 tree :: (a -> (a, a)) -> a -> Tree a
 tree f x = let (a, b) = f x
@@ -197,7 +197,7 @@ bisection' p =
 integrate :: (Double -> Double) -> [Double] -> Double
 integrate f mesh = sum $ zipWith (gauss f) mesh (tail mesh)
 
-findTree p Stop = []
+findTree p Empty = []
 findTree p (Node a t1 t2) = (if p a then [a] else []) ++
                             (findTree p t1 +++ findTree p t2)
 infixr 5 +++
@@ -245,3 +245,16 @@ dList lst = DList (Endo (lst ++))
 toList (DList e) = appEndo e []
 
 
+instance Ord a => Semigroup (Tree a) where
+  Empty <> t = t
+  t <> Empty = t
+  t1 <> t2 = foldr insert t1 t2
+    where
+      insert n Empty = Node n Empty Empty
+      insert n (Node m l r) = case compare n m of
+        LT -> Node m (insert n l) r
+        GT -> Node m l (insert n r)
+        EQ -> Node m l r
+
+instance Ord a => Monoid (Tree a) where
+  mempty = Empty

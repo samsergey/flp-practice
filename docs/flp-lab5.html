@@ -41,13 +41,15 @@
  All True <> All False</hs></pre>
       </task>
 
+      <h2>Класс Foldable</h2>
+      
       <p>Основное применение концепции моноидов в программировании -- объединение данных, организованных в сложные структуры тем или иным способом. Для этого служит универсальная функция свёртки <code>foldMap</code>:</p>
       <pre><hs>foldMap :: (Foldable t, Monoid m) => (a -> m) -> t a -> m</hs></pre>
-      <p>Тип этой функции говорит о том, что с её помощью можно объединить элементы любого сворачиваемого (Foldable) контейнера <code>t a</code>, хранящего элементы типа <code>a</code> в моноид типа <code>m</code>. Например, для списков эта функция может быть определена такими эквивалентными способами:</p>
+      <p>Тип этой функции говорит о том, что с её помощью можно объединить элементы любого сворачиваемого (Foldable) контейнера <code>t a</code>, хранящего элементы типа <code>a</code> в моноид типа <code>m</code>. Например, для списков эта функция может быть определена любым из этих эквивалентных способов:</p>
       <pre><hs>foldMap f = foldr (\x r -> f x <> r)) mempty
-          = foldr ((<>) . Sum) mempty
-          = foldr (<>) mempty . map f</hs></pre>
-      
+          = foldr (<>) mempty . map f
+          = foldr ((<>) . f) mempty</hs></pre>
+    
       <task>С помощью функции <code>foldMap</code> найдите для списка <code>[2, 4, -3, 10, 7, 6]</code>
 	<ul>
 	  <li> сумму элементов (тип <code>Sum</code>),
@@ -60,6 +62,14 @@
 	</ul>
       </task>
 
+      <p>Вернёмся к типу <a href="flp-lab3.html#Tree"><code>Tree</code><a> из Занятия 3 и определим его экземпляром класса <code>Foldable</code>. Для этого нужно определить моноидальную свёртку <code>foldMap</code> для дерева.
+	    <pre><hs>instance Foldable (Tree a) where
+foldMap _ Empty = mempty
+foldMap f (Tree a l r) = f a <> foldMap f l <> foldMap f r</hs></pre>
+Теперь мы можем найти все перечисленные в предыдущем задании свойства элементов для какого-либо дерева.</p>
+
+      <task>Вычислите для дерева, содержащего числа, количество элементов, их сумму, максимальное значение, содержит ли дерево отрицательные числа?</task>
+      
       <h2>Операции с моноидами</h2>
 
       <p>Сами по себе моноиды были бы не столь полезны в программировании, если бы не два их свойства: моноидами являются произведение типов-моноидов
@@ -258,7 +268,6 @@ instance Monoid (Endo a) where
 
       <task>Загрузите модуль <code>Data.Foldable</code>. Посмотрите информацию о классе <code>Foldable</code>. Обратите внимание на то, как много встречавшихся нам ранее функций, обрабатывающих списки, определены для этого класса, а также на то, к каким ещё типам можно применить эти функции. </task>
 
-      <task>Вернитесь к типу <a href="flp-lab3.html#Tree"><code>Tree</code><a> из Занятия 3 и определите его экземпляром класса <code>Foldable</code>, определив моноидальную свёртку <code>foldMap</code>. После этого, определите функцию <code>path</code> через <code>foldMap</code>.</task>
 
       <p>В определении класса <code>Foldable</code> есть любопытная строчка:
 	<pre><ghci><o> ...
@@ -285,7 +294,7 @@ instance Monoid (Endo a) where
   Dual m1 <> Dual m2 = Dual (m2 <> m1)
 
 instance Monoid m => Semigroup (Dual m) where 
-  memepty = Dual mempty</hs></pre> 
+  mempty = Dual mempty</hs></pre> 
   Таким образом, моноиду <code>Endo</code> c операциeй <tt>(.)</tt> соответствует моноид <code>Dual . Endo</code> с операцией <tt>flip (.)</tt>. Для левой свёртки цепочка вычислений в виде аппликаций записывается так:</p>
       <pre><hs>Endo (`f` c) <eq>\diamond</eq> Endo (`f` b) <eq>\diamond</eq> Endo (`f` a) = 
  = Dual (Endo (`f` a)) <eq>\diamond</eq> Dual (Endo (`f` b)) <eq>\diamond</eq> Dual (Endo (`f` c))</hs></pre>
