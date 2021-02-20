@@ -1,9 +1,10 @@
 module Lab5 where
 
+import Data.Semigroup
 import Data.Monoid
 import Data.List
 import Text.Printf
-import Lab1 (diff)
+--import Lab1 (diff)
 
 when :: Monoid m => (a -> m) -> (a -> Bool) -> a -> m
 when m p x = if p x then m x else mempty
@@ -110,5 +111,6 @@ fibi n = go 0 1 n
   where go a b 0 = a
         go a b 1 = b
         go a b n = go b (a + b) (n - 1)
+
 
 
