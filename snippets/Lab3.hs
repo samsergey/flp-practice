@@ -168,15 +168,25 @@ takeTree 0 _ = Empty
 takeTree _ Empty = Empty
 takeTree n (Node a t1 t2)
   = Node a (takeTree (n-1) t1) (takeTree (n-1) t2)
-
                                        
 instance Foldable Tree where
-  foldMap f (Node x t1 t2) = f x <> foldMap f t1 <> foldMap f t2
-  foldMap f Empty = mempty
+  foldMap f = foldMap f . breadthFirst
 
+breadthFirst Empty = []
+breadthFirst (Node a l r) = a:x:y:(xs +++ ys)
+    where (x:xs) = breadthFirst l
+          (y:ys) = breadthFirst r
+                 
 tree :: (a -> (a, a)) -> a -> Tree a
 tree f x = let (a, b) = f x
            in Node x (tree f a) (tree f b)
+
+mkTree :: (a -> Maybe (a, a)) -> a -> Tree a
+mkTree f x = case f x of
+             Just (a,b) -> let l = mkTree f a
+                               r = mkTree f b
+                           in Node x l r
+             Nothing -> Empty
 
 path :: (a -> Bool) -> Tree a -> [a]
 path p (Node a t1 t2)

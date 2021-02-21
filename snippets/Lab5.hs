@@ -5,7 +5,7 @@ import Data.Monoid
 import Data.List
 import Text.Printf
 import Data.Foldable
-import Lab3 (Tree(..))
+import Lab3 (Tree(..), tree)
 
 when :: Monoid m => (a -> m) -> (a -> Bool) -> a -> m
 when m p x = if p x then m x else mempty
@@ -112,3 +112,6 @@ fibi n = go 0 1 n
   where go a b 0 = a
         go a b 1 = b
         go a b n = go b (a + b) (n - 1)
+
+
+y

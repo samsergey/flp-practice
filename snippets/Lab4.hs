@@ -5,6 +5,8 @@ import Data.Char
 import Data.List
 import Text.Printf
 
+import Lab3
+
 fromBase b = foldl (\r x -> r*b+x) 0  
 
 data Alphabet i = Set [i]
@@ -152,3 +154,10 @@ floyd = zipWith (\s i -> [s .. s+i])
         (tail (scanl (+) 1 [0 ..]))
         [0 ..]
 
+data Flag = InsideWord | Spaces deriving (Show, Eq)
+          
+wc = Automat Any f (0, Spaces) [] []
+    where f (s, InsideWord) ' ' = (s, Spaces)
+          f (s, InsideWord) _ = (s, InsideWord)
+          f (s, Spaces) ' ' = (s, Spaces)
+          f (s, Spaces) _ = (s+1, InsideWord)
