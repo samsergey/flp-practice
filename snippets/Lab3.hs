@@ -268,3 +268,4 @@ instance Ord a => Semigroup (Tree a) where
 
 instance Ord a => Monoid (Tree a) where
   mempty = Empty
+

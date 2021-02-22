@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveFoldable #-}
+{-# LANGUAGE DeriveFunctor #-}
 module Lab5 where
 
 import Data.Semigroup
@@ -5,7 +7,8 @@ import Data.Monoid
 import Data.List
 import Text.Printf
 import Data.Foldable
-import Lab3 (Tree(..), tree)
+import Lab3 (Tree(..), tree, (+++))
+import Lab4 
 
 when :: Monoid m => (a -> m) -> (a -> Bool) -> a -> m
 when m p x = if p x then m x else mempty
@@ -33,6 +36,8 @@ toListM (M a) = a
 dot a b = sum $ zipWith (*) a b                 
 
 instance Num a => Semigroup (M a) where
+  I <> x = x
+  x <> I = x
   M a <> M b = M $ [ [ dot x y | y <- transpose b ] | x <- a ]
 
 instance Num a => Monoid (M a) where
@@ -113,5 +118,17 @@ fibi n = go 0 1 n
         go a b 1 = b
         go a b n = go b (a + b) (n - 1)
 
+data RTree a = RTree a [RTree a]
+  deriving Show
 
-y
+takeRTree 0 (RTree a _) = RTree a []
+takeRTree n (RTree a ts) = RTree a (takeRTree (n-1) <$> ts)
+
+instance Foldable RTree where
+  foldMap f = foldMap f . bfs
+    where
+      bfs (RTree a brs) = [a] <> foldl (+++) [] (bfs <$> brs)
+
+rTree f a = RTree a (rTree f <$> f a)
+
+t = rTree (\x -> ['(':x, ')':x, '[':x, ']':x]) []
