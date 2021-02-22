@@ -132,3 +132,5 @@ instance Foldable RTree where
 rTree f a = RTree a (rTree f <$> f a)
 
 t = rTree (\x -> ['(':x, ')':x, '[':x, ']':x]) []
+
+

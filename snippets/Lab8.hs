@@ -1,13 +1,19 @@
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DeriveFunctor #-}
+
 module Lab8 where
 
 import Lab7 (headE, calculateA)
 
 import Control.Applicative
-import Control.Monad
-
+import Control.Monad hiding (fail)
+import Data.List
+import Data.Maybe
 import System.CPUTime
 import Text.Printf
+import Lab3 ((+++))
 
 data State s a = State { runState :: s -> (s, a) }
 
@@ -204,4 +210,21 @@ randomAST n = Node <$> randomSample ["+","-","*","/"]
 
 randomSample lst = (lst !!) <$> random (length lst)
 
+emp = []
+eps = [[]]
+ch a = [[a]]
+str s = [s]
 
+infixr 6 ~*
+infixr 4 ~+
+(~+),(~*) :: [[a]] -> [[a]] -> [[a]]
+
+a ~* b = (++) <$> a <*> b
+a ~+ b = a +++ b
+as ~** bs = mconcat $ izipWith (~*) as bs             
+kleeny a = iterate (a ~*) eps
+
+izipWith f l1 l2 = catMaybes $ mconcat $ zipWith zipper (inits a) (inits b)
+    where a = (Just <$> l1) ++ (Nothing <$ l2)
+          b = (Just <$> l2) ++ (Nothing <$ l1)
+          zipper xs ys = zipWith (liftA2 f) xs (reverse ys)
