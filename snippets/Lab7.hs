@@ -9,6 +9,8 @@ import Lab5 ((*<>))
 import Control.Applicative hiding (many, some)
 import Control.Monad (foldM, ap)
 import Logic
+import Data.List
+import Data.Ord
     
 unless test p = if test then p else empty
 untill test x p = if test then pure x else p
@@ -236,10 +238,13 @@ instance Alternative Grammar where
 ch = Term
 opt x = Epsilon <|> x
 str s = foldMap ch s
-alt x = foldr (<|>) empty $ Term <$> x
+alt x = asum $ Term <$> x
 
+asum lst = foldr (<|>) empty lst
+        
 many = Kleeny
-some x = x <> Kleeny x 
+some x = x <> Kleeny x
+lessThen n x = asum $ take n $ iterate (x <>) mempty
 
 generate r = case r of
    Epsilon -> pure []
@@ -258,4 +263,9 @@ brs = ch '(' <> many brs <> ch ')'
           
 mod3 = many (ch 0 <|> (ch 1 <> many (ch 0 <> many (ch 1) <> ch 0) <> ch 1))
 
-       
+expr 0 = Fail
+expr n = sum
+    where
+      sum = term <> opt (alt "+-" <> term)
+      term = mult <> opt (alt "*/" <> mult)
+      mult = ch 'x' <|> (ch '(' <> expr (n - 1) <> ch ')')
