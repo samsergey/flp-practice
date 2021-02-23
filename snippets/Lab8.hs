@@ -210,6 +210,23 @@ randomAST n = Node <$> randomSample ["+","-","*","/"]
 
 randomSample lst = (lst !!) <$> random (length lst)
 
+data Reg = C Char
+         | Eps | Fail
+         | Reg :| Reg
+         | Reg :* Reg
+         | K Reg
+           deriving Show
+
+gen r = case r of
+          Eps -> [[]]
+          Fail -> []                         
+          C c -> [[c]]
+          K x -> gen x ++ gen (x :* K x) 
+          (r1 :| r2) -> gen r1 ++ gen r2
+          (r1 :* r2) -> izipWith (++) (gen r1) (gen r2)
+          
+                 
+                    
 emp = []
 eps = [[]]
 ch a = [[a]]
