@@ -224,9 +224,16 @@ gen r = case r of
           K x -> gen x ++ gen (x :* K x) 
           (r1 :| r2) -> gen r1 ++ gen r2
           (r1 :* r2) -> izipWith (++) (gen r1) (gen r2)
-          
-                 
-                    
+
+interleave m1 m2 = msplit m1 >>=
+                   maybe m2 (\(a, m1') -> pure a <|> interleave m2 m1')
+
+m >>- f = do (a, m') <- maybe empty pure =<< msplit m
+             interleave (f a) (m' >>- f)
+
+msplit []     = pure Nothing
+msplit (x:xs) = pure $ Just (x, xs)
+                        
 emp = []
 eps = [[]]
 ch a = [[a]]
