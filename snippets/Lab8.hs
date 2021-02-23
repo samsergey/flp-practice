@@ -210,45 +210,54 @@ randomAST n = Node <$> randomSample ["+","-","*","/"]
 
 randomSample lst = (lst !!) <$> random (length lst)
 
-data Reg = C Char
-         | Eps | Fail
-         | Reg :| Reg
-         | Reg :* Reg
-         | K Reg
-           deriving Show
+data Reg a = Eps
+           | Fail
+           | Lit a
+           | Many (Reg a)
+           | Some (Reg a)
+           | Opt (Reg a)
+           | Alt (Reg a) (Reg a)
+           | Chain (Reg a) (Reg a)
+  deriving (Show, Functor)
+
+instance Semigroup (Reg a) where
+  (<>) = Chain
+
+instance Monoid (Reg a) where
+  mempty = Eps
+
+instance Applicative Reg where
+  pure = Lit
+  f <*> x = undefined
+
+instance Alternative Reg where
+  empty = Fail
+  (<|>) = Alt
+
+string s = foldMap Lit s
+oneof x = foldr (<|>) empty $ Lit <$> x
 
 gen r = case r of
-          Eps -> [[]]
-          Fail -> []                         
-          C c -> [[c]]
-          K x -> gen x ++ gen (x :* K x) 
-          (r1 :| r2) -> gen r1 ++ gen r2
-          (r1 :* r2) -> izipWith (++) (gen r1) (gen r2)
-
-interleave m1 m2 = msplit m1 >>=
-                   maybe m2 (\(a, m1') -> pure a <|> interleave m2 m1')
-
-m >>- f = do (a, m') <- maybe empty pure =<< msplit m
-             interleave (f a) (m' >>- f)
-
-msplit []     = pure Nothing
-msplit (x:xs) = pure $ Just (x, xs)
-                        
-emp = []
-eps = [[]]
-ch a = [[a]]
-str s = [s]
-
-infixr 6 ~*
-infixr 4 ~+
-(~+),(~*) :: [[a]] -> [[a]] -> [[a]]
-
-a ~* b = (++) <$> a <*> b
-a ~+ b = a +++ b
-as ~** bs = mconcat $ izipWith (~*) as bs             
-kleeny a = iterate (a ~*) eps
-
-izipWith f l1 l2 = catMaybes $ mconcat $ zipWith zipper (inits a) (inits b)
+          Eps -> pure []
+          Fail -> empty
+          Lit c -> pure [c]
+          Some x -> gen x ++ gen (x <> Some x)
+          Many x -> gen $ Opt (Some x)
+          Opt x -> gen $ Eps <|> x          
+          Alt r1 r2 -> gen r1 +++ gen r2
+          Chain r1 r2 -> izipWith (++) (gen r1) (gen r2)
+               
+izipWith f l1 l2 = foldMap catMaybes $ zipWith zipper (inits a) (inits b)
     where a = (Just <$> l1) ++ (Nothing <$ l2)
           b = (Just <$> l2) ++ (Nothing <$ l1)
           zipper xs ys = zipWith (liftA2 f) xs (reverse ys)
+
+newtype Logic a = Logic { samples :: [a] }
+  deriving (Show, Functor, Foldable)
+
+instance Applicative Logic where
+  pure x = Logic [x]
+  Logic fs <*> Logic xs = Logic $ foldMap catMaybes $ zipWith zipper (inits a) (inits b)
+    where a = (Just <$> fs) ++ (Nothing <$ xs)
+          b = (Just <$> xs) ++ (Nothing <$ fs)
+          zipper xs ys = zipWith (liftA2 ($)) xs (reverse ys)
