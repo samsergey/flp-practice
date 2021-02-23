@@ -1,19 +1,17 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE DeriveTraversable #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE DeriveFunctor #-}
 
 module Lab8 where
 
 import Lab7 (headE, calculateA)
 
-import Control.Applicative
+import Control.Applicative hiding (some,many)
 import Control.Monad hiding (fail)
 import Data.List
 import Data.Maybe
 import System.CPUTime
 import Text.Printf
-import Lab3 ((+++))
+import Logic
+import Lab3 (Tree (..))
 
 data State s a = State { runState :: s -> (s, a) }
 
@@ -38,12 +36,9 @@ set s = State $ const (s, s)
 modify :: (s -> s) -> State s s
 modify f = get >>= set . f
   
-data BTree a = Leaf a
-             | Node a (BTree a) (BTree a)
-  deriving (Show, Eq)
 
-mkTree :: Int -> State Int (BTree Int)
-mkTree 0 = Leaf <$> modify (+ 1)
+mkTree :: Int -> State Int (Tree Int)
+mkTree 0 = leaf <$> modify (+ 1)
 -- enumTree n = Node <$> modify (+ 1)
 --              <*> enumTree (n-1)
 --              <*> enumTree (n-1)
@@ -58,7 +53,7 @@ mkTree n = do l <- mkTree (n-1)
               r <- mkTree (n-1)
               return $ Node i l r
 
-enumTree :: Int -> BTree Int
+enumTree :: Int -> Tree Int
 enumTree n = snd $ runState (mkTree n) 0
 
 
@@ -71,8 +66,8 @@ random k = rescale <$> modify iter
     (a, c, m) = (1103515245, 12345, 2^31-1)
     rescale x = fromIntegral x `mod` k
 
-randomTree :: Int -> Random (BTree Int)
-randomTree 0 = Leaf <$> random 100
+randomTree :: Int -> Random (Tree Int)
+randomTree 0 = leaf <$> random 100
 randomTree n = Node <$> random 100
                <*> (random n >>= randomTree)
                <*> (random n >>= randomTree)
@@ -185,16 +180,18 @@ calcIO = do s <- getLine
 floyd :: [[Int]]
 floyd = mapM (`replicateM` (modify succ)) [1..] `evalState` 0
 
-traditional (Leaf a) = a
+leaf x = Node x Empty Empty
+        
+traditional (Node a Empty Empty) = a
 traditional (Node a t1 t2) = printf "(%s%s%s)" (traditional t1) a (traditional t2)
 
-lisp (Leaf a) = a
+lisp (Node a Empty Empty) = a
 lisp (Node a t1 t2) = printf "(%s %s %s)"  a (lisp t1) (lisp t2)
 
-rpn (Leaf a) = a
+rpn (Node a Empty Empty) = a
 rpn (Node a t1 t2) = printf "%s %s %s"  (rpn t1) (rpn t2) a
 
-calc (Leaf a) = read a
+calc (Node a Empty Empty) = read a
 calc (Node a t1 t2) = case a of
   "+" -> calc t1 + calc t2
   "-" -> calc t1 - calc t2
@@ -202,62 +199,11 @@ calc (Node a t1 t2) = case a of
   "/" -> calc t1 / calc t2
   "^" -> calc t1 ** calc t2
 
-randomAST :: Int -> Random (BTree String)
-randomAST 0 = Leaf . show <$> random 10
+randomAST :: Int -> Random (Tree String)
+randomAST 0 = leaf . show <$> random 10
 randomAST n = Node <$> randomSample ["+","-","*","/"]
                <*> (random n >>= randomAST)
                <*> (random n >>= randomAST)
 
 randomSample lst = (lst !!) <$> random (length lst)
 
-data Reg a = Eps
-           | Fail
-           | Lit a
-           | Many (Reg a)
-           | Some (Reg a)
-           | Opt (Reg a)
-           | Alt (Reg a) (Reg a)
-           | Chain (Reg a) (Reg a)
-  deriving (Show, Functor)
-
-instance Semigroup (Reg a) where
-  (<>) = Chain
-
-instance Monoid (Reg a) where
-  mempty = Eps
-
-instance Applicative Reg where
-  pure = Lit
-  f <*> x = undefined
-
-instance Alternative Reg where
-  empty = Fail
-  (<|>) = Alt
-
-string s = foldMap Lit s
-oneof x = foldr (<|>) empty $ Lit <$> x
-
-gen r = case r of
-          Eps -> pure []
-          Fail -> empty
-          Lit c -> pure [c]
-          Some x -> gen x ++ gen (x <> Some x)
-          Many x -> gen $ Opt (Some x)
-          Opt x -> gen $ Eps <|> x          
-          Alt r1 r2 -> gen r1 +++ gen r2
-          Chain r1 r2 -> izipWith (++) (gen r1) (gen r2)
-               
-izipWith f l1 l2 = foldMap catMaybes $ zipWith zipper (inits a) (inits b)
-    where a = (Just <$> l1) ++ (Nothing <$ l2)
-          b = (Just <$> l2) ++ (Nothing <$ l1)
-          zipper xs ys = zipWith (liftA2 f) xs (reverse ys)
-
-newtype Logic a = Logic { samples :: [a] }
-  deriving (Show, Functor, Foldable)
-
-instance Applicative Logic where
-  pure x = Logic [x]
-  Logic fs <*> Logic xs = Logic $ foldMap catMaybes $ zipWith zipper (inits a) (inits b)
-    where a = (Just <$> fs) ++ (Nothing <$ xs)
-          b = (Just <$> xs) ++ (Nothing <$ fs)
-          zipper xs ys = zipWith (liftA2 ($)) xs (reverse ys)

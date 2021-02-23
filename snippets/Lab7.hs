@@ -1,11 +1,15 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE DeriveFunctor #-}
 module Lab7 where
 
 import Lab1 (mean)
-import Control.Applicative
+import Lab4 (fromBase)
+import Lab5 ((*<>))
+import Control.Applicative hiding (many, some)
 import Control.Monad (foldM, ap)
-
+import Logic
+    
 unless test p = if test then p else empty
 untill test x p = if test then pure x else p
 
@@ -16,8 +20,6 @@ bisection p (a,b) | p a == p b = empty
   where c = mean a b
        
         
-
-
 type Stack = [Double]
 
 calculate :: String -> Stack
@@ -190,3 +192,70 @@ spaces' s = case s of
     go s = case s of
       x:xs -> (++) <$> [[x], [' ',x]] <*> go xs
       "" -> [""]
+
+------------------------------------------------------------
+                   
+data Grammar a =
+  Epsilon                         -- пустой символ
+  | Fail                          -- невозможный символ
+  | Term a                        -- литерал
+  | Kleeny (Grammar a)            -- звезда Клини (повторение)
+  | Alt (Grammar a) (Grammar a)   -- объединение (альтернатива)
+  | Chain (Grammar a) (Grammar a) -- цепочка (конкатенация)
+    deriving (Show, Functor)
+
+toString Epsilon = ""
+toString Fail = "⊥"
+toString (Term x) = [x]
+toString (Kleeny (Term x)) = [x] <> "*"
+toString (Kleeny x) = "(" <> toString x <> ")*"
+toString (Alt x y) = "(" <> toString x <> "|" <> toString y <> ")"
+toString (Chain x y) = toString x <> toString y
+                         
+             
+instance Semigroup (Grammar a) where
+  Epsilon <> x = x
+  x <> Epsilon = x
+  Fail <> _ = Fail
+  _ <> Fail = Fail
+  a <> b = Chain a b
+
+instance Monoid (Grammar a) where
+  mempty = Epsilon
+
+instance Applicative Grammar where
+  pure = Term
+  (<*>) = undefined
+
+instance Alternative Grammar where
+  empty = Fail
+  Fail <|> x = x
+  x <|> Fail = x
+  a <|> b = Alt a b
+            
+ch = Term
+opt x = Epsilon <|> x
+str s = foldMap ch s
+alt x = foldr (<|>) empty $ Term <$> x
+
+many = Kleeny
+some x = x <> Kleeny x 
+
+generate r = case r of
+   Epsilon -> pure []
+   Fail -> empty
+   Term c -> pure [c]
+   Kleeny x -> generate Epsilon <|> generate (x <> Kleeny x)
+   Alt r1 r2 -> generate r1 <|> generate r2
+   Chain r1 r2 -> (++) <$> generate r1 <*> generate r2
+                         
+------------------------------------------------------------
+                       
+brs = ch '(' <> many brs <> ch ')'
+      <|> ch '[' <> many brs <> ch ']'
+      <|> ch '{' <> many brs <> ch '}'
+
+          
+mod3 = many (ch 0 <|> (ch 1 <> many (ch 0 <> many (ch 1) <> ch 0) <> ch 1))
+
+       

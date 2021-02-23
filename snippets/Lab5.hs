@@ -57,6 +57,8 @@ times n a
   | even n = (n `div` 2) `times` (a <> a)
   | odd n  = a <> (n - 1) `times` a
 
+n *<> m = times n m
+             
 diffs lst = zipWith (-) (tail lst) lst
 
 mean lst = dot lst [1..]
