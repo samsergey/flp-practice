@@ -303,11 +303,17 @@ some x = x <> Kleeny x </hs></pre>
   
   <pre><hs>generate :: Alternative f => Grammar a -> f [a]
 generate g = case g of
+   -- генерируется пустая строка
    Epsilon -> pure []
+   -- не генерируется ничего
    Fail -> empty
+   -- один символ
    Term c -> pure [c]
+   -- последовательность цепочек x, xx, xxx, ... 
    Kleeny x -> generate Epsilon <|> generate (x <> Kleeny x)
+   -- кнкатенация (или смешение) альтернатив
    Alt a b -> generate a <|> generate b
+   -- все возможные цепочки из вариантов a и b
    Chain a b -> (++) <$> generate a <*> generate b</hs></pre>
 
 <p>  Функтором <code>f</code> может быть тип <code>Maybe</code> или список. В первом случае, мы получим какое-то одно слово, а во втором — список всех подходящих слов, возможно, бесконечный. </p>
