@@ -250,9 +250,9 @@ replicateM</ghci></pre>
   Fail                            -- невозможный символ
   | Epsilon                       -- пустой символ
   | Term a                        -- литерал
-  | Kleene (Grammar a)            -- звезда Клини
   | Alt (Grammar a) (Grammar a)   -- объединение
   | Chain (Grammar a) (Grammar a) -- конкатенация
+  | Kleene (Grammar a)            -- звезда Клини
     deriving (Show, Functor)</hs></pre>
 
 <p>Этот тип вполне пригоден для описания произвольных регулярных грамматик. Но он крайне неудобен. Для примера опишем регулярное выражение, задающее двоичные числа, кратные трём  <tt>(0|(1(01*0)*1))*</tt>:</p>
@@ -309,12 +309,12 @@ generate g = case g of
    Epsilon -> pure []
    -- генерируется один символ
    Term c -> pure [c]
-   -- последовательность цепочек x, xx, xxx, ... 
-   Kleeny x -> generate Epsilon <|> generate (x <> Kleeny x)
    -- кнкатенация (или смешение) альтернатив
    Alt a b -> generate a <|> generate b
    -- все возможные цепочки из вариантов a и b
-   Chain a b -> (++) <$> generate a <*> generate b</hs></pre>
+   Chain a b -> (++) <$> generate a <*> generate b
+   -- последовательность цепочек eps, x, xx, xxx, ... 
+   Kleeny x -> generate Epsilon <|> generate (x <> Kleeny x)</hs></pre>
 
 <p>  Функтором <code>f</code> может быть тип <code>Maybe</code> или список. В первом случае, мы получим какое-то одно слово, а во втором — список всех подходящих слов, возможно, бесконечный. </p>
 <pre><ghci><l></l> let g1 = (str "cat" <|> str "dog") <> alt "ao" <> str "log"
