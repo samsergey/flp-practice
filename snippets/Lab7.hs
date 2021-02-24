@@ -216,12 +216,8 @@ toString (Chain x y) = toString x <> toString y
                          
              
 instance Semigroup (Grammar a) where
-  Epsilon <> x = x
-  x <> Epsilon = x
-  Fail <> _ = Fail
-  _ <> Fail = Fail
-  a <> b = Chain a b
-
+  (<>) = Chain
+    
 instance Monoid (Grammar a) where
   mempty = Epsilon
 
@@ -231,9 +227,7 @@ instance Applicative Grammar where
 
 instance Alternative Grammar where
   empty = Fail
-  Fail <|> x = x
-  x <|> Fail = x
-  a <|> b = Alt a b
+  (<|>) = Alt
             
 ch = Term
 opt x = Epsilon <|> x
@@ -266,6 +260,6 @@ mod3 = many (ch 0 <|> (ch 1 <> many (ch 0 <> many (ch 1) <> ch 0) <> ch 1))
 
 freeze x = Alt x Fail
        
-expr = freeze $ term <> many (alt "+-" <> term)
+expr = term <> many (alt "+-" <> term)
 term = mult <> many (alt "*/" <> mult)
 mult = ch 'x' <|> ch '(' <> expr <> ch ')'
