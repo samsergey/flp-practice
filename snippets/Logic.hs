@@ -28,13 +28,13 @@ instance Applicative Logic where
                           $ zipWith zipper (inits a) (inits b)
     where a = (Just <$> fs) ++ (Nothing <$ xs)
           b = (Just <$> xs) ++ (Nothing <$ fs)
-          zipper xs ys = zipWith (liftA2 ($)) xs (reverse ys)
+          zipper ~xs ~ys = zipWith (liftA2 ($)) xs (reverse ys)
 
 instance Alternative Logic where
   empty = Logic []
   Logic as <|> Logic bs = Logic $ interleave as bs
 
-interleave m1 m2 =
+interleave ~m1 ~m2 =
     msplit m1 >>= maybe m2 (\(a, m1') -> pure a <|> interleave m2 m1')
         where
           msplit []     = pure Nothing
@@ -46,8 +46,8 @@ instance Monad Logic where
 
 instance Traversable Logic where
     {-# INLINE traverse #-} 
-    traverse f xs = foldr cons_f (pure empty) xs
-      where cons_f x ys = liftA2 cons (f x) ys
+    traverse f ~xs = foldr cons_f (pure empty) xs
+      where cons_f ~x ~ys = liftA2 cons (f x) ys
 
 cons x (Logic xs) = Logic (x:xs)
                           

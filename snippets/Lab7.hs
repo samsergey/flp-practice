@@ -252,20 +252,27 @@ generate r = case r of
    Term c -> pure [c]
    Kleeny x -> generate Epsilon <|> generate (x <> Kleeny x)
    Alt r1 r2 -> generate r1 <|> generate r2
-   Chain r1 r2 -> (++) <$> generate r1 <*> generate r2
+   Chain r1 r2 -> (<>) <$> generate r1 <*> generate r2
                          
 ------------------------------------------------------------
                        
-brs = ch '(' <> many brs <> ch ')'
-      <|> ch '[' <> many brs <> ch ']'
-      <|> ch '{' <> many brs <> ch '}'
+brs = (ch '(' <> many brs <> ch ')'
+       <|> ch '[' <> many brs <> ch ']'
+       <|> ch '{' <> many brs <> ch '}')
+
+aa = ch 'a' <> aa
 
           
 mod3 = many (ch 0 <|> (ch 1 <> many (ch 0 <> many (ch 1) <> ch 0) <> ch 1))
 
-expr 0 = Fail
-expr n = sum
+expr' 0 = Fail
+expr' n = sum
     where
-      sum = term <> opt (alt "+-" <> term)
-      term = mult <> opt (alt "*/" <> mult)
-      mult = ch 'x' <|> (ch '(' <> expr (n - 1) <> ch ')')
+      sum = term <> many (alt "+-" <> term)
+      term = mult <> many (alt "*/" <> mult)
+      mult = ch 'x' <|> (ch '(' <> expr' (n - 1) <> ch ')')
+
+expr = term <> many (alt "+-" <> term)
+term = mult <> many (alt "*/" <> mult)
+mult = ch 'x' <|> ch '(' <> expr <> ch ')'
+
