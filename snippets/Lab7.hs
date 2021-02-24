@@ -201,7 +201,7 @@ data Grammar a =
   Epsilon                         -- пустой символ
   | Fail                          -- невозможный символ
   | Term a                        -- литерал
-  | Kleeny (Grammar a)            -- звезда Клини (повторение)
+  | Kleene (Grammar a)            -- звезда Клини (повторение)
   | Alt (Grammar a) (Grammar a)   -- объединение (альтернатива)
   | Chain (Grammar a) (Grammar a) -- цепочка (конкатенация)
     deriving (Show, Functor)
@@ -209,8 +209,8 @@ data Grammar a =
 toString Epsilon = ""
 toString Fail = "⊥"
 toString (Term x) = [x]
-toString (Kleeny (Term x)) = [x] <> "*"
-toString (Kleeny x) = "(" <> toString x <> ")*"
+toString (Kleene (Term x)) = [x] <> "*"
+toString (Kleene x) = "(" <> toString x <> ")*"
 toString (Alt x y) = "(" <> toString x <> "|" <> toString y <> ")"
 toString (Chain x y) = toString x <> toString y
                          
@@ -241,38 +241,31 @@ str s = foldMap ch s
 alt x = asum $ Term <$> x
 
 asum lst = foldr (<|>) empty lst
-        
-many = Kleeny
-some x = x <> Kleeny x
+
+many x = Kleene x
+some x = x <> Kleene x
+         
 lessThen n x = asum $ take n $ iterate (x <>) mempty
 
 generate r = case r of
    Epsilon -> pure []
    Fail -> empty
    Term c -> pure [c]
-   Kleeny x -> generate Epsilon <|> generate (x <> Kleeny x)
+   Kleene x -> generate Epsilon <|> generate (x <> Kleene x)
    Alt r1 r2 -> generate r1 <|> generate r2
-   Chain r1 r2 -> (<>) <$> generate r1 <*> generate r2
+   Chain r1 r2 -> (++) <$> generate r1 <*> generate r2
                          
 ------------------------------------------------------------
                        
-brs = (ch '(' <> many brs <> ch ')'
-       <|> ch '[' <> many brs <> ch ']'
-       <|> ch '{' <> many brs <> ch '}')
-
-aa = ch 'a' <> aa
+brs = ch '(' <> many brs <> ch ')'
+--      <|> ch '[' <> many brs <> ch ']'
+--      <|> ch '{' <> many brs <> ch '}'
 
           
 mod3 = many (ch 0 <|> (ch 1 <> many (ch 0 <> many (ch 1) <> ch 0) <> ch 1))
 
-expr' 0 = Fail
-expr' n = sum
-    where
-      sum = term <> many (alt "+-" <> term)
-      term = mult <> many (alt "*/" <> mult)
-      mult = ch 'x' <|> (ch '(' <> expr' (n - 1) <> ch ')')
-
-expr = term <> many (alt "+-" <> term)
+freeze x = Alt x Fail
+       
+expr = freeze $ term <> many (alt "+-" <> term)
 term = mult <> many (alt "*/" <> mult)
 mult = ch 'x' <|> ch '(' <> expr <> ch ')'
-
