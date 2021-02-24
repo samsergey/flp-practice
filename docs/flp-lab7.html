@@ -247,8 +247,8 @@ replicateM</ghci></pre>
 
 <p>Эту алгебраическую структуру можно выразить таким типом:</p>
 <pre><hs>data Grammar a =
-  Epsilon                         -- пустой символ
-  | Fail                          -- невозможный символ
+  Fail                            -- невозможный символ
+  | Epsilon                       -- пустой символ
   | Term a                        -- литерал
   | Kleene (Grammar a)            -- звезда Клини
   | Alt (Grammar a) (Grammar a)   -- объединение
@@ -303,11 +303,11 @@ some x = x <> Kleeny x </hs></pre>
   
   <pre><hs>generate :: Alternative f => Grammar a -> f [a]
 generate g = case g of
-   -- генерируется пустая строка
-   Epsilon -> pure []
    -- не генерируется ничего
    Fail -> empty
-   -- один символ
+   -- генерируется пустая строка
+   Epsilon -> pure []
+   -- генерируется один символ
    Term c -> pure [c]
    -- последовательность цепочек x, xx, xxx, ... 
    Kleeny x -> generate Epsilon <|> generate (x <> Kleeny x)
