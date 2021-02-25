@@ -277,18 +277,18 @@ instance Alternative Grammar where
 <pre>many (ch 0 <|> (ch 1 <> many (ch 0 <> many (ch 1) <> ch 0) <> ch 1))</pre>
 
   <p>Ещё стоит создать несколько вспомогательных функций:</p>
-<pre><hs>-- отдельный символ
-ch = Term
--- необязательное выражение
-opt x = Epsilon <|> x
+<pre><hs>-- указанный литерал
+ch c = pure c
+-- один из списка литералов
+alt cs = foldr (<|>) empty $ pure <$> cs
 -- цепочка литералов
-str s = foldMap ch s
--- список альтернатив
-alt x = foldr (<|>) empty $ Term <$> x
+str s = foldMap pure s
+-- необязательное выражение
+opt g = Epsilon <|> g
 -- повторение выражения 0 или более раз
 many = Kleeny
 -- повторение выражения 1 или более раз
-some x = x <> Kleeny x </hs></pre>
+some g = g <> Kleeny g</hs></pre>
 
 <p>Теперь определять регулярные выражения становится существенно удобнее. Вот, например, как запишутся выражения <tt>b[aeiou]bble</tt>, <tt>g(ooo)+gle</tt>, <tt>0x[0-9A-F]{2}</tt></p>
 <pre><hs> ch 'b' <> alt "aeiou" <> str "bble"
@@ -309,8 +309,8 @@ generate g = case g of
    Alt a b -> generate a <|> generate b
    -- все возможные цепочки из вариантов a и b
    Chain a b -> (++) <$> generate a <*> generate b
-   -- последовательность цепочек eps, x, xx, xxx, ... 
-   Kleeny x -> generate Epsilon <|> generate (x <> Kleeny x)</hs></pre>
+   -- последовательность цепочек eps, a, aa, aaa, ... 
+   Kleeny a -> generate Epsilon <|> generate (a <> Kleeny a)</hs></pre>
 
 <p>  Функтором <code>f</code> может быть тип <code>Maybe</code> или список. В первом случае, мы получим какое-то одно слово, а во втором — список всех подходящих слов, возможно, бесконечный. </p>
 <pre><ghci><l></l> let g1 = (str "cat" <|> str "dog") <> alt "ao" <> str "log"
