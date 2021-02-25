@@ -280,9 +280,9 @@ instance Alternative Grammar where
 <pre><hs>-- указанный литерал
 ch c = pure c
 -- один из списка литералов
-alt cs = foldr (<|>) empty $ pure <$> cs
--- цепочка литералов
-str s = foldMap pure s
+alt cs = foldr (<|>) empty $ ch <$> cs
+-- цепочка указанных литералов
+str s = foldMap ch s
 -- необязательное выражение
 opt g = Epsilon <|> g
 -- повторение выражения 0 или более раз
