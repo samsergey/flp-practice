@@ -24,6 +24,7 @@ bisection p (a,b) | p a == p b = empty
         
 type Stack = [Double]
 
+{-
 calculate :: String -> Stack
 calculate = foldl interprete [] . words
   where
@@ -194,7 +195,7 @@ spaces' s = case s of
     go s = case s of
       x:xs -> (++) <$> [[x], [' ',x]] <*> go xs
       "" -> [""]
-
+-}
 ------------------------------------------------------------
                    
 data Grammar a =
@@ -252,14 +253,17 @@ generate r = case r of
 ------------------------------------------------------------
                        
 brs = ch '(' <> many brs <> ch ')'
---      <|> ch '[' <> many brs <> ch ']'
---      <|> ch '{' <> many brs <> ch '}'
+      <|> ch '[' <> many brs <> ch ']'
+      <|> ch '{' <> many brs <> ch '}'
 
           
 mod3 = many (ch 0 <|> (ch 1 <> many (ch 0 <> many (ch 1) <> ch 0) <> ch 1))
 
-freeze x = Alt x Fail
-       
 expr = term <> many (alt "+-" <> term)
-term = mult <> many (alt "*/" <> mult)
-mult = ch 'x' <|> ch '(' <> expr <> ch ')'
+  where
+    term = mult <> many (alt "*/" <> mult)
+    mult = num <|> ch '(' <> expr <> ch ')'
+    num = alt ['1'..'9'] <> many (alt ['0'..'9'])
+
+
+

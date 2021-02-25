@@ -2,8 +2,6 @@
 
 module Lab8 where
 
-import Lab7 (headE, calculateA)
-
 import Control.Applicative hiding (some,many)
 import Control.Monad hiding (fail)
 import Data.List
@@ -12,6 +10,7 @@ import System.CPUTime
 import Text.Printf
 import Logic
 import Lab3 (Tree (..))
+import Lab7 hiding (expr)
 
 data State s a = State { runState :: s -> (s, a) }
 
@@ -104,7 +103,7 @@ push x = modify (x:) >> return []
 
 -- получить значение на вершине стека
 peek :: StackFn a
-peek = headE <$> get
+peek = take 1 <$> get
 
 -- снять значение с вершины стека
 pop :: StackFn a
@@ -169,6 +168,7 @@ dialog x = next
             GT -> print "greater" >> next
             EQ -> print "yes!"
 
+{-
 calcIO :: IO ()
 calcIO = do s <- getLine
             case calculateA $ toRPN s of
@@ -176,6 +176,7 @@ calcIO = do s <- getLine
               Right r -> putStr "> " >> print (head r)
               Left e -> print $ "Error in operation " <> e
             calcIO
+-}
 
 floyd :: [[Int]]
 floyd = mapM (`replicateM` (modify succ)) [1..] `evalState` 0
@@ -207,3 +208,16 @@ randomAST n = Node <$> randomSample ["+","-","*","/"]
 
 randomSample lst = (lst !!) <$> random (length lst)
 
+rndCh s = ch $ randomSample s
+chA = ch . pure
+altA xs = asum $ chA <$> xs
+
+seqn x = sequenceA $ sequenceA <$> x
+
+expr = term <> many (altA "+-" <> term)
+  where
+    term = mult <> many (altA "*/" <> mult)
+    mult = num <|> chA '(' <> expr <> chA ')'
+    num = rndCh "123456789"
+
+generateA x = sequenceA $ sequenceA <$> generate x
