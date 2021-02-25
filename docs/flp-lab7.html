@@ -297,7 +297,7 @@ some g = g <> Kleeny g</hs></pre>
 
 <p>Мы создали встроенный язык для описания грамматик, но без интерпретации он бесполезен. Приступим к генерации слов, соответствующих указанной грамматике. И здесь нам опять помогут концепции аппликативных и альтернативных функторов, позволяя дать изящное и универсальное решение:</p>
   
-  <pre><hs>generate :: Alternative f => Grammar a -> f [a]
+  <pre><hs><d>generate :: Alternative f => Grammar a -> f [a]</d>
 generate g = case g of
    -- не генерируется ничего
    Fail -> empty
@@ -395,14 +395,18 @@ aaaaa  11 17  25   34    47
   </code></pre>
 
 Если мы переведём её на наш язык для описания грамматик, то получится такой код:
-<pre><hs>expr = term <> many (alt "+-" <> term)
-term = mult <> many (alt "*/" <> mult)
-mult = num <|> (ch '(' <> expr <> ch ')')
-num = alt ['1'..'9'] <> many (alt ['0'..'9']) </hs></pre>
+<pre><hs><d>arythmetics :: Grammar Char</d>
+arythmetics = expr
+  where
+    expr = term <> many (alt "+-" <> term)
+    term = mult <> many (alt "*/" <> mult)
+    mult = num <|> ch '(' <> expr <> ch ')'
+    num = alt ['1'..'9']
+</hs></pre>
 
 Теперь можно генерировать схемы арифметических выражений:
 
-<pre><ghci><l></l> takeLogic 20 $ generate expr
+<pre><ghci><l></l> takeLogic 20 $ generate arythmetics
 <o>["1","1+1","1*1","1+1+1","1*1+1","(1)","1+1*1",
  "1*1+1+1","(1)+1","1*1*1","1+1+1+1","1*1+1*1",
  "(1)+1+1","1*1*1+1","(1)*1","1+1*1+1","1*1+1+1+1",
@@ -410,7 +414,6 @@ num = alt ['1'..'9'] <> many (alt ['0'..'9']) </hs></pre>
 </ghci></pre>
 </p>
 
-<task>Измените грамматику арифметических выражений так, чтобы в скобках могли быть только </task>
 
 <!--
       <h2>Управление семантикой вычислений</h2>

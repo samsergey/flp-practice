@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveFunctor, DeriveTraversable, DeriveFoldable #-}
 module Lab7 where
 
 import Lab1 (mean)
@@ -205,7 +205,7 @@ data Grammar a =
   | Kleene (Grammar a)            -- звезда Клини (повторение)
   | Alt (Grammar a) (Grammar a)   -- объединение (альтернатива)
   | Chain (Grammar a) (Grammar a) -- цепочка (конкатенация)
-    deriving (Show, Functor)
+    deriving (Show, Functor,Foldable, Traversable)
 
 toString Epsilon = ""
 toString Fail = "⊥"
@@ -229,11 +229,11 @@ instance Applicative Grammar where
 instance Alternative Grammar where
   empty = Fail
   (<|>) = Alt
-            
-ch = Term
+          
+ch x = pure x
 opt x = Epsilon <|> x
-str s = foldMap ch s
-alt x = asum $ Term <$> x
+str s = foldMap pure s
+alt x = asum $ pure <$> x
 
 asum lst = foldr (<|>) empty lst
 
@@ -259,11 +259,13 @@ brs = ch '(' <> many brs <> ch ')'
           
 mod3 = many (ch 0 <|> (ch 1 <> many (ch 0 <> many (ch 1) <> ch 0) <> ch 1))
 
-expr = term <> many (alt "+-" <> term)
+arythmetics :: Grammar Char
+arythmetics = expr
   where
+    expr = term <> many (alt "+-" <> term)
     term = mult <> many (alt "*/" <> mult)
     mult = num <|> ch '(' <> expr <> ch ')'
-    num = alt ['1'..'9'] <> many (alt ['0'..'9'])
+    num = alt ['1'..'9']
 
 
 

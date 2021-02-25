@@ -10,7 +10,7 @@ import System.CPUTime
 import Text.Printf
 import Logic
 import Lab3 (Tree (..))
-import Lab7 hiding (expr)
+import Lab7 hiding (arythmetcs)
 
 data State s a = State { runState :: s -> (s, a) }
 
@@ -206,19 +206,20 @@ randomAST n = Node <$> randomSample ["+","-","*","/"]
                <*> (random n >>= randomAST)
                <*> (random n >>= randomAST)
 
+randomSample :: [a] -> Random a
 randomSample lst = (lst !!) <$> random (length lst)
-
-rndA cs = ch $ randomSample cs
-chA = ch . pure
+                   
+chA = pure . pure
 altA xs = asum $ chA <$> xs
+strA xs = foldMap chA xs
 
-seqn x = sequenceA $ sequenceA <$> x
-
-expr = term <> many (altA "+-" <> term)
-  where
+arythmetcs :: Grammar (Random Char)
+arythmetcs = expr
+  whereg
+    expr = term <> many (altA "+-" <> term)
     term = mult <> many (altA "*/" <> mult)
     mult = num <|> chA '(' <> expr <> chA ')'
-    num = rndA "123456789"
+    num = pure $ randomSample "123456789"
 
-generateA x = sequenceA $ sequenceA <$> generate x
+generateA x = traverse sequenceA $ generate x
 

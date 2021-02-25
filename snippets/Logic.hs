@@ -5,7 +5,9 @@
 module Logic
     ( Logic (..)
     , sample
-    , takeLogic )
+    , takeLogic
+    , Compose (..)
+    )
     where
 
 import Control.Applicative
@@ -55,3 +57,18 @@ sample (Logic []) = empty
 sample (Logic (h:t)) = pure h
 
 takeLogic n = take n . samples
+
+------------------------------------------------------------
+              
+newtype Compose f g a = Compose {getA :: f (g a) }
+  deriving (Functor, Show)
+
+(f `over` g) a b = f (g a) (g b)
+           
+instance (Applicative f, Applicative g) => Applicative (Compose f g) where
+  pure = Compose . pure . pure
+  Compose f <*> Compose g = Compose $ (<*>) <$> f <*> g
+
+instance (Alternative f, Alternative g) => Alternative (Compose f g) where
+  empty = Compose . pure $ empty
+  Compose f <|> Compose g = Compose $ (<|>) <$> f <*> g
