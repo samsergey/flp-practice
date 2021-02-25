@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveFunctor, RankNTypes #-}
 
 module Lab8 where
 
@@ -208,7 +208,7 @@ randomAST n = Node <$> randomSample ["+","-","*","/"]
 
 randomSample lst = (lst !!) <$> random (length lst)
 
-rndCh s = ch $ randomSample s
+rndA cs = ch $ randomSample cs
 chA = ch . pure
 altA xs = asum $ chA <$> xs
 
@@ -218,6 +218,7 @@ expr = term <> many (altA "+-" <> term)
   where
     term = mult <> many (altA "*/" <> mult)
     mult = num <|> chA '(' <> expr <> chA ')'
-    num = rndCh "123456789"
+    num = rndA "123456789"
 
 generateA x = sequenceA $ sequenceA <$> generate x
+
