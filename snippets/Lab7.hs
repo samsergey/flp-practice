@@ -229,7 +229,13 @@ instance Applicative Grammar where
 instance Alternative Grammar where
   empty = Fail
   (<|>) = Alt
-          
+
+instance Monad Grammar where
+  Epsilon >>= _ = Epsilon
+  Fail >>= _ = Fail
+  Term x >>= f = f x
+  _ >>= f = undefined
+
 ch x = pure x
 opt x = Epsilon <|> x
 str s = foldMap pure s

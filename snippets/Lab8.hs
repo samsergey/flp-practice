@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE DeriveFunctor, RankNTypes #-}
 
 module Lab8 where
@@ -10,6 +11,7 @@ import System.CPUTime
 import Text.Printf
 import Logic
 import Lab3 (Tree (..))
+import Lab5 ((*<>))
 import Lab7 hiding (arythmetcs)
 
 data State s a = State { runState :: s -> (s, a) }
@@ -213,13 +215,27 @@ chA = pure . pure
 altA xs = asum $ chA <$> xs
 strA xs = foldMap chA xs
 
+
 arythmetcs :: Grammar (Random Char)
 arythmetcs = expr
-  whereg
+  where
     expr = term <> many (altA "+-" <> term)
     term = mult <> many (altA "*/" <> mult)
     mult = num <|> chA '(' <> expr <> chA ')'
-    num = pure $ randomSample "123456789"
+    num = rnd "123456789"
+
+rnd = pure . randomSample 
+
+powers x = scanl (<>) mempty $ repeat x
+
+rndN :: Int -> Grammar (Random a) -> Grammar (Random a)
+rndN n g = (*<>) <$> pure (random n) <*> g
 
 generateA x = traverse sequenceA $ generate x
+
+emails = login <> chA '@' <> dom <> some (chA '.' <> dom)
+  where
+    login = 8 *<> rnd ('.' : alnum)
+    dom =  rnd ['a'..'z']
+    alnum = 3 *<> (['0'..'9'] <> ['a'..'z']) <> "_-" <> ['A'..'Z']
 
