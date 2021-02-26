@@ -1,6 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE DeriveFunctor, DeriveTraversable, DeriveFoldable #-}
+{-# LANGUAGE DeriveFunctor #-}
 module Lab7 where
 
 import Lab1 (mean)
@@ -205,7 +204,7 @@ data Grammar a =
   | Kleene (Grammar a)            -- звезда Клини (повторение)
   | Alt (Grammar a) (Grammar a)   -- объединение (альтернатива)
   | Chain (Grammar a) (Grammar a) -- цепочка (конкатенация)
-    deriving (Show, Functor,Foldable, Traversable)
+    deriving (Show, Functor) --,Foldable, Traversable)
 
 toString Epsilon = ""
 toString Fail = "⊥"

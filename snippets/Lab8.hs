@@ -1,5 +1,4 @@
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE DeriveFunctor, RankNTypes #-}
 
 module Lab8 where
 
@@ -215,7 +214,6 @@ chA = pure . pure
 altA xs = asum $ chA <$> xs
 strA xs = foldMap chA xs
 
-
 arythmetcs :: Grammar (Random Char)
 arythmetcs = expr
   where
@@ -228,14 +226,13 @@ rnd = pure . randomSample
 
 powers x = scanl (<>) mempty $ repeat x
 
-rndN :: Int -> Grammar (Random a) -> Grammar (Random a)
-rndN n g = (*<>) <$> pure (random n) <*> g
-
 generateA x = traverse sequenceA $ generate x
 
-emails = login <> chA '@' <> dom <> some (chA '.' <> dom)
+rep (n, m) x = asum $ (*<> x) <$> [n..m]
+              
+emails = login <> chA '@' <> dom <> (rep (1,2) (chA '.' <> dom))
   where
-    login = 8 *<> rnd ('.' : alnum)
-    dom =  rnd ['a'..'z']
+    login = rep (4,8) $ rnd ('.' : alnum)
+    dom = rep (2,3) $ rnd ['a'..'z']
     alnum = 3 *<> (['0'..'9'] <> ['a'..'z']) <> "_-" <> ['A'..'Z']
 
