@@ -76,7 +76,7 @@ end = Parser $ \r -> case r of
 str :: String -> Parser String
 str s = sequenceA $ ch <$> s
 
-rep n p = sequenceA $ replicate n p
+rep (n,m) p = asum $ sequenceA . (`replicate` p) <$> reverse [n..m]
 
 epsilon :: Parser ()
 epsilon = pure ()
