@@ -85,18 +85,18 @@ check p = Parser $ \r -> case r of
       С его помощью определите несколько полезных парсеров:
 
       <pre><hs>-- распознаёт конкретный символ
-char :: Char -> Parser Char
+ch :: Char -> Parser Char
 -- распознаёт произвольную цифру
 digit :: Parser Char
 -- распознаёт символы из указанного списка
-set :: [Char] -> Parser Char </hs></pre>
-      <pre><ghci><l></l> run (char 'x') "xor"
+alt :: [Char] -> Parser Char </hs></pre>
+      <pre><ghci><l></l> run (ch 'x') "xor"
 <o>Ok 'x' "or"</o>
 <l></l> run digit "123"
 <o>Ok '1' "23"</o>
-<l></l> run (set "()[]{}") "(+ 1 2)"
+<l></l> run (alt "()[]{}") "(+ 1 2)"
 <o>Ok '(' "+ 1 2)"</o>
-<l></l> run (set ['a'..'z']) "cat"
+<l></l> run (alt ['a'..'z']) "cat"
 <o>Ok 'c' "at"</o></ghci></pre> </task>
 </task>
 
@@ -143,7 +143,7 @@ set :: [Char] -> Parser Char </hs></pre>
 <o>Ok 'b' "c"</o>
 <l></l> run (next <* next) "abc"
 <o>Ok 'a' "c"</o>
-<l></l> run (char '(' *> digit <* char ')') "(4)"
+<l></l> run (ch '(' *> digit <* ch ')') "(4)"
 <o>Ok '4' ""</o></ghci></pre>
 
 <p>Для всех аппликативных функторов определены две функции <code>traverse</code> и <code>sequenceA</code>:
@@ -154,17 +154,17 @@ traverse f = foldr (\x r -> (:) <$> f x <*> r) (pure [])
 sequenceA = traverse id</hs></pre>
 
 Они позволяют превратить последовательность аппликативных функторов, в результат их последовательной работы. В нашем случае, с их помощью можно список парсеров превратить в парсер, распознающий их последовательность, и возвращающий список результатов разбора:</p>
-<pre><ghci><l></l> run (sequenceA [char 'c', char 'a']) "catana"
+<pre><ghci><l></l> run (sequenceA [ch 'c', ch 'a']) "catana"
 <o>Ok "ca" "tana"</o>
 <l></l> run (sequenceA [digit, digit]) "1234"
 Ok "12" "34"
-<l></l> run (traverse char "cat") "catalog"
+<l></l> run (traverse ch "cat") "catalog"
 <o>Ok "cat" "alog"</o></ghci></pre>
 
   <hr/>
 
-<task>Напишите парсер <code>string s</code>, распознающий конкретную строку</task>
-<pre><ghci><l></l> run (string "cat") "catana"
+<task>Напишите парсер <code>str s</code>, распознающий конкретную строку</task>
+<pre><ghci><l></l> run (str "cat") "catana"
 <o>Ok "cat" "ana"</o></ghci></pre>
 
   <hr/>
@@ -195,9 +195,9 @@ epsilon = pure ()</hs></pre>
 <o>Ok 'a' "bc"</o>
 <l></l> run (neg digit *> next) "123"
 <o>Fail "123"</o>
-<l></l> run (neg $ string "cat") "dog"
+<l></l> run (neg $ str "cat") "dog"
 <o>Ok () "dog"</o>
-<l></l> run (neg $ string "cat") "cat"
+<l></l> run (neg $ str "cat") "cat"
 <o>Fail "cat"</o></ghci></pre>
 
       <h2>Альтернативное выполнение трансляторов</h2>
@@ -212,15 +212,15 @@ epsilon = pure ()</hs></pre>
       Fail _ -> run p2 s</hs></pre>
 
       <p> Теперь у нас появился выбор:</p>
-      <pre><ghci><l></l> run (char 'a' <|> char 'b') "abab"
+      <pre><ghci><l></l> run (ch 'a' <|> ch 'b') "abab"
 <o>Ok 'a' "bab"</o>
-<l></l> run (char 'a' <|> char 'b') "bbab"
+<l></l> run (ch 'a' <|> ch 'b') "bbab"
 <o>Ok 'b' "bab"</o>
-<l></l> run (char 'a' <|> char 'b') "vbbab"
+<l></l> run (ch 'a' <|> ch 'b') "vbbab"
 <o>Fail "vbbab"</o>
-<l></l> run (string "cat" <|> string "dog") "cat"
+<l></l> run (str "cat" <|> str "dog") "cat"
 <o>Ok "cat" ""</o>
-<l></l> run (string "cat" <|> string "dog") "dog"
+<l></l> run (str "cat" <|> str "dog") "dog"
 <o>Ok "dog" ""</o></ghci></pre>
 
       <p> Наличие свободного выбора и умение им пользоваться&nbsp;— это поистине великая вещь! Теперь мы можем определить транслятор для любой контекстно-свободной грамматики, ведь они описываются правилами такого рода:</p>
@@ -261,7 +261,7 @@ A \rightarrow \alpha ~|~ \beta ~|~ \gamma ~|~ ...
     <eqns>
       A \rightarrow \text{'a'}~\text{'b'}~A~\text{'a'} ~|~ \text{'b'} 
     </eqns>
-    <pre><hs>_A = (char 'a' *> char 'b' *> _A *> char 'a') <|> char 'b'</hs></pre>
+    <pre><hs>_A = (ch 'a' *> ch 'b' *> _A *> ch 'a') <|> ch 'b'</hs></pre>
 
     <task>Протестируйте правильность работы парсера <code>_A</code>.</task>
 
@@ -277,8 +277,8 @@ A \rightarrow \alpha ~|~ \beta ~|~ \gamma ~|~ ...
     
    <pre><hs>arythmetic = _E
   where
-    _E = (_T *> char '+' *> _E) <|> _T
-    _T = (char '(' *> _E <* char ')') <|> _N
+    _E = (_T *> ch '+' *> _E) <|> _T
+    _T = (ch '(' *> _E <* ch ')') <|> _N
     _N = digit *> (_N <|> epsilon)</hs></pre>
 
    <task>Проверьте корректность работы анализатора <code>arythmetic</code> на тестовых примерах:</p>
@@ -370,11 +370,11 @@ optional p = Just <$> p <|> pure Nothing</hs></pre>
 
 <task>Определите экземпляр классов <code>Semigroup</code> и  <code>Monoid</code> для типа <code>Parser</code>. Это позволит легко соединять результаты трансляции, просто соединяя трансляторы:
 
-<pre><ghci><l></l>run (string "a" <> some next <> string "b") "axb"
+<pre><ghci><l></l>run (str "a" <> some next <> str "b") "axb"
 <o>Ok "axb" ""</o>
-<l></l>run (string "a" <> many next <> string "b") "axyzb"
+<l></l>run (str "a" <> many next <> str "b") "axyzb"
 <o>Ok "axyzb" ""</o>
-<l></l>run (string "a" <> many next <> string "b") "ab"
+<l></l>run (str "a" <> many next <> str "b") "ab"
 <o>Ok "ab" ""</o></ghci></pre>
 </task>
 
@@ -436,13 +436,13 @@ xml = tag <|> text
   where
     text = Text <$> some (check (/= '<'))
     tag = do
-      char '<'
+      ch '<'
       t <- some $ check (/= '>')
-      char '>'
+      ch '>'
       c <- many xml
-      string "&lt;/"
-      string t
-      char '>'
+      str "&lt;/"
+      str t
+      ch '>'
       pure $ Tag t c</hs></pre>
 
  

@@ -157,7 +157,7 @@ between p [s1,s2] = _</hs></pre>
 <p>
   Транслятор регулярных выражений должен превращать строку в транслятор, соответствующий регулярному выражению. Например, строку <code>"a.b+"</code> он должен интерпретировать как выражение:
 
-  <pre><hs> only (char 'a') <> only next <> msome (char 'b')</hs></pre>
+  <pre><hs> only (ch 'a') <> only next <> msome (ch 'b')</hs></pre>
 
 <p>Таким образом, перед нами стоит задача трансляции строк в трансляторы. Такой процесс называется <strong>суперкомпилированием</strong>.</p>
 
@@ -200,36 +200,36 @@ between p [s1,s2] = _</hs></pre>
 
 <pre><hs>regexp_ = msome element `chainr` alt
   where
-    alt = (<|>) <$ char '|'
+    alt = (<|>) <$ ch '|'
     element = (group <|> (only <$> symbol)) <**> modifier
     group = regexp_ `between` "()"
-    symbol = anychar <|> charClass <|> literal</hs></pre>
+    symbol = anych <|> charClass <|> literal</hs></pre>
 
 <p>Теперь определим элементы их интерпретацию. (Сейчас будет немного сюрреализма, но смысл в этом всё же есть.) Все элементы после распознавания транслируются в трансляторы, которые, в свою очередь свои результаты комбинируют в строку.</p>
 
  <p>Символ-литерал интерпретируется, как транслятор <code>char</code>.</p>
-<pre><hs>literal = char <$> char `except` "?+*()[]|."</hs></pre>
+<pre><hs>literal = ch <$> ch `except` "?+*()[]|."</hs></pre>
 
  <p>Метасимвол <code>.</code> (точка) переводится в транслятор <code>next</code></p>
-<pre><hs>anychar = next <$ char '.'</hs></pre>
+<pre><hs>anych = next <$ ch '.'</hs></pre>
 
  <p>Определение для символьных классов выглядит более сложным, но устроено достаточно прямолинейно:</p>
 
  <pre><hs>charClass = c `between` "[]"
    where
-     c = except char <$> (char '^' *> chars)
-         <|> oneof char <$> chars
+     c = except ch <$> (ch '^' *> chars)
+         <|> oneof ch <$> chars
      chars = msome (range <|> only lit)
-     lit = char `except` "]"
-     range = enumFromTo <$> lit <*> (char '-' *> lit)</hs></pre>
+     lit = ch `except` "]"
+     range = enumFromTo <$> lit <*> (ch '-' *> lit)</hs></pre>
 
 <p>Модификаторы сделаем функциями, как и разделитель <tt><|></tt>:</p>				
 
  <pre><hs>modifier = option <|> repeat0 <|> repeat1 <|> pure id
   where
-    option = mopt <$ char '?'
-    repeat1 = msome <$ char '+'
-    repeat0 = mmany <$ char '*'</hs></pre>
+    option = mopt <$ ch '?'
+    repeat1 = msome <$ ch '+'
+    repeat0 = mmany <$ ch '*'</hs></pre>
 
  <p>Наконец, сам транслятор регулярных выражений превратим в полноценный транслятор:</p>
 						
@@ -254,7 +254,7 @@ between p [s1,s2] = _</hs></pre>
  
  А так — транслировать в словарь:
  
- <pre><hs>params = search ((,) <$> key <*> (char '=' *> value))
+ <pre><hs>params = search ((,) <$> key <*> (ch '=' *> value))
   where key = regexp "[a-z]+"
         value = regexp "[^&]+"</hs></pre>
 
@@ -283,23 +283,23 @@ between p [s1,s2] = _</hs></pre>
 <d>attr :: Parser (String, String)</d>
 attr = do
   a <- spaces *> identifier
-  v <- spaces *> char '=' *> spaces *> string_
+  v <- spaces *> ch '=' *> spaces *> string_
   return (a,v)
 	  
 <d>tag&#39; :: String -> Parser Attrs</d>
 tag&#39; t = do
-  char '&lt;' *> string t
+  ch '&lt;' *> str t
   attrs <- many attr
-  spaces *> string "/&gt;"
+  spaces *> str "/&gt;"
   return attrs
 
 <d>tag :: String -> Parser b -> Parser (Attrs, b)</d>
 tag t p = do
-  char '&lt;' *> string t
+  ch '&lt;' *> str t
   attrs <- many attr
-  spaces *> char '&gt;'
+  spaces *> ch '&gt;'
   contents <- p
-  string "&lt;/" *> string t *> char '&gt;'
+  str "&lt;/" *> str t *> ch '&gt;'
   return (attrs, contents)</hs></pre></p>
 
 <pre><ghci><l></l> run (tag "A" integer) "&lt;A a1='v1' a2='v2'&gt;12345&lt;/A&gt;"

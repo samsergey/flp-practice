@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, DeriveFunctor #-}
 
 module Lab8 where
 
@@ -11,7 +11,7 @@ import Text.Printf
 import Logic
 import Lab3 (Tree (..))
 import Lab5 ((*<>))
-import Lab7 hiding (arythmetcs)
+import Lab7 
 
 data State s a = State { runState :: s -> (s, a) }
 
@@ -209,17 +209,19 @@ randomAST n = Node <$> randomSample ["+","-","*","/"]
 
 randomSample :: [a] -> Random a
 randomSample lst = (lst !!) <$> random (length lst)
+
+------------------------------------------------------------
                    
 chA = pure . pure
 altA xs = asum $ chA <$> xs
 strA xs = foldMap chA xs
 
-arythmetcs :: Grammar (Random Char)
-arythmetcs = expr
+arythmeticsR :: Grammar (Random Char)
+arythmeticsR = expr
   where
     expr = term <> many (altA "+-" <> term)
     term = mult <> many (altA "*/" <> mult)
-    mult = num <|> chA '(' <> expr <> chA ')'
+    mult = num <|> chA '(' <> (Chain expr Epsilon) <> chA ')'
     num = rnd "123456789"
 
 rnd = pure . randomSample 
@@ -228,11 +230,31 @@ powers x = scanl (<>) mempty $ repeat x
 
 generateA x = traverse sequenceA $ generate x
 
+rep :: (Int, Int) -> Grammar a -> Grammar a
 rep (n, m) x = asum $ (*<> x) <$> [n..m]
               
-emails = login <> chA '@' <> dom <> (rep (1,2) (chA '.' <> dom))
+emails = login <> chA '@' <> dom <> rep (1,2) (chA '.' <> dom)
   where
-    login = rep (4,8) $ rnd ('.' : alnum)
+    login = rep (4,8) $ rnd (alnum <> ".")
     dom = rep (2,3) $ rnd ['a'..'z']
     alnum = 3 *<> (['0'..'9'] <> ['a'..'z']) <> "_-" <> ['A'..'Z']
 
+------------------------------------------------------------
+arythmetics' = expr
+  where
+    expr = term <> many (alt "+-" <> term)
+    term = mult <> many (alt "*/" <> mult)
+    mult = num <|> ch '(' <> expr <> ch ')'
+    num = 2 *<> alt "123456789"
+
+
+generateR :: Grammar a -> Random [a]
+generateR r = case r of
+   Epsilon -> pure []
+   None -> pure []
+   Term c -> pure [c]
+   Kleene x -> random 10 >>= \n -> generateR (n *<> x)
+   Alt a b -> do as <- generateR a
+                 bs <- generateR b
+                 randomSample [bs,as]
+   Chain r1 r2 -> (++) <$> generateR r1 <*> generateR r2

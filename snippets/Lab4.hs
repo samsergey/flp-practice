@@ -32,8 +32,7 @@ mod3 = Automat (Set [0,1]) f 0 [] [0,1,2]
         f 2 1 = 2
 
 scanA :: (Eq s, Eq i) => Automat s i -> [i] -> [(s, i)]
-scanA m xs = takeWhile (not . halt . fst) 
-               $ zip states inputs
+scanA m xs = takeWhile' (not . halt) $ zip states inputs
   where
     -- поток допустимых символов
     inputs = case alphabet m of
@@ -43,18 +42,78 @@ scanA m xs = takeWhile (not . halt . fst)
      -- поток состояний автомата
     states = tail $ scanl (delta m) (start m) inputs
      -- условие остановки работы
-    halt = (`elem` stop m)
+    halt = (`elem` stop m) . fst
 
-abba = Automat (Set "ab") f 0 [-1] [4]
+takeWhile' p lst = case span p lst of
+                     (a, []) ->  a
+                     (a, b:_) -> a ++ [b]
+
+           
+ab_a = Automat (Set "ab") f 0 [] [3]
   where f s x = case (s, x) of
           (0, 'a') -> 1
           (0, 'b') -> -1
           (1, 'a') -> -1
           (1, 'b') -> 2
-          (2, 'a') -> 4
+          (2, 'a') -> 3
           (2, 'b') -> 2
-          (4, _) -> 4
+          (3, _) -> -1
 
+abba = Automat (Set "ab") f 0 [4] [4]
+  where f s x = case (s, x) of
+          (0, 'a') -> 1
+          (0, 'b') -> 0
+          (1, 'a') -> 1
+          (1, 'b') -> 2
+          (2, 'a') -> 1
+          (2, 'b') -> 3
+          (3, 'a') -> 4
+          (3, 'b') -> 0
+                      
+aba_ = Automat (Set "ab") f 0 [-1] [0]
+  where f s x = case (s, x) of
+          (0, 'a') -> 1
+          (0, 'b') -> -1
+          (1, 'a') -> -1
+          (1, 'b') -> 2
+          (2, 'a') -> 0
+          (2, 'b') -> -1
+
+_aaa = Automat (Set "ab") f 0 [] [3]
+  where f s x = case (s, x) of
+          (0, 'a') -> 1
+          (0, 'b') -> 0
+          (1, 'a') -> 2
+          (1, 'b') -> 0
+          (2, 'a') -> 3
+          (2, 'b') -> 0
+          (3, 'a') -> 3
+          (3, 'b') -> 0
+
+bbb_ = Automat (Set "ab") f 0 [-1,3] [3]
+  where f s x = case (s, x) of
+          (0, 'a') -> -1
+          (0, 'b') -> 1
+          (1, 'a') -> -1
+          (1, 'b') -> 2
+          (2, 'a') -> -1
+          (2, 'b') -> 3
+
+x_x = Automat (Set "ab") f "s" [] ["a","b"]
+  where f s x = case (s, x) of
+          ("s", 'a') -> "a"
+          ("s", 'b') -> "b"
+          ("a", 'a') -> "a"
+          ("a", 'b') -> "wa"
+          ("b", 'a') -> "wb"
+          ("b", 'b') -> "b"
+          ("wa", 'a') -> "a"
+          ("wa", 'b') -> "wa"
+          ("wb", 'a') -> "wb"
+          ("wb", 'b') -> "b"
+
+
+                      
 runA :: (Eq s, Eq i) => Automat s i -> [i] -> s
 runA m xs = case scanA m xs of
                 [] -> start m
@@ -63,8 +122,9 @@ runA m xs = case scanA m xs of
 testA :: (Eq s, Eq i) => Automat s i -> [i] -> Bool
 testA m = (`elem` final m) . runA m
 
-printA m = mapM_ f . scanA m
-  where f (x, s) = putStrLn $ show x ++ "\t" ++ show s 
+printA m xs = do putStrLn $ "\t" <> show (start m)
+                 mapM_ f $ scanA m xs
+  where f (x, s) = putStrLn $ show s ++ "\t" ++ show x
 
 unfold f x = case f x of
   Nothing -> []

@@ -6,7 +6,6 @@ import Data.Char
 import Data.String
 import Data.Monoid
 import Data.Foldable
-import Lab7
 import Lab6
 
 data Parser a = Parser { run :: String -> Result a }
@@ -64,9 +63,9 @@ check p = Parser $ \r -> case r of
   x:xs | p x -> Ok x xs
   _          -> Fail r 
 
-char c = check (== c)
+ch c = check (== c)
 digit = check isDigit
-set s = check (`elem` s)
+alt s = check (`elem` s)
 
 except p xs = neg (p `oneof` xs) *> next
 
@@ -74,8 +73,8 @@ end = Parser $ \r -> case r of
   [] -> Ok () []
   r  -> Fail r
 
-string :: String -> Parser String
-string s = sequenceA $ char <$> s
+str :: String -> Parser String
+str s = sequenceA $ ch <$> s
 
 rep n p = sequenceA $ replicate n p
 
@@ -128,13 +127,13 @@ xml = tag <|> text
   where
     text = Text <$> some (check (/= '<'))
     tag = try $ do
-      char '<'
+      ch '<'
       t <- some $ check (/= '>')
-      char '>'
+      ch '>'
       c <- many xml
-      string "</"
-      string t <|> err ("Unclosed tag " <> t)
-      char '>'
+      str "</"
+      str t <|> err ("Unclosed tag " <> t)
+      ch '>'
       return $ Tag t c
 
 
@@ -155,10 +154,10 @@ xml = tag <|> text
   
 -- tests = do
 --   runTests "char"
---     [ (char 'a',             "abab", Ok 'a' "bab")
---     , (char 'a',             "bbab", Fail "bbab")
---     , (char 'a' >> char 'b', "abab", Ok 'b' "ab")
---     , (char 'b' >> char 'b', "abab", Fail "abab") ]
+--     [ (ch 'a',             "abab", Ok 'a' "bab")
+--     , (ch 'a',             "bbab", Fail "bbab")
+--     , (ch 'a' >> ch 'b', "abab", Ok 'b' "ab")
+--     , (ch 'b' >> ch 'b', "abab", Fail "abab") ]
 
 --   runTests "next"
 --     [ (next,         "abab", Ok 'a' "bab")
@@ -172,12 +171,12 @@ xml = tag <|> text
 
 --   runTests "neg" 
 --     [ (neg end,         "abc", Ok () "abc")
---     , (char 'a' >> end, "a",   Ok () "")
+--     , (ch 'a' >> end, "a",   Ok () "")
 --     , (neg digit,       "abc", Ok () "abc")
 --     , (neg digit,       "2bc", Fail "2bc") ]
 
--- _A = (char 'a' >> char 'b' >> _A >> char 'a')
---      <|> char 'b'
+-- _A = (ch 'a' >> ch 'b' >> _A >> ch 'a')
+--      <|> ch 'b'
 
 -- runTestsFor p name tst = runTests name tst'
 --   where tst' = map (\(i,o) -> (p,i,o)) tst
@@ -189,8 +188,8 @@ xml = tag <|> text
 --     , ("aba", Fail "aba")
 --     , ("ababa", Fail "ababa")] 
 
--- _E = _T ?> char '+' ?> _E <|> _T
--- _T = char '(' ?> _E ?> char ')' <|> _N
+-- _E = _T ?> ch '+' ?> _E <|> _T
+-- _T = ch '(' ?> _E ?> ch ')' <|> _N
 -- _N = digit ?> (_N <|> epsilon) 
 
 -- (?>) :: Parser a -> Parser b -> Parser ()
@@ -215,10 +214,10 @@ chainl p o = p <**> (appEndo . getDual <$> mmany chars)
   where
     chars = Dual . Endo <$> ((flip <$> o) <*> p)
 
-add = (+) <$ char '+'
-sub = (-) <$ char '-'
-mul = (*) <$ char '*'
-frac = div <$ char '/'
+add = (+) <$ ch '+'
+sub = (-) <$ ch '-'
+mul = (*) <$ ch '*'
+frac = div <$ ch '/'
 
 integer :: Parser Int
 integer = read <$> some digit
@@ -229,21 +228,21 @@ unexpected = getInput >>= err . msg
 expr = _E
   where _E = _T `chainl` (add <|> sub)
         _T = _P `chainl` (mul <|> frac)
-        _P = char '(' *> _E <* (char ')' !> "closing parenthesis")
+        _P = ch '(' *> _E <* (ch ')' !> "closing parenthesis")
              <|> (integer !> "number")
 
-        add = (+) <$ char '+'
-        sub = (-) <$ char '-'
-        mul = (*) <$ char '*'
-        frac = div <$ char '/'
+        add = (+) <$ ch '+'
+        sub = (-) <$ ch '-'
+        mul = (*) <$ ch '*'
+        frac = div <$ ch '/'
 
-between p [c1,c2] = char c1 *> p <* char c2
+between p [c1,c2] = ch c1 *> p <* ch c2
 
 collect p = mmany (p <|> mempty <$ next) 
 search p = collect (only p)
 ------------------------------------------------------------
 
-string_ = char '\'' *> some (char `except` "'") <* char '\''
+string_ = ch '\'' *> some (ch `except` "'") <* ch '\''
 
 sepBy p s = only p <> many (s *> p)
 
@@ -254,27 +253,27 @@ chainr1 p o = appEndo <$> mmany terms <*> p
 
 regexp_ = chainr1 (msome element) alt
   where
-    alt = (<|>) <$ char '|'
+    alt = (<|>) <$ ch '|'
     element = (group <|> (only <$> symbol)) <**> modifier
     group = regexp_ `between` "()"
-    symbol = anychar <|> charClass <|> literal 
+    symbol = anych <|> charClass <|> literal 
 
-literal = char <$> char `except` "?+*()[]|."
-anychar = next <$ char '.'
+literal = ch <$> ch `except` "?+*()[]|."
+anych = next <$ ch '.'
 
 charClass = c `between` "[]"
    where
-     c = except char <$> (char '^' *> chars)
-         <|> oneof char <$> chars
+     c = except ch <$> (ch '^' *> chars)
+         <|> oneof ch <$> chars
      chars = msome (range <|> only lit)
-     lit = char `except` "]"
-     range = enumFromTo <$> lit <*> (char '-' *> lit)
+     lit = ch `except` "]"
+     range = enumFromTo <$> lit <*> (ch '-' *> lit)
 
 modifier = option <|> repeat0 <|> repeat1 <|> pure id
   where
-    option = mopt <$ char '?'
-    repeat1 = msome <$ char '+'
-    repeat0 = mmany <$ char '*'
+    option = mopt <$ ch '?'
+    repeat1 = msome <$ ch '+'
+    repeat0 = mmany <$ ch '*'
 
 regexp s = case run regexp_ s of
   Ok p "" -> p
@@ -289,7 +288,7 @@ replace p f = collect (f <$> p <|> only next)
 float :: Parser Float
 float = read <$> regexp "-?[0-9]+([.][0-9]*)?"
 
-spaces = many (char ' ')
+spaces = many (ch ' ')
 
 identifier = regexp "[a-zA-Z][a-zA-Z0-9_-]*"
 
@@ -297,24 +296,24 @@ type Attr = (String, String)
 
 tag :: String -> Parser b -> Parser ([Attr], b)
 tag t p = do
-  char '<' *> string t
+  ch '<' *> str t
   attrs <- many attr
-  spaces *> char '>'
+  spaces *> ch '>'
   contents <- p
-  string "</" *> string t *> char '>'
+  str "</" *> str t *> ch '>'
   return (attrs, contents)
 
 tag' :: String -> Parser [Attr]
 tag' t = do
-  char '<' *> string t
+  ch '<' *> str t
   attrs <- many attr
-  spaces *> string "/>"
+  spaces *> str "/>"
   return attrs
 
 attr :: Parser Attr
 attr = do
   a <- spaces *> identifier
-  v <- spaces *> char '=' *> spaces *> string_
+  v <- spaces *> ch '=' *> spaces *> string_
   return (a,v)
 
 getAttr :: Parser v -> String -> [Attr] -> Parser v
@@ -339,7 +338,7 @@ line_ = do
   return $ Line pts
 
 points_ = pt `sepBy` spaces <* spaces
-  where pt = Pt <$> float <* char ',' <*> float
+  where pt = Pt <$> float <* ch ',' <*> float
 
 group_ = do
   (as, ps) <- tag "g" primitives

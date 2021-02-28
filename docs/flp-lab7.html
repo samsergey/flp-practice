@@ -247,7 +247,7 @@ replicateM</ghci></pre>
 
 <p>Эту алгебраическую структуру можно выразить таким типом:</p>
 <pre><hs>data Grammar a =
-  Fail                            -- невозможный символ
+  None                            -- невозможный символ
   | Epsilon                       -- пустой символ
   | Term a                        -- литерал
   | Alt (Grammar a) (Grammar a)   -- объединение
@@ -270,7 +270,7 @@ instance Applicative Grammar where
   (<*>) = undefined
 
 instance Alternative Grammar where
-  empty = Fail
+  empty = None
   (<|>) = Alt</hs></pre>
 
 <p>Аппликативное поведение грамматики нам не нужно, однако его требуется формально определить для того, чтобы можно было объявить тип для грамматики альтернативным функтором. Теперь запись выражения <nobr><tt>(0|(1(01*0)*1))*</tt></nobr> становится более осмысленной:</p>
@@ -300,7 +300,7 @@ some g = g <> Kleeny g</hs></pre>
   <pre><hs><d>generate :: Alternative f => Grammar a -> f [a]</d>
 generate g = case g of
    -- не генерируется ничего
-   Fail -> empty
+   None -> empty
    -- генерируется пустая строка
    Epsilon -> pure []
    -- генерируется один символ

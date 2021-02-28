@@ -3,7 +3,7 @@
 module Lab7 where
 
 import Lab1 (mean)
-import Lab4 (fromBase)
+import Lab4
 import Lab5 ((*<>))
 import Control.Applicative hiding (many, some)
 import Control.Monad (foldM, ap)
@@ -198,22 +198,15 @@ spaces' s = case s of
 ------------------------------------------------------------
                    
 data Grammar a =
-  Epsilon                         -- пустой символ
-  | Fail                          -- невозможный символ
+  Epsilon
+  | None 
   | Term a                        -- литерал
   | Kleene (Grammar a)            -- звезда Клини (повторение)
   | Alt (Grammar a) (Grammar a)   -- объединение (альтернатива)
   | Chain (Grammar a) (Grammar a) -- цепочка (конкатенация)
-    deriving (Show, Functor) --,Foldable, Traversable)
+    deriving (Functor) --,Foldable, Traversable)
 
-toString Epsilon = ""
-toString Fail = "⊥"
-toString (Term x) = [x]
-toString (Kleene (Term x)) = [x] <> "*"
-toString (Kleene x) = "(" <> toString x <> ")*"
-toString (Alt x y) = "(" <> toString x <> "|" <> toString y <> ")"
-toString (Chain x y) = toString x <> toString y
-                         
+                       
              
 instance Semigroup (Grammar a) where
   (<>) = Chain
@@ -222,19 +215,20 @@ instance Monoid (Grammar a) where
   mempty = Epsilon
 
 instance Applicative Grammar where
-  pure = Term
+  pure x = Term x
   (<*>) = undefined
 
 instance Alternative Grammar where
-  empty = Fail
+  empty = None
   (<|>) = Alt
 
 instance Monad Grammar where
   Epsilon >>= _ = Epsilon
-  Fail >>= _ = Fail
+  None >>= _ = None
   Term x >>= f = f x
   _ >>= f = undefined
 
+            
 ch x = pure x
 opt x = Epsilon <|> x
 str s = foldMap pure s
@@ -249,8 +243,9 @@ lessThen n x = asum $ take n $ iterate (x <>) mempty
 
 generate r = case r of
    Epsilon -> pure []
-   Fail -> empty
-   Term c -> pure [c]
+   None -> empty
+   Term (Set [c]) -> pure [c]
+   Term _ -> pure []
    Kleene x -> generate Epsilon <|> generate (x <> Kleene x)
    Alt r1 r2 -> generate r1 <|> generate r2
    Chain r1 r2 -> (++) <$> generate r1 <*> generate r2
