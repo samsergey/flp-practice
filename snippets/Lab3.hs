@@ -172,11 +172,16 @@ takeTree n (Node a t1 t2)
 instance Foldable Tree where
   foldMap f = foldMap f . breadthFirst
 
+breadthFirst :: Tree a -> [a]
 breadthFirst Empty = []
-breadthFirst (Node a l r) = a:x:y:(xs +++ ys)
+breadthFirst (Node n l r) = n:x:y:(xs +++ ys)
     where (x:xs) = breadthFirst l
           (y:ys) = breadthFirst r
-                 
+
+
+mcons [] = Nothing
+mcons (x:xs) = Just (x:xs)
+                   
 tree :: (a -> (a, a)) -> a -> Tree a
 tree f x = let (a, b) = f x
            in Node x (tree f a) (tree f b)
@@ -187,6 +192,8 @@ mkTree f x = case f x of
                                r = mkTree f b
                            in Node x l r
              Nothing -> Empty
+
+t = tree (\a -> (a-1,a+1)) 0
 
 path :: (a -> Bool) -> Tree a -> [a]
 path p (Node a t1 t2)
