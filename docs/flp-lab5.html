@@ -168,9 +168,9 @@ instance Monoid m => Monoid (a -> m) where
       <p>
 	Способ быстрого умножения основан на очень простых преобразованиях:</p>
       <p>если числовой множитель <eq>n</eq> чётный:
-	<eqn>n \times a = \frac{n}{2}\times(2\times a),</eqn></p>
+	<eqn>n \times a = \frac{n}{2}\times(a + a),</eqn></p>
       <p>если числовой множитель нечётный:
-	<eqn>(n+1)\times a = n \times a + a.</eqn></p>
+	<eqn>n \times a = (n - 1) \times a + a.</eqn></p>
 
       <p>
 	Ниже приводится классический вариант быстрого умножения для чисел.
