@@ -10,6 +10,8 @@ import Control.Monad (foldM, ap)
 import Logic
 import Data.List
 import Data.Ord
+import Data.Maybe
+import qualified Data.Monoid as M
     
 unless test p = if test then p else empty
 untill test x p = if test then pure x else p
@@ -241,15 +243,17 @@ some x = x <> Kleene x
          
 lessThen n x = asum $ take n $ iterate (x <>) mempty
 
+
 generate r = case r of
-   Epsilon -> pure []
+   Epsilon -> pure mempty
    None -> empty
-   Term (Set [c]) -> pure [c]
-   Term _ -> pure []
+   Term c -> pure (pure c)
    Kleene x -> generate Epsilon <|> generate (x <> Kleene x)
    Alt r1 r2 -> generate r1 <|> generate r2
-   Chain r1 r2 -> (++) <$> generate r1 <*> generate r2
-                         
+   Chain r1 r2 -> (<>) <$> generate r1 <*> generate r2
+
+
+                  
 ------------------------------------------------------------
                        
 brs = ch '(' <> many brs <> ch ')'
@@ -268,4 +272,9 @@ arythmetics = expr
     num = alt ['1'..'9']
 
 
+------------------------------------------------------------
 
+logicToMaybe = listToMaybe . samples
+
+leader :: Eq a => Grammar a -> [Maybe a]
+leader g = take 10 $ M.getAlt $ logicToMaybe <$> generate g
