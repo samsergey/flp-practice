@@ -113,7 +113,7 @@ breadthFirst t = case t of
 
 instance (Monoid m, Monoid n) => Monoid (m, n) where
   mempty = (mempty, mempty)</hs></pre> 
-	  и функции, возвращаgющие моноид
+	  и функции, возвращающие моноид
 	    <pre><hs>instance Semigroup m => Semigroup (a -> m) where
   f <> g = \x -> f x <> g x
 
