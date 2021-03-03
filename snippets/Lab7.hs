@@ -245,12 +245,12 @@ lessThen n x = asum $ take n $ iterate (x <>) mempty
 
 
 generate r = case r of
-   Epsilon -> pure mempty
+   Epsilon -> pure []
    None -> empty
-   Term c -> pure (pure c)
+   Term c -> pure [c]
    Kleene x -> generate Epsilon <|> generate (x <> Kleene x)
    Alt r1 r2 -> generate r1 <|> generate r2
-   Chain r1 r2 -> (<>) <$> generate r1 <*> generate r2
+   Chain r1 r2 -> (++) <$> generate r1 <*> generate r2
 
 
                   
@@ -274,7 +274,5 @@ arythmetics = expr
 
 ------------------------------------------------------------
 
-logicToMaybe = listToMaybe . samples
-
-leader :: Eq a => Grammar a -> [Maybe a]
-leader g = take 10 $ M.getAlt $ logicToMaybe <$> generate g
+--leader :: Eq a => Grammar a -> [Maybe a]
+--leader g = take 10 $ M.getAlt $ listToMaybe . samples <$> generate g
