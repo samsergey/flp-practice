@@ -12,6 +12,7 @@ import Data.List
 import Data.Ord
 import Data.Maybe
 import qualified Data.Monoid as M
+
     
 unless test p = if test then p else empty
 untill test x p = if test then pure x else p
@@ -206,9 +207,9 @@ data Grammar a =
   | Kleene (Grammar a)            -- звезда Клини (повторение)
   | Alt (Grammar a) (Grammar a)   -- объединение (альтернатива)
   | Chain (Grammar a) (Grammar a) -- цепочка (конкатенация)
-    deriving (Functor) --,Foldable, Traversable)
+    deriving (Functor, Show) --,Foldable, Traversable)
 
-                       
+
              
 instance Semigroup (Grammar a) where
   (<>) = Chain
@@ -232,33 +233,34 @@ instance Monad Grammar where
 
             
 ch x = pure x
-opt x = Epsilon <|> x
 str s = foldMap pure s
 alt x = asum $ pure <$> x
 
 asum lst = foldr (<|>) empty lst
 
-many x = Kleene x
-some x = x <> Kleene x
+opt g = Epsilon <|> g
+many g = Kleene g
+some g = g <> Kleene g
          
 lessThen n x = asum $ take n $ iterate (x <>) mempty
 
-
+generate :: Alternative f => Grammar a -> f [a]
 generate r = case r of
    Epsilon -> pure []
    None -> empty
    Term c -> pure [c]
-   Kleene x -> generate Epsilon <|> generate (x <> Kleene x)
+   Kleene x -> generate $ Epsilon <|> x <> Kleene x
    Alt r1 r2 -> generate r1 <|> generate r2
    Chain r1 r2 -> (++) <$> generate r1 <*> generate r2
 
+language :: Grammar a -> [[a]]
+language = samples . generate . expand
 
-                  
 ------------------------------------------------------------
                        
-brs = ch '(' <> many brs <> ch ')'
-      <|> ch '[' <> many brs <> ch ']'
-      <|> ch '{' <> many brs <> ch '}'
+brs = ch '(' <> many brs <> ch ')' <|>
+      ch '[' <> many brs <> ch ']' <|>
+      ch '{' <> many brs <> ch '}'
 
           
 mod3 = many (ch 0 <|> (ch 1 <> many (ch 0 <> many (ch 1) <> ch 0) <> ch 1))
@@ -271,8 +273,35 @@ arythmetics = expr
     mult = num <|> ch '(' <> expr <> ch ')'
     num = alt ['1'..'9']
 
-
 ------------------------------------------------------------
 
---leader :: Eq a => Grammar a -> [Maybe a]
---leader g = take 10 $ M.getAlt $ listToMaybe . samples <$> generate g
+newtype Leader a = Leader { getLeader :: [a] }
+  deriving (Show, Functor)
+
+instance Applicative Leader where
+  pure x = Leader $ pure x
+  Leader f <*> Leader x = Leader $ f <*> take 1 x
+
+instance Alternative Leader where
+  empty = Leader empty
+  Leader a <|> Leader b = Leader $ a <|> b
+
+expand = go
+  where
+    go g = case g of
+      Chain Epsilon a         -> go a
+      Chain a Epsilon         -> go a
+      Chain (Chain a b) c     -> go a <> go (b <> c)
+      Chain (Alt Epsilon a) b -> go $ b <|> a <> b
+      Chain (Kleene a) b      -> go $ b <|> some a <> b
+      Chain a b               -> go a <> go b
+      Alt None a              -> go a
+      Alt a None              -> go a
+      Alt (Alt a b) c         -> go a <|> go (b <|> c)
+      Alt a b                 -> go a <|> go b
+      Kleene (Kleene a)       -> go $ Kleene a
+      Kleene a                -> Kleene (go a)
+      x -> x
+
+leader :: Eq a => Grammar a -> [[a]]
+leader = nub . map (take 1) . getLeader . generate . expand

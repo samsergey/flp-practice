@@ -72,3 +72,11 @@ instance (Applicative f, Applicative g) => Applicative (Compose f g) where
 instance (Alternative f, Alternative g) => Alternative (Compose f g) where
   empty = Compose . pure $ empty
   Compose f <|> Compose g = Compose $ (<|>) <$> f <*> g
+
+-- class List a where
+--   cons :: a -> List a -> List a
+--   cocons :: List a -> Maybe (a, List a)
+
+-- instance List [a] where
+--   cons = (:)
+--   cocons = uncons
