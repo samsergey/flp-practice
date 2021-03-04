@@ -11,7 +11,7 @@ import Logic
 import Data.List
 import Data.Ord
 import Data.Maybe
-import qualified Data.Monoid as M
+import Data.Monoid
 
     
 unless test p = if test then p else empty
@@ -205,7 +205,7 @@ data Grammar a =
   | None 
   | Term a                        -- литерал
   | Kleene (Grammar a)            -- звезда Клини (повторение)
-  | Alt (Grammar a) (Grammar a)   -- объединение (альтернатива)
+  | Or (Grammar a) (Grammar a)    -- объединение (альтернатива)
   | Chain (Grammar a) (Grammar a) -- цепочка (конкатенация)
     deriving (Functor, Show) --,Foldable, Traversable)
 
@@ -223,7 +223,7 @@ instance Applicative Grammar where
 
 instance Alternative Grammar where
   empty = None
-  (<|>) = Alt
+  (<|>) = Or
 
 instance Monad Grammar where
   Epsilon >>= _ = Epsilon
@@ -231,30 +231,30 @@ instance Monad Grammar where
   Term x >>= f = f x
   _ >>= f = undefined
 
-            
+
+ch :: a -> Grammar a
 ch x = pure x
+
+str, alt :: [a] -> Grammar a
 str s = foldMap pure s
-alt x = asum $ pure <$> x
+alt x = getAlt $ foldMap pure x
 
-asum lst = foldr (<|>) empty lst
-
+opt, many, some :: Grammar a -> Grammar a
 opt g = Epsilon <|> g
 many g = Kleene g
 some g = g <> Kleene g
          
-lessThen n x = asum $ take n $ iterate (x <>) mempty
-
 generate :: Alternative f => Grammar a -> f [a]
 generate r = case r of
    Epsilon -> pure []
    None -> empty
    Term c -> pure [c]
-   Kleene x -> generate $ Epsilon <|> x <> Kleene x
-   Alt r1 r2 -> generate r1 <|> generate r2
+   Or r1 r2 -> generate r1 <|> generate r2
+   Kleene x -> generate $ opt (some x)
    Chain r1 r2 -> (++) <$> generate r1 <*> generate r2
 
 language :: Grammar a -> [[a]]
-language = samples . generate . expand
+language = samples . generate
 
 ------------------------------------------------------------
                        
@@ -273,35 +273,34 @@ arythmetics = expr
     mult = num <|> ch '(' <> expr <> ch ')'
     num = alt ['1'..'9']
 
+polynom x = expr
+  where
+    expr = term <> many (alt "+-" <> term)
+    term = opt (ch '-') <>
+           ( var <|>
+             alt ['2'..'9'] <> ch '*' <> var <|>
+             alt ['1'..'9'] )
+    var = x <> opt (ch '^' <> alt ['2'..'9'])
+
+
 ------------------------------------------------------------
 
-newtype Leader a = Leader { getLeader :: [a] }
-  deriving (Show, Functor)
+vanishing :: Grammar a -> Bool
+vanishing g = case g of
+   Epsilon -> True
+   None -> False
+   Term _ -> False
+   Kleene a -> True
+   Or a b -> vanishing a || vanishing b
+   Chain a b -> vanishing a && vanishing b
 
-instance Applicative Leader where
-  pure x = Leader $ pure x
-  Leader f <*> Leader x = Leader $ f <*> take 1 x
-
-instance Alternative Leader where
-  empty = Leader empty
-  Leader a <|> Leader b = Leader $ a <|> b
-
-expand = go
-  where
-    go g = case g of
-      Chain Epsilon a         -> go a
-      Chain a Epsilon         -> go a
-      Chain (Chain a b) c     -> go a <> go (b <> c)
-      Chain (Alt Epsilon a) b -> go $ b <|> a <> b
-      Chain (Kleene a) b      -> go $ b <|> some a <> b
-      Chain a b               -> go a <> go b
-      Alt None a              -> go a
-      Alt a None              -> go a
-      Alt (Alt a b) c         -> go a <|> go (b <|> c)
-      Alt a b                 -> go a <|> go b
-      Kleene (Kleene a)       -> go $ Kleene a
-      Kleene a                -> Kleene (go a)
-      x -> x
 
 leader :: Eq a => Grammar a -> [[a]]
-leader = nub . map (take 1) . getLeader . generate . expand
+leader g = case g of
+   Epsilon   -> pure []
+   None      -> empty
+   Term c    -> pure [c]
+   Or a b   -> leader a `union` leader b
+   Kleene g  -> leader $ opt (some g)
+   Chain a b -> leader $ a <|> unless (vanishing a) b
+

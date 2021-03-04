@@ -19,7 +19,7 @@ newtype Logic a = Logic { samples :: [a] }
   deriving (Functor, Foldable, Semigroup, Monoid)
 
 instance Show a => Show (Logic a) where
-    show (Logic xs) = case splitAt 5 xs of
+    show (Logic xs) = case splitAt 10 xs of
                         (h,[]) -> "Logic " <> show h
                         (h,_) -> "Logic " <> init (show h) <> "...]"
 
