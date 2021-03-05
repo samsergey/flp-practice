@@ -207,30 +207,34 @@ data Grammar a =
   | Kleene (Grammar a)            -- звезда Клини (повторение)
   | Or (Grammar a) (Grammar a)    -- объединение (альтернатива)
   | Chain (Grammar a) (Grammar a) -- цепочка (конкатенация)
-    deriving (Functor, Show) --,Foldable, Traversable)
+    deriving (Functor, Show, Eq) --,Foldable, Traversable)
 
 
              
 instance Semigroup (Grammar a) where
-  (<>) = Chain
+  Epsilon <> x = x
+  x <> Epsilon = x
+  None <> x = None
+  x <> None = None
+  a <> b = Chain a b
     
 instance Monoid (Grammar a) where
   mempty = Epsilon
 
 instance Applicative Grammar where
-  pure x = Term x
-  (<*>) = undefined
+  pure = Term
+  Epsilon   <*> x = Epsilon
+  None      <*> x = None
+  Term f    <*> x = f <$> x
+  Kleene f  <*> x = Kleene (f <*> x)
+  Or f g    <*> x = (f <*> x) <|> (g <*> x)
+  Chain f g <*> x = (f <*> x) <> (g <*> x)
 
 instance Alternative Grammar where
   empty = None
-  (<|>) = Or
-
-instance Monad Grammar where
-  Epsilon >>= _ = Epsilon
-  None >>= _ = None
-  Term x >>= f = f x
-  _ >>= f = undefined
-
+  None <|> x = x
+  x <|> None = x
+  a <|> b = Or a b
 
 ch :: a -> Grammar a
 ch x = pure x
@@ -300,7 +304,12 @@ leader g = case g of
    Epsilon   -> pure []
    None      -> empty
    Term c    -> pure [c]
-   Or a b   -> leader a `union` leader b
-   Kleene g  -> leader $ opt (some g)
+   Or a b    -> leader a `union` leader b
+   Kleene g  -> leader $ opt g
    Chain a b -> leader $ a <|> unless (vanishing a) b
 
+tst = [Epsilon, None, ch 'a', many (ch 'a'), ch 'a' <> ch 'b', ch 'a' <|> ch 'b']
+tstf = fmap (,) <$> tst
+rule1 u = (pure id <*> u, u)
+rule2 u = (u <*> pure 'x', pure ($ 'x') <*> u)
+rule3 u v w = (pure (.) <*> u <*> v <*> w , u <*> (v <*> w))

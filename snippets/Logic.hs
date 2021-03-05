@@ -5,8 +5,6 @@
 module Logic
     ( Logic (..)
     , sample
-    , takeLogic
-    , Compose (..)
     )
     where
 
@@ -48,35 +46,14 @@ instance Monad Logic where
 
 instance Traversable Logic where
     {-# INLINE traverse #-} 
-    traverse f xs = foldr cons_f (pure empty) xs
-      where cons_f x ys = liftA2 cons (f x) ys
+    traverse f = foldr cons_f (pure empty)
+      where cons_f x = liftA2 cons (f x)
 
+cons :: a -> Logic a -> Logic a
 cons x (Logic xs) = Logic (x:xs)
-                          
+
+sample :: Alternative f => Logic a -> f a
 sample (Logic []) = empty
 sample (Logic (h:t)) = pure h
 
 takeLogic n = take n . samples
-
-------------------------------------------------------------
-              
-newtype Compose f g a = Compose {getA :: f (g a) }
-  deriving (Functor, Show)
-
-(f `over` g) a b = f (g a) (g b)
-           
-instance (Applicative f, Applicative g) => Applicative (Compose f g) where
-  pure = Compose . pure . pure
-  Compose f <*> Compose g = Compose $ (<*>) <$> f <*> g
-
-instance (Alternative f, Alternative g) => Alternative (Compose f g) where
-  empty = Compose . pure $ empty
-  Compose f <|> Compose g = Compose $ (<|>) <$> f <*> g
-
--- class List a where
---   cons :: a -> List a -> List a
---   cocons :: List a -> Maybe (a, List a)
-
--- instance List [a] where
---   cons = (:)
---   cocons = uncons

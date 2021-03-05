@@ -4,8 +4,10 @@ module Lab8 where
 
 import Control.Applicative hiding (some,many)
 import Control.Monad hiding (fail)
+import Data.Foldable
 import Data.List
 import Data.Maybe
+import Data.Monoid
 import System.CPUTime
 import Text.Printf
 import Logic
@@ -211,24 +213,27 @@ randomSample :: [a] -> Random a
 randomSample lst = (lst !!) <$> random (length lst)
 
 ------------------------------------------------------------
-                   
+chA :: a -> Grammar (Random a)
 chA = pure . pure
-altA xs = asum $ chA <$> xs
+
+altA, strA :: [a] -> Grammar (Random a)
+altA = getAlt . foldMap (Alt . chA)
 strA xs = foldMap chA xs
 
-arythmeticsR :: Grammar (Random Char)
-arythmeticsR = expr
+arythmeticsA :: Grammar (Random Char)
+arythmeticsA = expr
   where
     expr = term <> many (altA "+-" <> term)
     term = mult <> many (altA "*/" <> mult)
-    mult = num <|> chA '(' <> (Chain expr Epsilon) <> chA ')'
+    mult = num <|> chA '(' <> expr <> chA ')'
     num = rnd "123456789"
 
 rnd = pure . randomSample 
 
 powers x = scanl (<>) mempty $ repeat x
 
-generateA x = traverse sequenceA $ generate x
+languageA :: Grammar (Random a) -> Random [[a]]
+languageA = fmap samples . traverse sequenceA . generate
 
 rep :: (Int, Int) -> Grammar a -> Grammar a
 rep (n, m) x = asum $ (*<> x) <$> [n..m]
@@ -240,11 +245,12 @@ emails = login <> chA '@' <> dom <> rep (1,2) (chA '.' <> dom)
     alnum = 3 *<> (['0'..'9'] <> ['a'..'z']) <> "_-" <> ['A'..'Z']
 
 ------------------------------------------------------------
-arythmetics' = expr
+
+arythmeticsR = expr
   where
     expr = term <> many (alt "+-" <> term)
     term = mult <> many (alt "*/" <> mult)
-    mult = num <|> ch '(' <> expr <> ch ')'
+    mult = num <|> ch '(' <> (Chain expr Epsilon) <> ch ')'
     num = 2 *<> alt "123456789"
 
 
@@ -254,7 +260,7 @@ generateR r = case r of
    None -> pure []
    Term c -> pure [c]
    Kleene x -> random 10 >>= \n -> generateR (n *<> x)
-   Alt a b -> do as <- generateR a
-                 bs <- generateR b
-                 randomSample [bs,as]
+   Or a b -> do as <- generateR a
+                bs <- generateR b
+                randomSample [bs,as]
    Chain r1 r2 -> (++) <$> generateR r1 <*> generateR r2
