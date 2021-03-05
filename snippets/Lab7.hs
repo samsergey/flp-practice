@@ -262,9 +262,9 @@ alphabeth g = case g of
            
 ------------------------------------------------------------
                        
-brs f = ch '(' <> many f <> ch ')' <|>
-        ch '[' <> many f <> ch ']' <|>
-        ch '{' <> many f <> ch '}'
+brs f = ch '(' <> many f <> ch ')'
+--        <|> ch '[' <> many f <> ch ']' <|> ch '{' <> many f <> ch '}'
+
 
 fix f = f (fix f)
            
