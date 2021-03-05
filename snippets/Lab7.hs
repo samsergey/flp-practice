@@ -202,7 +202,7 @@ spaces' s = case s of
                    
 data Grammar a =
   Epsilon
-  | None 
+  | None
   | Term a                        -- литерал
   | Kleene (Grammar a)            -- звезда Клини (повторение)
   | Alter (Grammar a) (Grammar a) -- объединение (альтернатива)
@@ -228,7 +228,8 @@ instance Applicative Grammar where
      Kleene f  -> Kleene (f <*> x)
      Alter f g -> Alter (f <*> x) (g <*> x)
      Chain f g -> Chain (f <*> x) (g <*> x)
-          
+
+                  
 ch x = pure x
 str s = foldMap pure s
 alt x = getAlt $ foldMap pure x
@@ -238,24 +239,35 @@ many g = Kleene g
 some g = g <> Kleene g
          
 generate :: Alternative f => Grammar a -> f [a]
-generate r = case r of
+generate g = case g of
    Epsilon -> pure []
    None -> empty
    Term c -> pure [c]
-   Alter r1 r2 -> generate r1 <|> generate r2
    Kleene x -> generate $ opt (some x)
-   Chain r1 r2 -> (++) <$> generate r1 <*> generate r2
+   Alter a b -> generate a <|> generate b
+   Chain a b -> (++) <$> generate a <*> generate b
 
 language :: Grammar a -> [[a]]
 language = samples . generate
 
+alphabeth :: Eq a => Grammar a -> [a]
+alphabeth g = case g of
+   Epsilon -> empty
+   None -> empty
+   Term a -> pure a
+   Kleene a -> alphabeth a
+   Alter a b -> alphabeth a `union` alphabeth b
+   Chain a b -> alphabeth a `union` alphabeth b
+
+           
 ------------------------------------------------------------
                        
-brs = ch '(' <> many brs <> ch ')' <|>
-      ch '[' <> many brs <> ch ']' <|>
-      ch '{' <> many brs <> ch '}'
+brs f = ch '(' <> many f <> ch ')' <|>
+        ch '[' <> many f <> ch ']' <|>
+        ch '{' <> many f <> ch '}'
 
-          
+fix f = f (fix f)
+           
 mod3 = many (ch 0 <|> (ch 1 <> many (ch 0 <> many (ch 1) <> ch 0) <> ch 1))
 
 arythmetics :: Grammar Char
