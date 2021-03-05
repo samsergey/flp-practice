@@ -205,45 +205,34 @@ data Grammar a =
   | None 
   | Term a                        -- литерал
   | Kleene (Grammar a)            -- звезда Клини (повторение)
-  | Or (Grammar a) (Grammar a)    -- объединение (альтернатива)
+  | Alter (Grammar a) (Grammar a) -- объединение (альтернатива)
   | Chain (Grammar a) (Grammar a) -- цепочка (конкатенация)
-    deriving (Functor, Show, Eq) --,Foldable, Traversable)
-
-
+    deriving (Functor, Show, Eq)
              
-instance Semigroup (Grammar a) where
-  Epsilon <> x = x
-  x <> Epsilon = x
-  None <> x = None
-  x <> None = None
-  a <> b = Chain a b
-    
 instance Monoid (Grammar a) where
   mempty = Epsilon
 
-instance Applicative Grammar where
-  pure = Term
-  Epsilon   <*> x = Epsilon
-  None      <*> x = None
-  Term f    <*> x = f <$> x
-  Kleene f  <*> x = Kleene (f <*> x)
-  Or f g    <*> x = (f <*> x) <|> (g <*> x)
-  Chain f g <*> x = (f <*> x) <> (g <*> x)
+instance Semigroup (Grammar a) where
+  (<>) = Chain
 
 instance Alternative Grammar where
   empty = None
-  None <|> x = x
-  x <|> None = x
-  a <|> b = Or a b
-
-ch :: a -> Grammar a
+  (<|>) = Alter
+    
+instance Applicative Grammar where
+  pure = Term
+  f <*> x = case f of 
+     Epsilon   -> Epsilon
+     None      -> None
+     Term f    -> f <$> x
+     Kleene f  -> Kleene (f <*> x)
+     Alter f g -> Alter (f <*> x) (g <*> x)
+     Chain f g -> Chain (f <*> x) (g <*> x)
+          
 ch x = pure x
-
-str, alt :: [a] -> Grammar a
 str s = foldMap pure s
 alt x = getAlt $ foldMap pure x
 
-opt, many, some :: Grammar a -> Grammar a
 opt g = Epsilon <|> g
 many g = Kleene g
 some g = g <> Kleene g
@@ -253,7 +242,7 @@ generate r = case r of
    Epsilon -> pure []
    None -> empty
    Term c -> pure [c]
-   Or r1 r2 -> generate r1 <|> generate r2
+   Alter r1 r2 -> generate r1 <|> generate r2
    Kleene x -> generate $ opt (some x)
    Chain r1 r2 -> (++) <$> generate r1 <*> generate r2
 
@@ -295,16 +284,16 @@ vanishing g = case g of
    None -> False
    Term _ -> False
    Kleene a -> True
-   Or a b -> vanishing a || vanishing b
+   Alter a b -> vanishing a || vanishing b
    Chain a b -> vanishing a && vanishing b
-
+                        
 
 leader :: Eq a => Grammar a -> [[a]]
 leader g = case g of
    Epsilon   -> pure []
    None      -> empty
    Term c    -> pure [c]
-   Or a b    -> leader a `union` leader b
+   Alter a b -> leader a `union` leader b
    Kleene g  -> leader $ opt g
    Chain a b -> leader $ a <|> unless (vanishing a) b
 

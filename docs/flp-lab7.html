@@ -262,35 +262,35 @@ replicateM</ghci></pre>
 (Chain (Term 1) (Chain (Kleene (Chain (Term 0) (Chain (Kleene (Term 1))
 (Term 0)))) (Term 1)))))</pre>
 <p>Как видно, запись получается громоздкой и вовсе нечитабельной. Для упрощения работы, воспользуемся тем, что регулярные грамматики образуют моноид относительно операций объединения и конкатенации с нейтральными элементами <eq>\bot</eq> и <eq>\varepsilon</eq>, соответственно. Это свойство можно выразить с помощью классов <code>Monoid</code> и <code>Alternative</code>:</p>
-<pre><hs>instance Semigroup (Grammar a) where
-  (<>) = Chain
-
-instance Monoid (Grammar a) where
+<pre><hs>instance Monoid (Grammar a) where
   mempty = Epsilon
 
-instance Applicative Grammar where
-  pure = Term
-  (<*>) = undefined
+instance Semigroup (Grammar a) where
+  (<>) = Chain
 
 instance Alternative Grammar where
   empty = None
-  (<|>) = Or</hs></pre>
+  (<|>) = Alter
+         
+instance Applicative Grammar where
+  pure = Term
+  f <*> x = case f of 
+     Epsilon   -> Epsilon
+     None      -> None
+     Term f    -> f <$> x
+     Kleene f  -> Kleene (f <*> x)
+     Alter f g -> (f <*> x) <|> (g <*> x)
+     Chain f g -> (f <*> x) <> (g <*> x)</hs></pre>
 
-<p>Аппликативное поведение грамматики определить можно, но оно достаточно громоздко и нам не потребуется, однако формально определить его нужно для того, чтобы можно было объявить тип для грамматики альтернативным функтором. Ещё стоит создать несколько вспомогательных функций:</p>
-  <pre><hs><d>ch :: a -> Grammar a</d>
-ch = pure -- указанный литерал
-
-<d>str :: [a] -> Grammar a</d>
+<p>Ещё стоит создать несколько вспомогательных функций:</p>
+  <pre><hs>ch = pure -- указанный литерал
 str = foldMap ch -- цепочка указанных литералов
-
-<d>alt :: [a] -> Grammar a</d>
 alt = getAlt . foldMap ch -- один из списка литералов
 -- здесь используется тип-обёртка Alt, превращающая
 -- любой альтернативный функтор в моноид.
 
-<d>opt, many, some :: Grammar a -> Grammar a</d>
-opt g = Epsilon <|> g -- необязательное выражение
-many = Kleeny -- повторение выражения 0 или более раз
+opt g = Epsilon <|> g  -- необязательное выражение
+many g = Kleeny g      -- повторение выражения 0 или более раз
 some g = g <> Kleeny g -- повторение выражения 1 или более раз</hs></pre>
   
 <p>Теперь запись выражения <nobr><tt>(0|(1(01*0)*1))+</tt></nobr> становится более осмысленной:</p>
@@ -314,7 +314,7 @@ leader g = case g of
    Epsilon   -> pure []
    Term c    -> pure [c]
    Kleene g  -> leader $ opt g
-   Or a b    -> leader a `union` leader b
+   Alter a b -> leader a `union` leader b
    Chain a b -> leader $ a <|> unless (vanishing a) b</hs></pre>
 
 <task>Найдите лидирующие символы для следующих выражений:
@@ -335,7 +335,7 @@ generate g = case g of
    Epsilon   -> pure []
    Term c    -> pure [c]
    Kleene g  -> generate $ opt (some g)
-   Or a b    -> generate a <|> generate b
+   Alter a b -> generate a <|> generate b
    Chain a b -> (++) <$> generate a <*> generate b</hs></pre>
 
 <p>  Функтором <code>f</code> может быть тип <code>Maybe</code> или список. В первом случае, мы получим какое-то одно (самое простое) слово, а во втором — список всех подходящих слов, возможно, бесконечный. </p>
