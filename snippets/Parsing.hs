@@ -7,6 +7,7 @@ import Data.String
 import Data.Monoid
 import Data.Foldable
 import Lab6
+    
 
 data Parser a = Parser { run :: String -> Result a }
 
@@ -165,7 +166,7 @@ xml = tag <|> text
 --     , (next,         "",     Fail "") ]
 
 --   runTests "digit"
---     [ (digit,          "23x", Ok '2' "3x")
+--     [ (digit,          "23x", Ogk '2' "3x")
 --     , (digit,          "abc", Fail "abc")
 --     , (digit >> digit, "23x", Ok '3' "x") ]
 

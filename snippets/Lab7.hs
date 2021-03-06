@@ -203,6 +203,7 @@ spaces' s = case s of
 data Grammar a =
   Epsilon
   | None
+  | Anything
   | Term a                        -- литерал
   | Kleene (Grammar a)            -- звезда Клини (повторение)
   | Alter (Grammar a) (Grammar a) -- объединение (альтернатива)
@@ -224,6 +225,7 @@ instance Applicative Grammar where
   f <*> x = case f of 
      Epsilon   -> Epsilon
      None      -> None
+     Anything  -> Anything
      Term f    -> f <$> x
      Kleene f  -> Kleene (f <*> x)
      Alter f g -> Alter (f <*> x) (g <*> x)
