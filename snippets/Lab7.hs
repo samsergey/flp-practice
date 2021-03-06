@@ -237,6 +237,8 @@ alt x = getAlt $ foldMap pure x
 opt g = Epsilon <|> g
 many g = Kleene g
 some g = g <> Kleene g
+
+oneof p = getAlt . foldMap (Alt . p)
          
 generate :: Alternative f => Grammar a -> f [a]
 generate g = case g of
@@ -265,6 +267,7 @@ alphabeth g = case g of
 brs f = ch '(' <> many f <> ch ')'
 --        <|> ch '[' <> many f <> ch ']' <|> ch '{' <> many f <> ch '}'
 
+fact f n = if n == 0 then 1 else f(n-1)*n
 
 fix f = f (fix f)
            
@@ -314,3 +317,29 @@ tstf = fmap (,) <$> tst
 rule1 u = (pure id <*> u, u)
 rule2 u = (u <*> pure 'x', pure ($ 'x') <*> u)
 rule3 u v w = (pure (.) <*> u <*> v <*> w , u <*> (v <*> w))
+
+palindrome p xs = oneof (\x -> ch x <|> (ch x <> opt (p xs) <> ch x)) xs
+
+simplify :: Eq a => Grammar a -> Grammar a
+simplify = fixedPoint go
+  where go g = case g of
+          Kleene Epsilon -> Epsilon
+          Kleene None -> None
+          Kleene (Alter Epsilon x) -> Kleene (go x)
+          Kleene (Kleene x) -> Kleene (go x)
+          Alter None x -> go x
+          Alter x None -> go x
+          Alter a b | a == b -> go a
+          Alter a b -> Alter (go a) (go b)
+          Chain None x -> None
+          Chain x None -> None
+          Chain Epsilon x -> go x
+          Chain x Epsilon -> go x
+          Chain a b -> Chain (go a) (go b)
+          x -> x
+          
+fixedPoint f x = let fx = f x
+                 in if fx == x
+                    then x
+                    else fixedPoint f fx
+          

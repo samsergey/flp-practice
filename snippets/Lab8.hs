@@ -250,17 +250,17 @@ arythmeticsR = expr
   where
     expr = term <> many (alt "+-" <> term)
     term = mult <> many (alt "*/" <> mult)
-    mult = num <|> ch '(' <> (Chain expr Epsilon) <> ch ')'
+    mult = num <|> ch '(' <> expr <> ch ')'
     num = 2 *<> alt "123456789"
 
 
-generateR :: Grammar a -> Random [a]
+generateR :: Grammar a -> Ragndom [a]
 generateR r = case r of
    Epsilon -> pure []
    None -> pure []
    Term c -> pure [c]
    Kleene x -> random 10 >>= \n -> generateR (n *<> x)
-   Or a b -> do as <- generateR a
-                bs <- generateR b
-                randomSample [bs,as]
+   Alter a b -> do as <- generateR a
+                   bs <- generateR b
+                   randomSample [bs,as]
    Chain r1 r2 -> (++) <$> generateR r1 <*> generateR r2
