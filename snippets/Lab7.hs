@@ -12,7 +12,7 @@ import Data.List
 import Data.Ord
 import Data.Maybe
 import Data.Monoid
-import Parsing (run, mmany, check, Result (..)) 
+import Parsing (run, mmany, check, next, Result (..)) 
     
 unless test p = if test then p else empty
 untill test x p = if test then pure x else p
@@ -241,33 +241,39 @@ many g = Kleene g
 some g = g <> Kleene g
 
 oneof p = getAlt . foldMap (Alt . p)
-         
-generate :: Alternative f => Grammar a -> f [a]
-generate g = case g of
-   Epsilon -> pure []
-   None -> empty
-   Term c -> pure [c]
-   Kleene x -> generate $ opt (some x)
-   Alter a b -> generate a <|> generate b
-   Chain a b -> (++) <$> generate a <*> generate b
 
-language :: Grammar a -> [[a]]
-language = samples . generate
+chars = ['a'..'z'] ++ [' '..'`']
 
-alphabeth :: Eq a => Grammar a -> [a]
+alphabeth :: Grammar Char -> String
 alphabeth g = case g of
    Epsilon -> empty
    None -> empty
    Term a -> pure a
+   Anything -> chars
    Kleene a -> alphabeth a
    Alter a b -> alphabeth a `union` alphabeth b
    Chain a b -> alphabeth a `union` alphabeth b
+
+        
+generate :: Alternative f => Grammar Char -> f String
+generate g = case g of
+               None -> empty
+               Epsilon -> pure []
+               Term c -> pure [c]
+               Anything -> pure $ alphabeth g
+               Kleene x -> generate $ opt (some x)
+               Alter a b -> generate a <|> generate b
+               Chain a b -> (++) <$> generate a <*> generate b
+
+language :: Grammar Char -> [String]
+language = samples . generate
 
            
 ------------------------------------------------------------
                        
 brs f = ch '(' <> many f <> ch ')'
-        <|> ch '[' <> many f <> ch ']' <|> ch '{' <> many f <> ch '}'
+        <|> ch '[' <> many f <> ch ']'
+        <|> ch '{' <> many f <> ch '}'
 
 fact f n = if n == 0 then 1 else f(n-1)*n
 
@@ -300,16 +306,18 @@ vanishing g = case g of
    Epsilon -> True
    None -> False
    Term _ -> False
+   Anything -> False
    Kleene a -> True
    Alter a b -> vanishing a || vanishing b
    Chain a b -> vanishing a && vanishing b
                         
 
-leader :: Eq a => Grammar a -> [[a]]
+leader :: Grammar Char -> String
 leader g = case g of
-   Epsilon   -> pure []
+   Epsilon   -> mempty
    None      -> empty
-   Term c    -> pure [c]
+   Term c    -> pure c
+   Anything  -> alphabeth g
    Alter a b -> leader a `union` leader b
    Kleene g  -> leader $ opt g
    Chain a b -> leader $ a <|> unless (vanishing a) b
@@ -351,6 +359,7 @@ match = run . go
                    Epsilon -> mempty
                    None -> empty
                    Term x -> pure <$> check (== x)
+                   Anything -> pure <$> next
                    Kleene a -> mmany (go a)
                    Alter a b -> go a <|> go b
                    Chain a b -> go a <> go b

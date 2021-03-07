@@ -24,28 +24,31 @@
 
       <pre><hs>import Parser (check, run, mmany, Result (..))</hs></pre>
 
-      <p>Теперь можно написать простой интерпретацию свободной грамматики в транслятор:</p>
+      <p>Теперь можно написать простой интерпретатор свободной грамматики в её распознаватель:</p>
       
       <pre><hs>match :: Grammar Char -> String -> Result String
 match = run . go
   where go g = case g of
-    Epsilon -> mempty
-    None -> empty
-    Term x -> pure <$> check (== x)
-    Kleene a -> mmany (go a)
+    None      -> empty
+    Epsilon   -> mempty
+    Term x    -> pure <$> check (== x)
+    Anything  -> pure <$> next
+    Kleene a  -> mmany $ go a
     Alter a b -> go a <|> go b
     Chain a b -> go a <> go b</hs></pre>
 
-<p>Этот транслятор работает и с регулярными и нерегулярными грамматиками</p>
+<p>Этот распознаватель работает и с регулярными и нерегулярными грамматиками</p>
 
 <pre><ghci><l></l> match (str "cat") "catalog"
 <o>Ok "cat" "alog"</o>
 <l></l> match (many (alt "cat")) "catalog"
 <o>Ok "cata" "log"</o>
-<l></l> match (fix brs) "[{}({})]"
+<l></l> match (fix brs) "[{}({})]"g
 <o>Ok "[{}({})]" ""</o>
-<l></l> match (arythmetics) "2+3*(7-3)"
-<o>Ok "2+3*(7-3)" ""</o></ghci></pre>
+<l></l> match arythmetics "2+3*(7-3)"
+<o>Ok "2+3*(7-3)" ""</o>
+<l></l> match arythmetics "cat"
+<o>Fail "cat"</o></ghci></pre>
 	    
       <h2>Поиск и замена подстрок</h2>
 
@@ -67,7 +70,7 @@ longest :: Parser [a] -> Parser [a]</hs></pre>
 				      
 <task>Реализуйте комбинатор <code>&lt;?></code>, с помощью которого, можно было бы отфильтровывать трансляторы по указанному предикату для возвращаемого значения. Так, например можно было бы отыскивать в тексте только нечётные числа:
 <pre><ghci><l></l> run (search (integer &lt;?> odd)) "5 pigs, 122 cows, 47 cats"
-<o>Ok "" [5,47]</o></ghci></pre>
+<o>Ok [5,47] ""</o></ghci></pre>
 </task>
 
  <task>Напишите транслятор <code>replace p f</code>, который изменял бы части входной последовательности, описываемые транслятором <code>p</code> с помощью функции <code>f</code>:<pre><hs>replace :: Parser a -> (a -> [b]) -> Parser [b]</hs></pre> Например:

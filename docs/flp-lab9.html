@@ -159,7 +159,7 @@ sequenceA = traverse id</hs></pre>
 <pre><ghci><l></l> run (sequenceA [ch 'c', ch 'a']) "catana"
 <o>Ok "ca" "tana"</o>
 <l></l> run (sequenceA [digit, digit]) "1234"
-Ok "12" "34"
+<o>Ok "12" "34"</o>
 <l></l> run (traverse ch "cat") "catalog"
 <o>Ok "cat" "alog"</o></ghci></pre>
 
@@ -333,7 +333,7 @@ optional p = Just <$> p <|> pure Nothing</hs></pre>
       <pre><ghci><l></l> run (opt digit) "123"
 <o>Ok "1" "23"</o>
 <l></l> run (opt digit) "x123"
-<o>Ok "" "23"</o> </ghci></pre>
+<o>Ok "" "123"</o> </ghci></pre>
   
       </task>
 
