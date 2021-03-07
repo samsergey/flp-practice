@@ -260,7 +260,7 @@ generate g = case g of
                None -> empty
                Epsilon -> pure []
                Term c -> pure [c]
-               Anything -> pure $ alphabeth g
+               Anything -> generate $ alt $ alphabeth g
                Kleene x -> generate $ opt (some x)
                Alter a b -> generate a <|> generate b
                Chain a b -> (++) <$> generate a <*> generate b
@@ -363,3 +363,32 @@ match = run . go
                    Kleene a -> mmany (go a)
                    Alter a b -> go a <|> go b
                    Chain a b -> go a <> go b
+
+rpn :: Int -> Int -> Grammar Char
+rpn 0 x = None  
+rpn n x = operand <> ch ' ' <> operand <> ch ' ' <> binary <|>
+          operand <> ch ' ' <> unary
+    where operand = alt (show x) <|> rpn (n-1) x
+          binary = alt "+-*/"
+          unary = alt "n!"
+      
+evalRPN = head . runA calcRPN . words
+    where calcRPN = Automat Lab4.Any f [] [] []
+          f (x:y:s) "+" = (x+y):s
+          f (x:y:s) "-" = (y-x):s
+          f (x:y:s) "*" = (x*y):s
+          f (x:y:s) "/" = (y / x):s
+          f (x:s) "n" = (-x):s
+          f (x:s) "!" = (product [1..x]):s
+          f s n = read n : s
+
+hist lst = foldl' add [] lst
+
+add dict x = case lookup x dict of
+               Nothing -> (x,1) : dict
+               Just n -> update x (n+1) dict
+
+update x a [] = [(x,a)]
+update x a ((y,b):ds)
+    | x == y = (x,a):ds
+    | x /= y = (y,b) : update x a ds
