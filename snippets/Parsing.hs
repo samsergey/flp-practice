@@ -7,9 +7,9 @@ import Data.String
 import Data.Monoid
 import Data.Foldable
 import Lab6
-    
 
-data Parser a = Parser { run :: String -> Result a }
+
+newtype Parser a = Parser { run :: String -> Result a }
 
 data Result a = Ok a String
               | Fail String
@@ -241,6 +241,7 @@ between p [c1,c2] = ch c1 *> p <* ch c2
 
 collect p = mmany (p <|> mempty <$ next) 
 search p = collect (only p)
+
 ------------------------------------------------------------
 
 string_ = ch '\'' *> some (ch `except` "'") <* ch '\''
@@ -358,3 +359,22 @@ picture = foldMap primitive . snd <$> tag "svg" primitives
 
 ------------------------------------------------------------
 
+-- match :: Grammar Char -> String -> Result String
+-- match = run . go
+--     where go g = case g of
+--                    Epsilon -> mempty
+--                    None -> empty
+--                    Term x -> pure <$> check (== x)
+--                    Kleene a -> mmany (go a)
+--                    Alter a b -> go a <|> go b
+--                    Chain a b -> go a <> go b
+
+-- reg :: Parser (Grammar Char)
+-- reg = simplify <$> msome alt
+--     where
+--       alt = asum <$> r `sepBy` ch '|'
+--       r = ch '.' <|> ch '(' *> reg <* ch ')' <|> lit
+--       lit = Term <$> check (\x -> not (x `elem` "|.+*?()[]"))
+--       mod g = Kleene <$> g <* ch '*' <|>
+--               (\x -> x <|> Kleene x) <$> g <* ch '+' <|>
+--               (\x -> x <|> Epsilon) <$> g <* ch '?'         

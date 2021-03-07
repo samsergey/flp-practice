@@ -18,6 +18,35 @@
     <div class='tasks'>
       <!-- ------------------------------------------------------------ -->
 
+      <h2>Трансляция свободной грамматики</h2>
+
+      <p>Давайте совместим построенную на занятии 7 систему представления порождающих грамматик и парсеров. Вернёмся к файлу <code>Lab7</code> и добавим к списку импортов модуль <code>Parser</code>:</p>
+
+      <pre><hs>import Parser (check, run, mmany, Result (..))</hs></pre>
+
+      <p>Теперь можно написать простой интерпретацию свободной грамматики в транслятор:</p>
+      
+      <pre><hs>match :: Grammar Char -> String -> Result String
+match = run . go
+  where go g = case g of
+    Epsilon -> mempty
+    None -> empty
+    Term x -> pure <$> check (== x)
+    Kleene a -> mmany (go a)
+    Alter a b -> go a <|> go b
+    Chain a b -> go a <> go b</hs></pre>
+
+<p>Этот транслятор работает и с регулярными и нерегулярными грамматиками</p>
+
+<pre><ghci><l></l> match (str "cat") "catalog"
+<o>Ok "cat" "alog"</o>
+<l></l> match (many (alt "cat")) "catalog"
+<o>Ok "cata" "log"</o>
+<l></l> match (fix brs) "[{}({})]"
+<o>Ok "[{}({})]" ""</o>
+<l></l> match (arythmetics) "2+3*(7-3)"
+<o>Ok "2+3*(7-3)" ""</o></ghci></pre>
+	    
       <h2>Поиск и замена подстрок</h2>
 
 <task>Для трансляторов-моноидов можно написать универсальную функцию <code>collect</code>, полезную для поиска подстрок, описываемых транслятором <code>p</code>  

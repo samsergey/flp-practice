@@ -12,7 +12,7 @@ import Data.List
 import Data.Ord
 import Data.Maybe
 import Data.Monoid
-
+import Parsing (run, mmany, check, Result (..)) 
     
 unless test p = if test then p else empty
 untill test x p = if test then pure x else p
@@ -267,7 +267,7 @@ alphabeth g = case g of
 ------------------------------------------------------------
                        
 brs f = ch '(' <> many f <> ch ')'
---        <|> ch '[' <> many f <> ch ']' <|> ch '{' <> many f <> ch '}'
+        <|> ch '[' <> many f <> ch ']' <|> ch '{' <> many f <> ch '}'
 
 fact f n = if n == 0 then 1 else f(n-1)*n
 
@@ -344,4 +344,13 @@ fixedPoint f x = let fx = f x
                  in if fx == x
                     then x
                     else fixedPoint f fx
-          
+
+match :: Grammar Char -> String -> Result String
+match = run . go
+    where go g = case g of
+                   Epsilon -> mempty
+                   None -> empty
+                   Term x -> pure <$> check (== x)
+                   Kleene a -> mmany (go a)
+                   Alter a b -> go a <|> go b
+                   Chain a b -> go a <> go b
