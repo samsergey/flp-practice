@@ -208,7 +208,7 @@ data Grammar a =
   | Kleene (Grammar a)            -- звезда Клини (повторение)
   | Alter (Grammar a) (Grammar a) -- объединение (альтернатива)
   | Chain (Grammar a) (Grammar a) -- цепочка (конкатенация)
-    deriving (Functor, Show, Eq)
+    deriving (Functor, Eq)
              
 instance Monoid (Grammar a) where
   mempty = Epsilon
@@ -231,7 +231,31 @@ instance Applicative Grammar where
      Alter f g -> Alter (f <*> x) (g <*> x)
      Chain f g -> Chain (f <*> x) (g <*> x)
 
-                  
+instance Show (Grammar Char) where
+  show = go . simplify
+    where go g = case g of
+            Epsilon -> ""
+            None -> "#"
+            Anything -> "."
+            Term a -> unless (meta a) "\\" <> pure a
+            Kleene g -> group g <> "*"
+            Alter a Epsilon -> go a <> "?"
+            Alter Epsilon a -> group a <> "?"
+            Alter a b -> "(" <> go a <> "|" <> go b <> ")"
+            Chain a b -> go a <> go b
+
+          group g = case g of
+              Term _ -> go g
+              Alter _ _ -> go g
+              _ -> "(" <> go g <> ")"
+
+          meta = (`elem` ".|*+?()[]#")
+
+instance Show (Grammar Char -> Grammar Char) where
+  show g = show $ simplify $ g $ str "<self>"
+
+          
+ch :: a -> Grammar a
 ch x = pure x
 str s = foldMap pure s
 alt x = getAlt $ foldMap pure x
@@ -278,15 +302,16 @@ brs f = ch '(' <> many f <> ch ')'
 fact f n = if n == 0 then 1 else f(n-1)*n
 
 fix f = f (fix f)
-           
+
+recur n f = foldl1 (.) $ replicate n f
+        
 mod3 = many (ch 0 <|> (ch 1 <> many (ch 0 <> many (ch 1) <> ch 0) <> ch 1))
 
-arythmetics :: Grammar Char
-arythmetics = expr
+arythmetics :: Grammar Char -> Grammar Char
+arythmetics f = term <> many (alt "+-" <> term)
   where
-    expr = term <> many (alt "+-" <> term)
     term = mult <> many (alt "*/" <> mult)
-    mult = num <|> ch '(' <> expr <> ch ')'
+    mult = num <|> ch '(' <> f <> ch ')'
     num = alt ['1'..'9']
 
 polynom x = expr
@@ -328,23 +353,24 @@ rule1 u = (pure id <*> u, u)
 rule2 u = (u <*> pure 'x', pure ($ 'x') <*> u)
 rule3 u v w = (pure (.) <*> u <*> v <*> w , u <*> (v <*> w))
 
-palindrome p xs = oneof (\x -> ch x <|> (ch x <> opt (p xs) <> ch x)) xs
+palindrome xs p = oneof (\x -> ch x <|> (ch x <> opt p <> ch x)) xs
 
 simplify :: Eq a => Grammar a -> Grammar a
 simplify = fixedPoint go
   where go g = case g of
           Kleene Epsilon -> Epsilon
           Kleene None -> None
-          Kleene (Alter Epsilon x) -> Kleene (go x)
-          Kleene (Kleene x) -> Kleene (go x)
-          Alter None x -> go x
-          Alter x None -> go x
-          Alter a b | a == b -> go a
+          Kleene (Alter Epsilon a) -> Kleene a
+          Kleene (Kleene a) -> Kleene a
+          Kleene a -> Kleene $ go a
+          Alter None a -> a
+          Alter a None -> a
+          Alter a b | a == b -> a
           Alter a b -> Alter (go a) (go b)
-          Chain None x -> None
-          Chain x None -> None
-          Chain Epsilon x -> go x
-          Chain x Epsilon -> go x
+          Chain None _ -> None
+          Chain _ None -> None
+          Chain Epsilon a -> a
+          Chain a Epsilon -> a
           Chain a b -> Chain (go a) (go b)
           x -> x
           
@@ -364,11 +390,9 @@ match = run . go
                    Alter a b -> go a <|> go b
                    Chain a b -> go a <> go b
 
-rpn :: Int -> Int -> Grammar Char
-rpn 0 x = None  
-rpn n x = operand <> ch ' ' <> operand <> ch ' ' <> binary <|>
+rpn x f = operand <> ch ' ' <> operand <> ch ' ' <> binary <|>
           operand <> ch ' ' <> unary
-    where operand = alt (show x) <|> rpn (n-1) x
+    where operand = x <|> f
           binary = alt "+-*/"
           unary = alt "n!"
       
