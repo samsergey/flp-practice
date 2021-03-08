@@ -523,12 +523,10 @@ dyck f = ch '(' <> many f <> ch ')' <|>
 <o>Alt (Chain (Term '(') (Chain (Kleene None) (Term ')')))</o></ghci></pre>
 Это конечное представление уже даёт возможность получить алфавит нашего языка или множество лидирующих символов:</p>
 <pre><ghci><l></l> alphabeth $ dyck None
-    <o>"()"</o>
-    <l></l> leader $ dyck None
-    <o>"("</o>
+<o>"()"</o>
+<l></l> leader $ dyck None
+<o>"("</o>
 </ghci></pre>
-
-<task></task>
 
 <p>При генерации слов языка можно контролировать глубину рекурсии:
 <pre><ghci><l></l> take 10 $ language $ dyck None

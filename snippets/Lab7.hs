@@ -208,7 +208,7 @@ data Grammar a =
   | Kleene (Grammar a)            -- звезда Клини (повторение)
   | Alter (Grammar a) (Grammar a) -- объединение (альтернатива)
   | Chain (Grammar a) (Grammar a) -- цепочка (конкатенация)
-    deriving (Functor, Eq)
+    deriving (Functor, Eq, Show)
              
 instance Monoid (Grammar a) where
   mempty = Epsilon
@@ -219,7 +219,7 @@ instance Semigroup (Grammar a) where
 instance Alternative Grammar where
   empty = None
   (<|>) = Alter
-    
+  
 instance Applicative Grammar where
   pure = Term
   f <*> x = case f of 
@@ -231,28 +231,28 @@ instance Applicative Grammar where
      Alter f g -> Alter (f <*> x) (g <*> x)
      Chain f g -> Chain (f <*> x) (g <*> x)
 
-instance Show (Grammar Char) where
-  show = go . simplify
-    where go g = case g of
-            Epsilon -> ""
-            None -> "#"
-            Anything -> "."
-            Term a -> unless (meta a) "\\" <> pure a
-            Kleene g -> group g <> "*"
-            Alter a Epsilon -> go a <> "?"
-            Alter Epsilon a -> group a <> "?"
-            Alter a b -> "(" <> go a <> "|" <> go b <> ")"
-            Chain a b -> go a <> go b
+-- instance Show (Grammar Char) where
+--   show = go . simplify
+--     where go g = case g of
+--             Epsilon -> ""
+--             None -> "#"
+--             Anything -> "."
+--             Term a -> unless (meta a) "\\" <> pure a
+--             Kleene g -> group g <> "*"
+--             Alter a Epsilon -> go a <> "?"
+--             Alter Epsilon a -> group a <> "?"
+--             Alter a b -> "(" <> go a <> "|" <> go b <> ")"
+--             Chain a b -> go a <> go b
 
-          group g = case g of
-              Term _ -> go g
-              Alter _ _ -> go g
-              _ -> "(" <> go g <> ")"
+--           group g = case g of
+--               Term _ -> go g
+--               Alter _ _ -> go g
+--               _ -> "(" <> go g <> ")"
 
-          meta = (`elem` ".|*+?()[]#")
+--           meta = (`elem` ".|*+?()[]#")
 
-instance Show (Grammar Char -> Grammar Char) where
-  show g = show $ simplify $ g $ str "<self>"
+-- instance Show (Grammar Char -> Grammar Char) where
+--   show g = show $ simplify $ g $ str "<self>"
 
           
 ch :: a -> Grammar a
@@ -285,12 +285,16 @@ generate g = case g of
                Epsilon -> pure []
                Term c -> pure [c]
                Anything -> generate $ alt $ alphabeth g
+               Kleene None -> empty
+               Kleene Epsilon -> pure []
                Kleene x -> generate $ opt (some x)
+               Alter None b -> generate b
+               Alter Anything _  -> generate Anything
                Alter a b -> generate a <|> generate b
                Chain a b -> (++) <$> generate a <*> generate b
 
 language :: Grammar Char -> [String]
-language = samples . generate
+language = samples . generate 
 
            
 ------------------------------------------------------------
@@ -363,6 +367,8 @@ simplify = fixedPoint go
           Kleene (Alter Epsilon a) -> Kleene a
           Kleene (Kleene a) -> Kleene a
           Kleene a -> Kleene $ go a
+          Alter Anything _ -> Anything
+          Alter _ Anything -> Anything
           Alter None a -> a
           Alter a None -> a
           Alter a b | a == b -> a
