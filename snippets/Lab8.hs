@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts, DeriveFunctor #-}
+{-# LANGUAGE FlexibleContexts, DeriveFunctor,FlexibleInstances,TypeSynonymInstances #-}
 
 module Lab8 where
 
@@ -148,7 +148,10 @@ prec x = case x of
 toRPN = unwords . dijkstra . lexer
 
 dijkstra :: [String] -> [String]
-dijkstra s = evalStackFn $ (<>) <$> foldMapM step s <*> get
+dijkstra s = evalStackFn $ do
+   res <- foldMapM step s
+   s <- get
+   return $ res <> s
   
 lexer :: String -> [String]
 lexer = words . foldMap separate
@@ -192,8 +195,8 @@ traditional (Node a t1 t2) = printf "(%s%s%s)" (traditional t1) a (traditional t
 lisp (Node a Empty Empty) = a
 lisp (Node a t1 t2) = printf "(%s %s %s)"  a (lisp t1) (lisp t2)
 
-rpn (Node a Empty Empty) = a
-rpn (Node a t1 t2) = printf "%s %s %s"  (rpn t1) (rpn t2) a
+rpn' (Node a Empty Empty) = a
+rpn' (Node a t1 t2) = printf "%s %s %s"  (rpn' t1) (rpn' t2) a
 
 calc (Node a Empty Empty) = read a
 calc (Node a t1 t2) = case a of
@@ -210,7 +213,7 @@ randomAST n = Node <$> randomSample ["+","-","*","/"]
                <*> (random n >>= randomAST)
 
 randomSample :: [a] -> Random a
-randomSample lst = (lst !!) <$> random (length lst)
+randomSample lst = (cycle lst !!) <$> random 10000
 
 ------------------------------------------------------------
 chA :: a -> Grammar (Random a)
@@ -244,23 +247,43 @@ emails = login <> chA '@' <> dom <> rep (1,2) (chA '.' <> dom)
     dom = rep (2,3) $ rnd ['a'..'z']
     alnum = 3 *<> (['0'..'9'] <> ['a'..'z']) <> "_-" <> ['A'..'Z']
 
+          
+
 ------------------------------------------------------------
 
-arythmeticsR = expr
-  where
-    expr = term <> many (alt "+-" <> term)
-    term = mult <> many (alt "*/" <> mult)
-    mult = num <|> ch '(' <> expr <> ch ')'
-    num = 2 *<> alt "123456789"
+-- generate :: Alternative f => Grammar a -> f [a]
+-- generate g = case g of
+--                None -> empty
+--                Kleene None -> empty
+--                Epsilon -> pure []
+--                Kleene Epsilon -> pure []
+--                Term c -> pure [c]
+-- --               Anything -> generate $ alt $ alphabeth g
+--                Kleene x -> generate $ opt (some x)
+--                Alter a b -> generate a <|> generate b
+--                Chain a b -> (++) <$> generate a <*> generate b
 
+instance Alternative (State Integer) where
+    empty = undefined
+    a <|> b = do i <- random 2
+                 if i < 1 then a else b 
 
-generateR :: Grammar a -> Ragndom [a]
-generateR r = case r of
-   Epsilon -> pure []
-   None -> pure []
-   Term c -> pure [c]
-   Kleene x -> random 10 >>= \n -> generateR (n *<> x)
-   Alter a b -> do as <- generateR a
-                   bs <- generateR b
-                   randomSample [bs,as]
-   Chain r1 r2 -> (++) <$> generateR r1 <*> generateR r2
+generateR :: Grammar Char -> Random String
+generateR g = case g of
+               None -> pure []
+               Kleene None -> pure []
+               Epsilon -> pure []
+               Kleene Epsilon -> pure []
+               Term c -> pure [c]
+               Kleene a -> chose $ take 10 $ powers a
+               Alter a None -> generateR a
+               Alter a b -> generateR a <|> generateR b
+               Chain a b -> (++) <$> generateR a <*> generateR b
+    where
+      chose lst = mapM generateR lst >>= randomSample
+
+rept 0 f = id
+rept 1 f = f
+rept n f = f . rept (n-1) f
+
+      
