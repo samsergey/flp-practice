@@ -24,7 +24,7 @@ instance Functor (State s) where
 
 instance Applicative (State s) where
   pure x  = State $ \s -> (s, x)
-  f <*> x = f >>= (<$> x)
+  (<*>) = ap
   
 instance Monad (State s) where
   State p >>= f = State $ \s -> let ~(s', y) = p s
@@ -213,44 +213,51 @@ randomAST n = Node <$> randomSample ["+","-","*","/"]
                <*> (random n >>= randomAST)
 
 randomSample :: [a] -> Random a
-randomSample lst = (cycle lst !!) <$> random 10000
+randomSample lst = (lst !!) <$> random (length lst)
 
 ------------------------------------------------------------
-chA :: a -> Grammar (Random a)
-chA = pure . pure
+-- цепочка указанных символов
+chA = fmap pure . ch
+-- случайный символ из списка символов
+altA = pure . randomSample
+       
+-- pure2 = pure . pure
 
-altA, strA :: [a] -> Grammar (Random a)
-altA = getAlt . foldMap (Alt . chA)
-strA xs = foldMap chA xs
+-- chA [] = mempty
+-- chA [x] = pure2 x
+-- chA xs = foldMap pure2 xs
 
+-- altA [] = empty
+-- altA [x] = pure2 x
+-- altA xs = getAlt $ foldMap (Alt . pure2) xs
+
+ 
+      
 instance Alphabetic a => Alphabetic (Random a) where
   charset = pure <$> charset
 
 instance Eq (Random a) where
   a == b = False
 
-arythmeticsA :: Grammar (Random Char)
-arythmeticsA = expr
+arythmeticsA f = expr
   where
     expr = term <> many (altA "+-" <> term)
     term = mult <> many (altA "*/" <> mult)
-    mult = num <|> chA '(' <> expr <> chA ')'
-    num = rnd "123456789"
-
-rnd = pure . randomSample 
+    mult = opt (chA "-") <> (altA "1234567890" <|>
+                             chA "(" <> f <> chA ")")
 
 powers x = scanl (<>) mempty $ repeat x
 
-languageA :: Grammar (Random Char) -> Random [[Char]]
+languageA :: Grammar (Random Char) -> Random [String]
 languageA = fmap samples . traverse sequenceA . generate
 
 rep :: (Int, Int) -> Grammar a -> Grammar a
 rep (n, m) x = asum $ (*<> x) <$> [n..m]
               
-emails = login <> chA '@' <> dom <> rep (1,2) (chA '.' <> dom)
+emails = login <> chA "@" <> dom <> rep (1,2) (chA "." <> dom)
   where
-    login = rep (4,8) $ rnd (alnum <> ".")
-    dom = rep (2,3) $ rnd ['a'..'z']
+    login = rep (4,8) $ altA (alnum <> ".")
+    dom = rep (2,3) $ altA ['a'..'z']
     alnum = 3 *<> (['0'..'9'] <> ['a'..'z']) <> "_-" <> ['A'..'Z']
 
           

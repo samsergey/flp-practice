@@ -232,18 +232,18 @@ instance Applicative Grammar where
      Chain f g -> Chain (f <*> x) (g <*> x)
 
 isNone g = case g of
-  None -> True
-  Kleene a -> isNone a
+  None      -> True
+  Kleene a  -> isNone a
   Alter a b -> isNone a && isNone b
   Chain a b -> isNone a || isNone b
-  _ -> False
+  _         -> False
 
 isEpsilon g = case g of
-  Epsilon -> True
-  Kleene a -> isEpsilon a
+  Epsilon   -> True
+  Kleene a  -> isEpsilon a
   Alter a b -> isEpsilon a && isEpsilon b
   Chain a b -> isEpsilon a && isEpsilon b
-  _ -> False
+  _         -> False
 
 
 
@@ -271,18 +271,21 @@ isEpsilon g = case g of
 --   show g = show $ simplify $ g $ str "<self>"
 
           
-ch :: a -> Grammar a
-ch x = pure x
-str s = foldMap pure s
-alt x = getAlt $ foldMap pure x
+ch :: [a] -> Grammar a
+ch [] = mempty
+ch [x] = pure x
+ch xs = foldMap pure xs
+
+alt :: [a] -> Grammar a
+alt [] = empty
+alt [x] = pure x
+alt xs = getAlt $ foldMap pure xs
 
 opt g = Epsilon <|> g
 many g = Kleene g
 some g = g <> Kleene g
 
 oneof p = getAlt . foldMap (Alt . p)
-
--- charset = ['a'..'z'] ++ [' '..'`']
 
 class Eq a => Alphabetic a where
   charset :: [a]
@@ -302,11 +305,13 @@ alphabeth g = case g of
         
 generate :: (Alphabetic a, Alternative f) => Grammar a -> f [a]
 generate g = case g of
-   g | isNone g    -> empty
-   g | isEpsilon g -> pure []
+--   a | isNone a    -> empty
+--   a | isEpsilon a -> pure []
+   None -> empty
+   Epsilon -> pure []
    Anything  -> generate $ alt $ alphabeth g
-   Term c    -> pure [c]
-   Kleene x  -> generate $ opt (some x)
+   Term a    -> pure [a]
+   Kleene a  -> generate $ opt (some a)
    Alter a b -> generate a <|> generate b
    Chain a b -> (++) <$> generate a <*> generate b
 
@@ -336,8 +341,8 @@ leader g = case g of
 
 ------------------------------------------------------------
                        
-dyck f = ch '(' <> many f <> ch ')' <|>
-         ch '[' <> many f <> ch ']' 
+dyck f = ch "(" <> many f <> ch ")" <|>
+         ch "[" <> many f <> ch "]" 
 
 fact f n = if n == 0 then 1 else f(n-1)*n
 
@@ -345,29 +350,30 @@ fix f = f (fix f)
 
 recur n f = foldl1 (.) $ replicate n f
         
-mod3 = many (ch 0 <|> (ch 1 <> many (ch 0 <> many (ch 1) <> ch 0) <> ch 1))
+--mod3 = many (ch 0 <|> (ch 1 <> many (ch 0 <> many (ch 1) <> ch 0) <> ch 1))
 
-arythmetics' k = term <> many (alt "+-" <> term)
+arythmetics' f = expr
   where
+    expr = term <> many (alt "+-" <> term)
     term = mult <> many (alt "*/" <> mult)
-    mult = opt (ch '-') <> (alt "1234567890" <|>
-                            ch '(' <> k <> ch ')')
+    mult = opt (ch "-") <> (alt "1234567890" <|>
+                            ch "(" <> f <> ch ")")
 
 arythmetics = fix arythmetics'
               
 polynom x = expr
   where
     expr = term <> many (alt "+-" <> term)
-    term = opt (ch '-') <>
+    term = opt (ch "-") <>
            ( var <|>
-             alt ['2'..'9'] <> ch '*' <> var <|>
+             alt ['2'..'9'] <> ch "*" <> var <|>
              alt ['1'..'9'] )
-    var = x <> opt (ch '^' <> alt ['2'..'9'])
+    var = x <> opt (ch "^" <> alt ['2'..'9'])
 
 
 ------------------------------------------------------------
 
-tst = [Epsilon, None, ch 'a', many (ch 'a'), ch 'a' <> ch 'b', ch 'a' <|> ch 'b']
+tst = [Epsilon, None, ch "a", many (ch "a"), ch "a" <> ch "b", ch "a" <|> ch "b"]
 tstf = fmap (,) <$> tst
 rule1 u = (pure id <*> u, u)
 rule2 u = (u <*> pure 'x', pure ($ 'x') <*> u)
@@ -410,8 +416,8 @@ match = run . go
                    Alter a b -> go a <|> go b
                    Chain a b -> go a <> go b
 
-rpn x f = operand <> ch ' ' <> operand <> ch ' ' <> binary <|>
-          operand <> ch ' ' <> unary
+rpn x f = operand <> ch " " <> operand <> ch " " <> binary <|>
+          operand <> ch " " <> unary
     where operand = x <|> f
           binary = alt "+-*/"
           unary = alt "n!"
