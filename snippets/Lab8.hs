@@ -24,7 +24,7 @@ instance Functor (State s) where
 
 instance Applicative (State s) where
   pure x  = State $ \s -> (s, x)
-  (<*>) = ap
+  f <*> x = f >>= (<$> x)
   
 instance Monad (State s) where
   State p >>= f = State $ \s -> let ~(s', y) = p s
@@ -223,6 +223,12 @@ altA, strA :: [a] -> Grammar (Random a)
 altA = getAlt . foldMap (Alt . chA)
 strA xs = foldMap chA xs
 
+instance Alphabetic a => Alphabetic (Random a) where
+  charset = pure <$> charset
+
+instance Eq (Random a) where
+  a == b = False
+
 arythmeticsA :: Grammar (Random Char)
 arythmeticsA = expr
   where
@@ -235,7 +241,7 @@ rnd = pure . randomSample
 
 powers x = scanl (<>) mempty $ repeat x
 
-languageA :: Grammar (Random a) -> Random [[a]]
+languageA :: Grammar (Random Char) -> Random [[Char]]
 languageA = fmap samples . traverse sequenceA . generate
 
 rep :: (Int, Int) -> Grammar a -> Grammar a

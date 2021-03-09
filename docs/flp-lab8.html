@@ -200,6 +200,14 @@ randomSample lst = (lst !!) <$> random (length lst)
 languageA = fmap samples . traverse sequenceA . generate  </hs></pre>
 </p>
 
+Для того, чтобы эти определения прошли проверку типов нужно объявить тип <code>Random a</code> экземплярами классов
+<code>Alphabetic</code> и <code>Eq</code>:
+<pre><hs>instance Alphabetic a => Alphabetic (Random a) where
+  charset = pure <$> charset
+
+instance Eq (Random a) where
+  a == b = False</hs></pre>
+
 <p>Порождающая грамматика арифметических выражений со случайными числами будет мало отличаться от варианта, не использующего изменяемое состояние:</p>
 <pre><hs><d>arythmeticsA :: Grammar (Random Char)</d>
 arythmeticsA = expr

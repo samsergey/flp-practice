@@ -203,7 +203,7 @@ spaces' s = case s of
 data Grammar a =
   Epsilon
   | None
---  | Anything
+  | Anything
   | Term a                        -- литерал
   | Kleene (Grammar a)            -- звезда Клини (повторение)
   | Alter (Grammar a) (Grammar a) -- объединение (альтернатива)
@@ -225,7 +225,7 @@ instance Applicative Grammar where
   f <*> x = case f of 
      Epsilon   -> Epsilon
      None      -> None
---     Anything  -> Anything
+     Anything  -> Anything
      Term f    -> f <$> x
      Kleene f  -> Kleene (f <*> x)
      Alter f g -> Alter (f <*> x) (g <*> x)
@@ -266,38 +266,45 @@ some g = g <> Kleene g
 
 oneof p = getAlt . foldMap (Alt . p)
 
-charset = ['a'..'z'] ++ [' '..'`']
+-- charset = ['a'..'z'] ++ [' '..'`']
 
-alphabeth :: Eq a => Grammar a -> [a]
+class Eq a => Alphabetic a where
+  charset :: [a]
+
+instance Alphabetic Char where
+  charset = ['a'..'z'] ++ [' '..'`']
+
+alphabeth :: Alphabetic a => Grammar a -> [a]
 alphabeth g = case g of
    Epsilon -> empty
    None -> empty
    Term a -> pure a
---   Anything -> charset
+   Anything -> charset
    Kleene a -> alphabeth a
    Alter a b -> alphabeth a `union` alphabeth b
    Chain a b -> alphabeth a `union` alphabeth b
 
         
-generate :: Alternative f => Grammar a -> f [a]
+generate :: (Alphabetic a, Alternative f) => Grammar a -> f [a]
 generate g = case g of
                None -> empty
                Kleene None -> empty
                Epsilon -> pure []
                Kleene Epsilon -> pure []
                Term c -> pure [c]
---               Anything -> generate $ alt $ alphabeth g
+               Anything -> generate $ alt $ alphabeth g
                Kleene x -> generate $ opt (some x)
                Alter a b -> generate a <|> generate b
                Chain a b -> (++) <$> generate a <*> generate b
 
-language :: Grammar a -> [[a]]
+language :: Alphabetic a => Grammar a -> [[a]]
 language = samples . generate 
 
            
 ------------------------------------------------------------
                        
-brs f = ch '(' <> many f <> ch ')'
+dyck f = ch '(' <> many f <> ch ')' <|>
+         ch '[' <> many f <> ch ']' 
 
 fact f n = if n == 0 then 1 else f(n-1)*n
 
@@ -307,14 +314,16 @@ recur n f = foldl1 (.) $ replicate n f
         
 mod3 = many (ch 0 <|> (ch 1 <> many (ch 0 <> many (ch 1) <> ch 0) <> ch 1))
 
-arythmetics' num k = term <> many (alt "+-" <> term)
+arythmetics' k = term <> many (alt "+-" <> term)
   where
     term = mult <> many (alt "*/" <> mult)
-    mult = num <|>
+    mult = alt "1234567890" <|>
            ch '-' <> mult <|>
            ch '(' <> k <> ch ')'
+           
+           
 
-arythmetics = fix . arythmetics'
+arythmetics = fix arythmetics'
               
 polynom x = expr
   where
@@ -333,18 +342,18 @@ vanishing g = case g of
    Epsilon -> True
    None -> False
    Term _ -> False
---   Anything -> False
+   Anything -> False
    Kleene a -> True
    Alter a b -> vanishing a || vanishing b
    Chain a b -> vanishing a && vanishing b
                         
 
-leader :: Eq a => Grammar a -> [a]
+leader :: Alphabetic a => Grammar a -> [a]
 leader g = case g of
    Epsilon   -> mempty
    None      -> empty
    Term c    -> pure c
---   Anything  -> alphabeth g
+   Anything  -> alphabeth g
    Alter a b -> leader a `union` leader b
    Kleene g  -> leader $ opt g
    Chain a b -> leader $ a <|> unless (vanishing a) b
@@ -386,7 +395,7 @@ match = run . go
     where go g = case g of
                    Epsilon -> mempty
                    None -> empty
-                   Term '_' -> pure <$> next
+                   Anything -> pure <$> next
                    Term x -> pure <$> check (== x)
                    Kleene a -> mmany (go a)
                    Alter a b -> go a <|> go b
