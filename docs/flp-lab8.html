@@ -113,8 +113,6 @@ enumTree n = evalState (mkTree n) 0</hs></pre>
 
 <p>В таком виде функцию <code>enumTree</code> можно использовать в любых вычислениях, она имеет тип, ничего не говорящий о том, что внутри неё работала монада <code>State</code>.</p>
 
-<task>Определите функцию <code>randomSample :: [a] -> Random a</code>, возвращающую случайный элемент указанного списка.</task>
-
 <task>Напишите функцию, создающую треугольник Флойда с использованием сквозного счетчика в монаде <code>State</code>.
   <details><summary>Вариант решения</summary>
     <pre><hs>floyd = mapM (`replicateM` (modify (+ 1))) [1 ..]</hs></pre>
@@ -166,6 +164,8 @@ randomTree n = Node <$> random 100
 <l></l>  randomTree 3 `evalState` 43
 <o>Node 24 (Node 62 (Leaf 88) (Leaf 26)) (Node 52 (Node 54 (Leaf 72) (Leaf 82)) (Node 0 (Leaf 78) (Leaf 92)))</o></ghci></pre>
 
+<task>Определите функцию <code>randomSample :: [a] -> Random a</code>, возвращающую случайный элемент указанного списка.</task>
+
 <p>Наконец, можно выйти во внешний мир с помощью монады <code>IO</code> и запросить абсолютное время у процессора в качестве затравки генератора. Функция <code>getCPUTime</code> определена в библиотеке <tt>System.CPUTime</tt>. </p>
 <pre><hs><d>randomIO :: Integral a => a -> IO a</d>
 randomIO n = evalState (random n) <$> getCPUTime</hs></pre>
@@ -180,20 +180,16 @@ randomIO n = evalState (random n) <$> getCPUTime</hs></pre>
 
 <hr/>
     
-<p>Созданная нами на прошлом занятии система генерации выражений какого-то языка 
-по заданной грамматике способна работать в монаде <code>State</code>.
- Для этого можно определить инструменты для погружения элементов грамматики в аппликативный контекст:
-  <pre><hs>-- цепочка указанных символов
+<p>Созданная нами на прошлом занятии система генерации выражени языка 
+по заданной грамматике способна работать в монаде <code>State</code> и создавать корректные 
+выражения с элементами случайности.
+ Для этого можно определить инструменты, погружающие элементы грамматики в аппликативный контекст:
+  <pre><hs>-- детерминированная цепочка символов
 chA = fmap pure . ch
 -- случайный символ из списка символов
-altA = pure . randomSample
+altA = pure . randomSample</hs></pre>
  
--- генерация внутри аппликативного функтора
-<d>languageA :: Grammar (Random a) -> Random [[a]]</d>
-languageA = fmap samples . traverse sequenceA . generate  </hs></pre>
-</p>
-
-Для того, чтобы эти определения прошли проверку типов нужно объявить тип <code>Random a</code> экземплярами классов
+Для того, чтобы можно было воспользоваться функцией <code>generate</code>, нужно объявить тип <code>Random a</code> экземпляром классов
 <code>Alphabetic</code> и <code>Eq</code>:
 <pre><hs>instance Alphabetic a => Alphabetic (Random a) where
   charset = pure <$> charset
@@ -201,7 +197,18 @@ languageA = fmap samples . traverse sequenceA . generate  </hs></pre>
 instance Eq (Random a) where
   a == b = False</hs></pre>
 
-<p>Порождающая грамматика арифметических выражений со случайными числами будет мало отличаться от варианта, не использующего изменяемое состояние:</p>
+Генератор выражений языка внутри аппликативного функтора может быть записан так:
+<pre><hs><d>languageA :: Grammar (Random a) -> Random [[a]]</d>
+languageA = fmap samples . traverse sequenceA . generate  </hs></pre>
+Здесь композиция функций выполняет такое преобразование типов:
+<pre><hs> generate :: Grammar (Random a) -> f [Random a]
+ traverse sequenceA :: f [Random a] -> Random (f [a])
+ fmap samples :: Random (f [a]) -> Random [[a]]</hs></pre>
+При этом использование функции <code>samples</code> задаëт конкретный
+функтор <code>f</code>, его роль будет играть <code>Logic</code>.
+</p>
+
+<p>Порождающая грамматика арифметических выражений со случайными числами будет мало отличаться от варианта, не использующего изменяемое состояние:
 <pre><hs><d>arythmeticsA :: Grammar (Random Char) -> Grammar (Random Char)</d>
 arythmeticsA f = expr
   where
@@ -209,12 +216,13 @@ arythmeticsA f = expr
     term = mult <> many (altA "*/" <> mult)
     mult = opt (chA "-") <> (altA "1234567890" <|>
                              chA "(" <> f <> chA ")")</hs></pre>
+Вот как она работает:
 
 <pre><ghci><l></l> take 20 $ languageA (fix arythmeticsA) `evalState` 42
 <o>["4","6-7","5/5","7-1-2","1/9+8","(9)","6+3*1"
 ,"7/6-7+5","(8)+6","7/9/2","3-4+8+1","9/4+4/3"
 ,"(3)+1-7","3/9/7-1","(4)*5","9+7*3+3","2*7-4+4+7"
-,"(6)-2/6","8/5*1-2-5","(9)*7+2"]</o></ghci></pre>
+,"(6)-2/6","8/5*1-2-5","(9)*7+2"]</o></ghci></pre></p>
 
 
 <details><summary><b>Дополнительный материал</b></summary>
