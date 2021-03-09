@@ -231,6 +231,22 @@ instance Applicative Grammar where
      Alter f g -> Alter (f <*> x) (g <*> x)
      Chain f g -> Chain (f <*> x) (g <*> x)
 
+isNone g = case g of
+  None -> True
+  Kleene a -> isNone a
+  Alter a b -> isNone a && isNone b
+  Chain a b -> isNone a || isNone b
+  _ -> False
+
+isEpsilon g = case g of
+  Epsilon -> True
+  Kleene a -> isEpsilon a
+  Alter a b -> isEpsilon a && isEpsilon b
+  Chain a b -> isEpsilon a && isEpsilon b
+  _ -> False
+
+
+
 -- instance Show (Grammar Char) where
 --   show = go . simplify
 --     where go g = case g of
@@ -276,31 +292,48 @@ instance Alphabetic Char where
 
 alphabeth :: Alphabetic a => Grammar a -> [a]
 alphabeth g = case g of
-   Epsilon -> empty
-   None -> empty
-   Term a -> pure a
-   Anything -> charset
-   Kleene a -> alphabeth a
-   Alter a b -> alphabeth a `union` alphabeth b
-   Chain a b -> alphabeth a `union` alphabeth b
+   g | isEpsilon g || isNone g -> []
+   Term a     -> [a]
+   Anything   -> charset
+   Kleene a   -> alphabeth a
+   Alter a b  -> alphabeth a `union` alphabeth b
+   Chain a b  -> alphabeth a `union` alphabeth b
 
         
 generate :: (Alphabetic a, Alternative f) => Grammar a -> f [a]
 generate g = case g of
-               None -> empty
-               Kleene None -> empty
-               Epsilon -> pure []
-               Kleene Epsilon -> pure []
-               Term c -> pure [c]
-               Anything -> generate $ alt $ alphabeth g
-               Kleene x -> generate $ opt (some x)
-               Alter a b -> generate a <|> generate b
-               Chain a b -> (++) <$> generate a <*> generate b
+   g | isNone g    -> empty
+   g | isEpsilon g -> pure []
+   Anything  -> generate $ alt $ alphabeth g
+   Term c    -> pure [c]
+   Kleene x  -> generate $ opt (some x)
+   Alter a b -> generate a <|> generate b
+   Chain a b -> (++) <$> generate a <*> generate b
 
 language :: Alphabetic a => Grammar a -> [[a]]
 language = samples . generate 
 
-           
+vanishing :: Grammar a -> Bool
+vanishing g = case g of
+   Epsilon -> True
+   None -> False
+   Term _ -> False
+   Anything -> False
+   Kleene a -> True
+   Alter a b -> vanishing a || vanishing b
+   Chain a b -> vanishing a && vanishing b
+                        
+
+leader :: Alphabetic a => Grammar a -> [a]
+leader g = case g of
+   g | isEpsilon g -> mempty
+   g | isNone g    -> empty
+   Term c          -> pure c
+   Anything        -> alphabeth g
+   Alter a b       -> leader a `union` leader b
+   Kleene g        -> leader $ opt g
+   Chain a b       -> leader $ a <|> unless (vanishing a) b
+
 ------------------------------------------------------------
                        
 dyck f = ch '(' <> many f <> ch ')' <|>
@@ -317,11 +350,8 @@ mod3 = many (ch 0 <|> (ch 1 <> many (ch 0 <> many (ch 1) <> ch 0) <> ch 1))
 arythmetics' k = term <> many (alt "+-" <> term)
   where
     term = mult <> many (alt "*/" <> mult)
-    mult = alt "1234567890" <|>
-           ch '-' <> mult <|>
-           ch '(' <> k <> ch ')'
-           
-           
+    mult = opt (ch '-') <> (alt "1234567890" <|>
+                            ch '(' <> k <> ch ')')
 
 arythmetics = fix arythmetics'
               
@@ -336,27 +366,6 @@ polynom x = expr
 
 
 ------------------------------------------------------------
-
-vanishing :: Grammar a -> Bool
-vanishing g = case g of
-   Epsilon -> True
-   None -> False
-   Term _ -> False
-   Anything -> False
-   Kleene a -> True
-   Alter a b -> vanishing a || vanishing b
-   Chain a b -> vanishing a && vanishing b
-                        
-
-leader :: Alphabetic a => Grammar a -> [a]
-leader g = case g of
-   Epsilon   -> mempty
-   None      -> empty
-   Term c    -> pure c
-   Anything  -> alphabeth g
-   Alter a b -> leader a `union` leader b
-   Kleene g  -> leader $ opt g
-   Chain a b -> leader $ a <|> unless (vanishing a) b
 
 tst = [Epsilon, None, ch 'a', many (ch 'a'), ch 'a' <> ch 'b', ch 'a' <|> ch 'b']
 tstf = fmap (,) <$> tst
