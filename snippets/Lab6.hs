@@ -5,6 +5,8 @@ import Data.Monoid
 import Data.Semigroup (Min(..), Max(..))
 import Data.List (transpose)
 
+import Lab2
+
 data Pt = Pt Float Float
   deriving Show
 
@@ -265,3 +267,8 @@ colorizeWith colors ps = zipWith fill (cycle colors) ps
 
 overlayCharts colors tbl = opacity 0.5 $ mconcat charts
   where charts = colorizeWith colors $ lineChart <$> tbl
+
+------------------------------------------------------------
+
+instance DeMorgan Picture where
+  g
