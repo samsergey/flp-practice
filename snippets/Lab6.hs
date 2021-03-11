@@ -269,6 +269,3 @@ overlayCharts colors tbl = opacity 0.5 $ mconcat charts
   where charts = colorizeWith colors $ lineChart <$> tbl
 
 ------------------------------------------------------------
-
-instance DeMorgan Picture where
-  g
