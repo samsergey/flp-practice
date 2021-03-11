@@ -193,9 +193,10 @@ primitive p = Picture (box p, [p])</hs></pre>
       <task>Наконец, используйте информацию об обрамляющей рамке изображения для вычисления размеров, указываемых в заголовке SVG-файла.</task>
 
       <task>Определите для экземпляров класса <code>Boxed</code> универсальную функцию <code>corner</code>, возвращающую углы обрамляющей рамки изображения, или примитива
-      <pre><hs>corner :: a -> ((Pt, Pt), (Pt, Pt))</hs></pre> и четыре селектора <code>left, right, upper, lower</code>
+	<pre><hs>corner :: a -> (((Float,Float), (Float,Float))
+               ,((Float,Float), (Float,Float)))</hs></pre> и четыре селектора <code>left, right, upper, lower</code>
       так, чтобы можно было бы получить, например, правый нижний угол изображения с помощью выражения:
-      <pre><hs> right . lower . corner $ p</hs></pre></task>
+      <pre><hs> right . lower . corner :: Picture -> (Float, Float)</hs></pre></task>
       
       <h2>Преобразования изображений</h2>
 
@@ -323,6 +324,7 @@ rotate 30 &lt;&gt; (`at` (40, 40)) $ square 10</hs></pre>
 	<p align='center'><svg width='108.0' height='68.0' fill='none' stroke='blue'><circle cx='34.0' cy='34.0' r='30.0'/><polyline points=' 64.0,64.0 104.0,64.0 104.0,24.0 64.0,24.0 64.0,64.0'/></svg></p>
 	<pre><hs>circle 30 `above` square 40</hs></pre>
 	<p align='center'><svg width='68.0' height='108.0' fill='none' stroke='blue'><circle cx='34.0' cy='34.0' r='30.0'/><polyline points=' 4.0,104.0 44.0,104.0 44.0,64.0 4.0,64.0 4.0,104.0'/></svg></p>
+	Продумайте какой может быть ассоциативность этих двух операций из соображений эффективности. Явно указать приоритет и ассоциативность операций можно с помощью ключевых слов <code>infixl</code> и <code>infixr</code>.
       </task>
 
       <task>Напишите две функции <code>row</code> и <code>column</code>, которые располагали бы список изображений в виде ряда или колонки. Например так:
@@ -358,10 +360,10 @@ rotate 30 &lt;&gt; (`at` (40, 40)) $ square 10</hs></pre>
       
      <p>В формате SVG для атрибутов принято единообразное обозначение: <tt>attribute='value'</tt>. Перечисленным в типе <code>Attribute</code> конструкторам соответствуют следующие параметры элементов SVG:
 	  <table>
-	    <tr><td style='width:7em'><code>LineColor</code></td><td><tt>stroke</tt></td></tr>
-	    <tr><td style='width:7em'><code>Fill</code></td><td><tt>fill</tt></td></tr>
-	    <tr><td style='width:7em'><code>LineWidth</code></td><td><tt>stroke-width</tt></td></tr>
-	    <tr><td style='width:7em'><code>Opacity</code></td><td><tt>stroke-opacity</tt> и <tt>fill-opacity</tt></td></tr>
+	    <tr><td style='width:7em'><code>LineColor</code></td><td><sl>stroke</sl></td></tr>
+	    <tr><td style='width:7em'><code>Fill</code></td><td><sl>fill</sl></td></tr>
+	    <tr><td style='width:7em'><code>LineWidth</code></td><td><sl>stroke-width</sl></td></tr>
+	    <tr><td style='width:7em'><code>Opacity</code></td><td><sl>stroke-opacity</sl> и <sl>fill-opacity</sl></td></tr>
 	  </table>
       </p>
 

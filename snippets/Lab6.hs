@@ -50,8 +50,8 @@ height :: Boxed a => a -> Float
 height p = y2 - y1
   where ((_,Min y1),(_,Max y2)) = box p
 
-corner :: Boxed a => a -> ((Pt, Pt),(Pt, Pt))
-corner p = ((Pt x1 y1, Pt x2 y1),(Pt x1 y2, Pt x2 y2))
+--corner :: Boxed a => a -> ((Pt, Pt),(Pt, Pt))
+corner p = (((x1, y1), (x2, y1)),((x1, y2), (x2, y2)))
   where ((Min x1, Min y1),(Max x2, Max y2)) = box p
 
 lower = fst
@@ -200,7 +200,7 @@ reflect = affine . reflectM
 
 
 at p (x, y) = shift (x-x') (y-y') p
-  where Pt x' y' = left . lower . corner $ p
+  where (x', y') = left . lower . corner $ p
 
 
 instance Affine Pt where
@@ -217,6 +217,10 @@ instance Affine Picture where
   affine t p = Picture (box p', p')
     where p' = affine t (contents p)
 
+infixl 5 `beside`
+infixr 5 `above`
+a `beside` b = a <> b `at` (lower . right . corner) a
+a `above` b  = a `at` (upper . left . corner) b <> b
 ------------------------------------------------------------
 
 data Attribute = LineColor String
