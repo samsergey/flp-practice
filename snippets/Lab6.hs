@@ -273,3 +273,19 @@ overlayCharts colors tbl = opacity 0.5 $ mconcat charts
   where charts = colorizeWith colors $ lineChart <$> tbl
 
 ------------------------------------------------------------
+ssqq n = lineWidth 0.5 . opacity 0.75 . scale 100 $ toSquare side
+    where
+      side = iterate (mconcat model) stem !! n
+      stem = line [(0, 0), (1, 0)]
+      model = [ scale 0.25
+              , shift 0.25 0 . rotate 90 . scale 0.25
+              , shift 0.25 0.25 . scale 0.25
+              , shift 0.5 0.25 . scale 0.5 . rotate (-90)
+              , shift 0.5 (-0.25) . scale 0.25
+              , shift 0.75 (-0.25) . scale 0.25 . rotate 90
+              , shift 0.75 0 . scale 0.25
+              ]
+      toSquare = mconcat [ id
+                         , shift 1 0 . rotate 90
+                         , shift 1 1 . rotate 180
+                         , shift 0 1 . rotate 270 ]
