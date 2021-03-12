@@ -6,9 +6,10 @@ import Data.Semigroup (Min(..), Max(..))
 import Data.List (transpose)
 
 import Lab2
+import Lab5 (when)
 
 data Pt = Pt Float Float
-  deriving Show
+  deriving (Show, Eq)
 
 getX (Pt x _) = x
 getY (Pt _ y) = y
@@ -76,7 +77,10 @@ instance Boxed Primitive where
 ------------------------------------------------------------
 
 primitive :: Primitive -> Picture
-primitive p =  Picture (box p, [p])
+primitive p =  primitives [p]
+
+primitives :: [Primitive] -> Picture
+primitives ps =  Picture (box ps, ps)
 
 point :: (Float, Float) -> Picture
 point (x,y) = primitive . Point $ Pt x y
@@ -273,19 +277,40 @@ overlayCharts colors tbl = opacity 0.5 $ mconcat charts
   where charts = colorizeWith colors $ lineChart <$> tbl
 
 ------------------------------------------------------------
-ssqq n = lineWidth 0.5 . opacity 0.75 . scale 100 $ toSquare side
+ssqq n = style . scale 100 $ toPolyline $ toSquare side
     where
-      side = iterate (mconcat model) stem !! n
+      style = lineColor "none" . fill "navy" . lineWidth 0.5
+      side = iterate model stem !! n
       stem = line [(0, 0), (1, 0)]
-      model = [ scale 0.25
-              , shift 0.25 0 . rotate 90 . scale 0.25
-              , shift 0.25 0.25 . scale 0.25
-              , shift 0.5 0.25 . scale 0.5 . rotate (-90)
-              , shift 0.5 (-0.25) . scale 0.25
-              , shift 0.75 (-0.25) . scale 0.25 . rotate 90
-              , shift 0.75 0 . scale 0.25
-              ]
+      model = scale 0.25 .
+              mconcat [ id
+                      , shift 1 0 . rotate 90
+                      , shift 1 1
+                      , shift 2 1 . scale 2 . rotate (-90)
+                      , shift 2 (-1)
+                      , shift 3 (-1) . rotate 90
+                      , shift 3 0 ]
       toSquare = mconcat [ id
                          , shift 1 0 . rotate 90
                          , shift 1 1 . rotate 180
                          , shift 0 1 . rotate 270 ]
+
+inContents f = primitive . f . contents
+
+toPolyline :: Picture -> Picture
+toPolyline p = foldl1 join `inContents` p
+  where
+    join (Line pts1) (Line pts2)
+      | last pts1 == head pts2 = Line (pts1 <> tail pts2)
+      | otherwise = Line (pts1 <> pts2)
+
+main = writeSVG "test.html" $ ssqq 2
+
+perimeter (Point _) = mempty
+perimeter (Line pts) = mconcat $ zipWith dist pts (tail pts)
+  where dist (Pt x y) (Pt a b) = Sum $ sqrt ((x-a)**2 + (y-b)**2)
+perimeter (Group _ prs) = foldMap perimeter  prs
+
+pointNum (Point _) = Sum 1
+pointNum (Line pts) = Sum $ length pts
+pointNum (Group _ ps) = foldMap pointNum ps
