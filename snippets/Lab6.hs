@@ -314,3 +314,32 @@ perimeter (Group _ prs) = foldMap perimeter  prs
 pointNum (Point _) = Sum 1
 pointNum (Line pts) = Sum $ length pts
 pointNum (Group _ ps) = foldMap pointNum ps
+
+------------------------------------------------------------
+                        
+coch = LSystem f  s
+    where
+      s = "F+F-F-F.F+F+F-F"
+      f x = case x of
+              'F' -> s
+              x -> pure x
+
+data LSystem = LSystem { rewrite :: (Char -> String)
+                       , start :: String }
+             
+runLS (LSystem r s) = iterate (>>= r) s 
+
+add (Pt x1 y1) (Pt x2 y2) = Pt (x1+x2) (y1+y2)
+                      
+drawLS l s n = shift . compose . iterprete $ string
+    where
+      string = runLS l !! n
+      shift = scanl add (Pt 0 0)
+      compose = scanl (flip ($)) s
+      iterprete = foldMap $
+                  \c -> case c of
+                          'F' -> mempty
+                          '.' -> [id]
+                          '+' -> [rotate 90]
+                          '-' -> [rotate (-90)]
+                           
