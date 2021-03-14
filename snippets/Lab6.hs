@@ -343,3 +343,4 @@ drawLS l s n = shift . compose . iterprete $ string
                           '+' -> [rotate 90]
                           '-' -> [rotate (-90)]
                            
+------------------------------------------------------------
