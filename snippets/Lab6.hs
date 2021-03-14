@@ -344,3 +344,5 @@ drawLS l s n = shift . compose . iterprete $ string
                           '-' -> [rotate (-90)]
                            
 ------------------------------------------------------------
+
+plot f (a,b) = line $ (\x -> (x, f x)) <$> [a,a+(b-a)/300..b]
