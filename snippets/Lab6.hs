@@ -118,11 +118,11 @@ instance SVG Primitive where
     Group attr ps -> printf "<g %s>%s</g>" (toSVG attr) (toSVG ps)
 
 instance SVG Picture where
-  toSVG p = printf fmt (width p) (height p) prims
+  toSVG p = printf fmt (width p+4) (height p+4) prims
     where
       fmt = "<svg width='%f' height='%f' fill='none' stroke='blue'>%s</svg>"
       prims = toSVG (contents p')
-      p' = reflect 0 p `at` (0, 0)
+      p' = reflect 0 p `at` (2, 2)
 
 writeSVG :: String -> Picture -> IO ()
 writeSVG fname = writeFile fname . toSVG
@@ -221,10 +221,14 @@ instance Affine Picture where
   affine t p = Picture (box p', p')
     where p' = affine t (contents p)
 
-infixl 5 `beside`
-infixr 5 `above`
-a `beside` b = a <> b `at` (lower . right . corner) a
-a `above` b  = a `at` (upper . left . corner) b <> b
+a `beside` b = b `at` (right . lower . corner) a <> a
+a `above` b  = a `at` (left . upper . corner) b <> b
+
+row [] = mempty
+row (p:ps) = foldl beside p ps
+
+col [] = mempty
+col (p:ps) = foldl above p ps
 ------------------------------------------------------------
 
 data Attribute = LineColor String
