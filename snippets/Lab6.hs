@@ -182,6 +182,8 @@ scaleY s = affine $ scaleM 1 s
 scale :: Affine a => Float -> a -> a 
 scale s = affine $ scaleM s s
 
+s *< p = scale s p
+
  -- приводит изображение к указанным размерам 
 rescaleTo :: (Boxed a, Affine a) => Float -> Float -> a -> a
 rescaleTo a b p = affine (scaleM (a / width p) (b/height p)) p
