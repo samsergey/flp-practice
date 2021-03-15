@@ -259,7 +259,7 @@ primitive p = Picture (box p, [p])</hs></pre>
 	<pre><hs>rotateM :: Float -> M Float
 tranlangateM :: Float -> Float -> M Float
 scaleM :: Float -> Float -> M Float
-reflectM :: Double -> M Float</hs></pre></task>
+reflectM :: Float -> M Float</hs></pre></task>
       
       <p>Применять афинные преобразования можно к разным объектам: точкам, примитивам и целым изображениям. Это наводит на мысль о классе типов <code>Affine</code>, который абстрагирует это свойство и определяет оператор афинных преобразований <code>affine</code>:
 	<pre><hs>class Affine p where
