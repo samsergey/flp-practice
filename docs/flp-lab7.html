@@ -510,7 +510,7 @@ fix f = f (fix f)</hs></pre>
 <pre>&lt;expr&gt; ::= &lt;term&gt;{(+|-)&lt;term&gt;}
 &lt;term&gt; ::= &lt;mult&gt;{(*|/)&lt;mult&gt;}
 &lt;mult&gt; ::= -?(&lt;num&gt;|'('&lt;expr&gt;')')
-&lt;num&gt; = (1|2|3|4|5|6|7|8|9|0)+
+&lt;num&gt; = [1|2|3|4|5|6|7|8|9|0]
 </pre>
 
 <p>Нетерминал <code>&lt;num&gt;</code> оставим пока свободным. Если мы переведём эту грамматику на наш язык, то получится такой код:
