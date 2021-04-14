@@ -74,7 +74,7 @@ end = Parser $ \r -> case r of
 <l></l> run (check isDigit) "abc"
 <o>Fail "abc"</o>
 <l></l> run (check isUpper) "Abc"
-<o>Ok 'A' "bc"</o>
+<o>Ok 'A' "Abc"</o>
 <l></l> run (check isUpper) "abc"
 <o>Fail "abc"</o></ghci></pre>
       <details><summary>Вариант решения</summary>
@@ -90,7 +90,7 @@ check p = Parser $ \r -> case r of
 ch :: Char -> Parser Char
 -- распознаёт произвольную цифру
 digit :: Parser Char
--- распознаёт символы из указанного списка
+-- распознаёт любой символ из указанного списка
 alt :: [Char] -> Parser Char </hs></pre>
       <pre><ghci><l></l> run (ch 'x') "xor"
 <o>Ok 'x' "or"</o>
